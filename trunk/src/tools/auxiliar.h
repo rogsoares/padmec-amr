@@ -1,0 +1,164 @@
+#ifndef AUXILIAR_H_
+#define AUXILIAR_H_
+
+#include "includes.h"
+
+const double pi = 3.14159265359;
+
+double F_area(const double *ptn1, const double *ptn2, const double *ptn3);
+
+double norm(const double *n);
+
+
+void setBarrier();
+
+double E_length(pEdge edge);
+
+void getEdgeVector(pEdge edge, std::vector<double> &edgVec);
+
+double strToDouble(string &str);
+
+int strToInteger(string &str);
+
+const char* getSubString(string &str);
+
+int getVertexFlag(pVertex vertex);
+
+void makeVector(const double *A, const double *B, double *v);
+
+bool isEdgeExternal(int flag);
+
+bool isEdgeInternal(int flag);
+
+bool isFaceExternal(int flag);
+
+bool isFaceInternal(int flag);
+
+double* getIdentityMatrix(const int &dim);
+
+double getSmallestEdgeLength(pMesh theMesh);
+
+int getVertexFlag(pVertex node);
+int getEdgeFlag(pEdge edge);
+int getFaceFlag(pFace face);
+int getTetraFlag(pRegion tetra);
+int getEntityFlag(int i, pEntity ent);
+
+void replaceAllOccurencesOnString(string &, string::size_type, string, string);
+void getIJnodes(pEdge, std::vector<pEntity>&);
+
+void F_getEdges(pMesh, pEntity, std::vector<pEntity> &);
+
+const double qsi = 1e-10; // qsi is used to avoid division by zero
+
+
+/*
+ * Get edge vertices. M_GetVertices returns the vertices for every entity (edge,
+ * triangle, tetra, etc. E_vertices avoid the 'if' statement used by the former
+ * function allowing some CPU time reduction.
+ */
+void E_vertices(pEntity edge, std::vector<pEntity> & vertex);
+
+/*
+ * Get coordenates (x,y,z) for edge's vertices I and J.
+ */
+void E_getVerticesCoord(pEntity edge, double *I, double *J);
+
+typedef Trellis_Util::mPoint VPoint;
+
+/*
+ * Get vertex point from an edge
+ */
+VPoint E_getVertexPoint(pEntity,int);
+
+void E_IJvector(double*, double*, double*);
+
+void printSimulationHeader();
+
+typedef std::vector<double> dblarray;
+
+// let's use C++ <numeric> and <algorithm> to help us doing cool things like
+// calculating dot product and euclidian norm
+double inner_product(const dblarray &a1, const dblarray &a2);
+
+void unitary_vector(const dblarray &a1, dblarray &a2);
+
+void unitary_vector(dblarray &a1);
+
+double norm2(const dblarray &a1);
+
+void checklinepassing(int, const char*, std::string);
+
+enum LOG_FILES {OPENLG, UPDATELG, CLOSELG};
+
+void LogFiles(LOG_FILES ,double t1=.0, double t2=.0, double timeStep=.0,
+		double accSimTime=.0, string path="",bool hasRestart=false,
+		int last_step=0, double CPU_time=.0);
+
+void failOpeningFile(string, int, const char *);
+
+/*
+ * converts seconds to hours minutes seconds
+ */
+void convertSecToTime(double t, double *h, double *m, double *s);
+
+void STOP();
+
+
+int printMatrixToFile(Mat&,const char*);
+int printVectorToFile(Vec&,const char*);
+
+
+/*
+ * Define types for arrays of pointer functions (Scalars)
+ */
+typedef double(*GetPFunction)(pEntity);
+typedef void(*SetPFunction)(pEntity,double);
+
+typedef GetPFunction* GetFunctionArray;
+typedef SetPFunction* SetFunctionArray;
+
+/*
+ * Define types for arrays of pointer functions (scalars/gradients)
+ */
+typedef double (*GetPFuncScalar)(pEntity);
+typedef void (*SetPFuncScalar)(pEntity,double);
+typedef void (*GetPFuncGrad)(int,int,double*);
+typedef void (*SetPFuncGrad)(int,int,double*);
+
+typedef GetPFuncScalar* GetFuncScalarArray;
+typedef SetPFuncScalar* SetFuncScalarArray;
+typedef GetPFuncGrad* GetFuncGradArray;
+typedef SetPFuncGrad* SetFuncGradArray;
+
+/*! \brief: Get leaves of an edge with refinementDepth equal 1 (ONLY two children)
+ * \param pEdge edge: edge where to get children from
+ * \param pEdge* edgeChildren: pointer array with two children
+ */
+void getEdgesChildren(pEdge, mEdge**);
+
+/*! \brief: Get faces around a face. In general, face has three neighbors, but it has boundary edges, it may have two or only one neighbor
+ * \param face face to find its neighbors
+ * \param faces face's neighbors
+ * \param numFaces how many neighbor were found
+ */
+void getFacesAroundFace(pFace face, pFace *faces, int &numFaces);
+
+
+double dot(const double *u, const double *v, int dim);
+double norm_L2(const double *p, int dim);
+
+int EN_getFlag(pEntity);
+
+void getTriVerticesIDs(pFace face, int* IDs);
+
+void printFaceIDs(pEntity);
+
+//void neighboursFace(pMesh theMesh, pEntity face, std::vector <pFace> &fvector);
+//void neighboursFaceofEdge(pMesh theMesh, pEntity edge, std::vector <pFace> &fvector);
+void getNeighboursFace(pEntity face, std::vector<pEntity> &neighbousFace, int &);
+void getChildren (pMesh theMesh, pEntity parent, std::vector<pFace> &fchildren);
+void getEdgesNodeIDs(pEdge edge, int &ID1, int &ID2);
+bool isNotEdgeOnBdry(pEdge edge);
+
+#endif /*AUXILIAR_H_*/
