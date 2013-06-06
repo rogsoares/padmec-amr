@@ -25,8 +25,8 @@ H_Refinement_2D::~H_Refinement_2D(){
  * step 5: reconstruct mesh database
  */
 
-void H_Refinement_2D::run(ErrorAnalysis *pErrorAnalysis, pMesh theMesh){
-	if (theMesh->getDim() != 2){
+void H_Refinement_2D::rodar(ErrorAnalysis *pErrorAnalysis, pMesh & theMesh){
+	if (theMesh->getDim() != 2){ 
 		throw Exception(__LINE__,__FILE__,"Adaptation procedure has been implemented only for 2D meshes!\n");
 	}
 	removeSpecialElements(theMesh,pErrorAnalysis);
@@ -37,6 +37,7 @@ void H_Refinement_2D::run(ErrorAnalysis *pErrorAnalysis, pMesh theMesh){
 	createSpecialElementsList(theMesh,pErrorAnalysis);
 	eliminateHangNodes(theMesh);							// step 4:
 	refreshDataStructure(theMesh);							// step 5:
+
 }
 
 void H_Refinement_2D::refreshDataStructure(pMesh theMesh){

@@ -95,6 +95,12 @@ namespace PRS{
 		}
 		setInterpolationMethod(intpmethod);
 
+		setPositionToRead(fid,"Parameters to decide if an element must be (un)refined or not.");
+		fid >> str;
+		remeshing_param1 = strtod(str.c_str(), 0);
+		fid >> str;
+		remeshing_param2 = strtod(str.c_str(), 0);
+
 		if (!P_pid()) std::cout << "done.\n";
 	}
 }

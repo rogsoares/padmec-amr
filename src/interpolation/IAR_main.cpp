@@ -12,11 +12,26 @@
 #include "interpolation.h"
 
 void Linear(InterpolationDataStruct* pIntpData){
+#ifdef TRACKING_PROGRAM_STEPS
+	cout << "TRACKING_PROGRAM_STEPS: Interpolation (Linear Method)\tIN\n";
+#endif
+
 	int dim = pIntpData->m1->getDim();
-	//create octree on the first mesh
-	pIntpData->theOctree = OctreeCreate2<iterall>(pIntpData->m1->beginall(dim),pIntpData->m1->endall(dim),dim);
+	/*
+	 * Octree structure is created for searching the element on base mesh which contains data fields to be interpolated to the adaptaded mesh.
+	 *
+	 * pIntpData->m2:	Base mesh
+	 * pIntpData->m1:	To receive interpolated data from pIntpData->m2
+	 */
+	pIntpData->theOctree = OctreeCreate2<iterall>(pIntpData->m2->beginall(dim),pIntpData->m2->endall(dim),dim);
+
+
 	calculate_GeometricCoefficients(pIntpData,dim);
 	calculate_LinearInterpolation(pIntpData,dim);
+
+#ifdef TRACKING_PROGRAM_STEPS
+	cout << "TRACKING_PROGRAM_STEPS: Interpolation (Linear Method)\tOUT\n";
+#endif
 }
 
 void Quadratic(InterpolationDataStruct* pIntpData){

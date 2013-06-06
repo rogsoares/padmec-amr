@@ -35,11 +35,11 @@ namespace PRS{
 		pMS = new UVMN_Struct;
 	}
 
-	void MeshData::initialize(GeomData* pGCData){
+	void MeshData::initialize(pMesh theMesh, GeomData* pGCData){
 		if (!P_pid()) cout << "Initializing MeshData... ";
-		reorderVerticesIds(&pGCData->getNumRemoteCopies);
-		settingFreeAndPrescribedNodes();
-		createVectorsForRHS(pGCData->getMeshDim());
+		reorderVerticesIds(theMesh,&pGCData->getNumRemoteCopies);
+		settingFreeAndPrescribedNodes(theMesh);
+		createVectorsForRHS(theMesh,theMesh->getDim());
 		if (!P_pid()) cout << "done.";
 	}
 
@@ -57,7 +57,7 @@ namespace PRS{
 		return n;
 	}
 
-	void MeshData::reorderVerticesIds(int (*pFunc_numRemoteCopies)(pEntity)){
+	void MeshData::reorderVerticesIds(pMesh theMesh, int (*pFunc_numRemoteCopies)(pEntity)){
 		if(!P_pid()) std::cout << "\tStart reordering vertices IDs... ";
 		// rank p must take all remote nodes
 		set<int> remoteNodesSet;
@@ -169,7 +169,7 @@ namespace PRS{
 		if(!P_pid()) std::cout << "done.\n";
 	}
 
-	void MeshData::settingFreeAndPrescribedNodes(){
+	void MeshData::settingFreeAndPrescribedNodes(pMesh theMesh){
 		if (!numGN)
 			throw Exception(__LINE__,__FILE__,"Number of global nodes is unknown. Did you call reorderVerticesIds before?\n");
 		FreePrescribedNodes();
@@ -348,7 +348,7 @@ namespace PRS{
 	 * - nrows: number of rows will be imported and will be local to that rank.
 	 * - rows: array with number of rows indices that correspond to a free node.	 *
 	 * */
-	int MeshData::rowsToImport(int &nrows, int *&rows){
+	int MeshData::rowsToImport(pMesh theMesh, int &nrows, int *&rows){
 		Mat temp;
 		PetscErrorCode ierr = MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,numGF,numGF,0,PETSC_NULL,0,PETSC_NULL,&temp);
 
@@ -456,7 +456,7 @@ namespace PRS{
 		MPI_Barrier(MPI_COMM_WORLD);
 	}
 
-	void MeshData::createVectorsForRHS(int dim){
+	void MeshData::createVectorsForRHS(pMesh theMesh, int dim){
 		/*
 		 * Allocate memory for auxiliary vectors.
 		 * */

@@ -13,7 +13,7 @@ void calculate_GeometricCoefficients(InterpolationDataStruct* pIData, int dim){
 	double ptn1[3],ptn2[3],ptn3[3],ptn4[3];
 
 	if(dim==2){
-		VIter vit = M_vertexIter(pIData->m2);
+		VIter vit = M_vertexIter(pIData->m1);
 		while ( pEntity vertex = VIter_next(vit) ){
 
 			// get coordinate of a point from the mesh to be interpolated
@@ -23,6 +23,7 @@ void calculate_GeometricCoefficients(InterpolationDataStruct* pIData, int dim){
 			// search entity in which the point above are
 			pEntity element = (pEntity)Octree_Search(xyz,pIData->theOctree);
 			if (!element){
+				cout << "Finding element containing coordenate: " << xyz[0] << "\t" << xyz[1] << "\t" << xyz[2] << endl;
 				cout << "Entity not found! Exiting...\n";
 				exit(1);
 			}
@@ -34,25 +35,29 @@ void calculate_GeometricCoefficients(InterpolationDataStruct* pIData, int dim){
 			V_coord(vertice_1,ptn1);
 			V_coord(vertice_2,ptn2);
 			V_coord(vertice_3,ptn3);
+			//printf("Coord_x: %.5f %.5f %.5f %.5f\n",xyz[0],ptn1[0],ptn2[0],ptn3[0]);
+			//printf("Coord_y: %.5f %.5f %.5f %.5f\n",xyz[1],ptn1[1],ptn2[1],ptn3[1]);
+
 
 			//calculate areas
 			double a1 = F_area(xyz,ptn2,ptn3);
 			double a2 = F_area(xyz,ptn1,ptn3);
 			double a3 = F_area(xyz,ptn1,ptn2);
 			double a = a1 + a2 + a3;
-			a1 = a1/a;
-			a2 = a2/a;
-			a3 = a3/a;
+			a1 = (double)a1/a;
+			a2 = (double)a2/a;
+			a3 = (double)a3/a;
 
 			//calculate coefficients
-			EN_attachDataDbl(element, MD_lookupMeshDataId("GC_a1"),a1);
-			EN_attachDataDbl(element, MD_lookupMeshDataId("GC_a2"),a2);
-			EN_attachDataDbl(element, MD_lookupMeshDataId("GC_a3"),a3);
+			EN_attachDataDbl(vertex, MD_lookupMeshDataId("GC_a1"),a1);
+			EN_attachDataDbl(vertex, MD_lookupMeshDataId("GC_a2"),a2);
+			EN_attachDataDbl(vertex, MD_lookupMeshDataId("GC_a3"),a3);
+			//printf("Coeff: %.5f %.5f %.5f %.5f\n\n",a1,a2,a3,a);
 		}
 		VIter_delete(vit);
 	}
 //	else {
-//		VIter vit = M_vertexIter(pIData->m1);
+//		VIter vit = M_vertexIter(pIData->m2);
 //		while ( pEntity vertex = VIter_next(vit) ){
 //
 //			// get coordinate of a point from the mesh to be interpolated
@@ -96,29 +101,38 @@ void calculate_GeometricCoefficients(InterpolationDataStruct* pIData, int dim){
 void calculate_LinearInterpolation(InterpolationDataStruct* pIData, int dim){
 	string geocoeffstr[4] = {"GC_a1","GC_a2","GC_a3","GC_a4"};
 	double xyz[3], scalar, val;
+	pEntity v;
+	int size = dim + 1;
 
 	//Loop over vertices (from the mesh to where the data is being transfered)
 	VIter vit = M_vertexIter(pIData->m1);
 	while ( pEntity vertex = VIter_next(vit) ){
 		//get the node coordinate
-
 		V_coord(vertex,xyz);
 
 		//search entity in which the node is
 		pEntity element = (pEntity)Octree_Search(xyz,pIData->theOctree);
 
 		// Interpolate all fields assigned to mesh node
-		int size = dim + 1;
 		double geo_coeff = .0;
 		for (int field=0; field<pIData->numFields; field++){
+			//cout << "Field: " << field << ":\t";
 			// get element's nodes data per field
 			for(int i=0; i<size; i++){
-				scalar = pIData->pGetDblFunctions[field]( element->get(0,i) );
-				EN_getDataDbl(element, MD_lookupMeshDataId(geocoeffstr[i].c_str()), &geo_coeff);
-				val += scalar*geo_coeff;
+				v = (pEntity)element->get(0,i);
+				scalar = pIData->pGetDblFunctions[field]( v );
+				EN_getDataDbl(vertex, MD_lookupMeshDataId(geocoeffstr[i].c_str()), &geo_coeff);
+				val += (double)scalar*geo_coeff;
 			}
+			#ifdef MACOSX
+				if (fabs(val)<1e-10){
+					val = .0;
+				}
+			#endif
 			pIData->pSetDblFunctions[field](vertex,val);
+			val = .0;
 		}
+		//cout << endl;
 	}
 	VIter_delete(vit);
 }

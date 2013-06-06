@@ -128,7 +128,7 @@ public:
 	void getWells(pMesh theMesh, int);
 	bool rankHasProductionWell() const { return _rankHasProductionWell; }
 	void checkIfRankHasProductionWell();
-	void weightWellFlowRateByVolume(GeomData *);
+	void weightWellFlowRateByVolume(pMesh theMesh, GeomData *);
 	double getFlowrateValue(int flag) const;
 	double getInitialSaturation(pEntity);
 
@@ -139,7 +139,7 @@ public:
 	}
 	double dimensionlessFactorForDeltaTImplicit(double dom);
 	double getDVTOL() const { return _dvtol; }
-	void setInitialOilVolume(GeomData*);	// this work for multi-domains
+	void setInitialOilVolume(pMesh theMesh, GeomData*);	// this work for multi-domains
 
 	set<int> setOfDomains;
 	int getNumDomains() const { return setOfDomains.size(); }
@@ -275,6 +275,22 @@ public:
 
 	INTERPOLATION_OPTIONS getInterpolationMethod() const{
 		return _intpmethod;
+	}
+
+	double Remeshing_param1() const{
+		return remeshing_param1;
+	}
+
+	double Remeshing_param2() const{
+		return remeshing_param2;
+	}
+
+	void Remeshing_param1(double param){
+		remeshing_param1 = param;
+	}
+
+	void Remeshing_param2(double param){
+		remeshing_param2 = param;
 	}
 
 private:
@@ -441,6 +457,10 @@ private:
 	//std::map<int,setNodes> _mapLocalID_perDomain;	// for each domain -> there is a set o of local node IDs
 
 	INTERPOLATION_OPTIONS _intpmethod;	// interpolation method for adaptative mesh refinement
+
+	// remshing parameters to decide if an element must be (un)refined or not.
+	double remeshing_param1, remeshing_param2;
 };
 }
 #endif /*SimulatorParameters_H_*/
+

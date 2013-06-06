@@ -45,7 +45,7 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 							GeomData *,
 							MeshData *);
 		~EBFV1_elliptic();
-		double solver();
+		double solver(pMesh);
 
 	private:
 		bool DF_key;
@@ -79,14 +79,14 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 		/*
 		 *  associate to mesh nodes new pressure values computed
 		 */
-		double updatePressure();
+		double updatePressure(pMesh theMesh);
 		/*
 		 *  compute pressure gradient and associate them to mesh nodes for all domains
 		 * Note: nodes between two or more domains can store a vector for each one
 		 */
-		double pressureGradient();
+		double pressureGradient(pMesh theMesh);
 		int pressureGradient(int, int);
-		int resetPressureGradient(int, char*);
+		int resetPressureGradient(pMesh theMesh, int, char*);
 		int updatePressureGradient(int, int);
 
 		/*
@@ -99,10 +99,10 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 		 */
 
 		Data_struct *matvec_struct;
-		double setMatrixFreeOperation();
+		double setMatrixFreeOperation(pMesh);
 
 		/* Group set of calls to compute and assembly matrices E,F and G*/
-		double assembly_EFG_RHS();
+		double assembly_EFG_RHS(pMesh);
 
 		/* MatMultUser is called several time by Petsc during KSP solver until convergence be reached. */
 		static int MatMultUser(Mat mat, Vec u, Vec y){
@@ -127,13 +127,13 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 		}
 
 		/*set well contribution to right hand side*/
-		int wellsContributionToRHS(Vec&);
+		int wellsContributionToRHS(pMesh theMesh, Vec&);
 
 		/* Matrices E,F and G are assembled for all nodes.
 		 * After that, sub matrices are extracted to form the system of equations.
 		 * It is not seem to be the wisest way to assembly the final system of equation
 		 * but EBFV1 formulation is a little bit complex to make something efficient.*/
-		int set_SOE(Mat, Mat&, bool, Vec&, bool, bool);
+		int set_SOE(pMesh theMesh, Mat, Mat&, bool, Vec&, bool, bool);
 
 		/*Free memory from matrices related to Data_struct*/
 		double freeMemory();

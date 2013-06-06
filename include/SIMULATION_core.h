@@ -3,7 +3,7 @@
 
 #include "solverEquation_methods.h"
 #include "H_Refinement_2D.h"
-#include "AdaptativeRemeshing.h"
+#include "AdaptiveRemeshing.h"
 #include "ErrorAnalysis_2D.h"
 #include "interpolation.h"
 #include "EBFV1__pre-processors.h"
@@ -31,7 +31,7 @@ void createUnrefinementLevel(ErrorAnalysis* pErrorAnalysis, pMesh theMesh, doubl
 
 		/*! Call it when performing mesh adaptation. After mesh has been modified, many informations (e.g. number of degrees of freedom) must be recalculated.
 		 */
-		void updatePointersData();
+		void updatePointersData(pMesh);
 
 		/*!Initialize a pointer to call the solver defined by user for the elliptic term in IMPES method
 		 */

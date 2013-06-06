@@ -33,8 +33,6 @@ int EBFV1_elliptic::divergence_E(Mat E, pEntity edge, const int &dom, int dim, d
 	// get absolute K tensor: dim x dim
 	const double *K = pSimPar->getPermeability(dom);
 
-	//	printf("dom: %d   K: %f %f %f %f\n",dom,K[0],K[1],K[2],K[3]);
-
 	// get mobility for nodes I and J
 	const double MobI = pPPData->getTotalMobility(I);
 	const double MobJ = pPPData->getTotalMobility(J);

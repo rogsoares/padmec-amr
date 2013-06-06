@@ -40,6 +40,9 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 		// look up only for leave elements (without children)
 		if ( !theMesh->getRefinementDepth(face) ){
 			dom = EN_getFlag(face);
+			if (!dom){
+				throw Exception(__LINE__,__FILE__,"dom = 0\n");
+			}
 
 			setOfDomain.insert(dom);		// store every new domain
 			double faceCenter[3] = {.0, .0, .0};
@@ -91,6 +94,12 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 					Cij[j] = H*Cij[j];
 				}
 				pGCData->setCij(edge,dom,Cij);
+				//cout << "Cij = " << Cij[0] << "\t" << Cij[1] << "\t" << Cij[2] << "\n";
+#ifdef __ADAPTATION_DEBUG__
+		if (Cij[0]==.0 && Cij[1]==.0){
+			throw Exception(__LINE__,__FILE__,"Cij[0]==.0 && Cij[1]==.0\n");
+		}
+#endif
 			}
 
 			// calculate volume of control volume and associate it to elements nodes
@@ -166,6 +175,7 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 					Dij[j] *= H;
 				}
 				pGCData->setDij(edge,domains[0],domains[1],Dij);
+	//			cout << "Dij = " << Dij[0] << "\t" << Dij[1] << "\t" << Dij[2] << "\n";
 			}
 		}
 	}
@@ -215,7 +225,7 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 			vt += vol;
 			wvol = H*0.2*vol;
 			if (vol == .0){
-				throw Exception(__LINE__,__FILE__,"Volume is NULL!\n");
+				//throw Exception(__LINE__,__FILE__,"Volume is NULL!\n");//GUILHERMEPADMEC
 			}
 			pGCData->setWeightedVolume(node,wvol);
 		}

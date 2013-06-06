@@ -22,9 +22,9 @@
 typedef double(*GetDblFunction)(pEntity);
 typedef void(*SetDblFunction)(pEntity,double);
 struct InterpolationDataStruct{
-	pMesh m1;							// Used for h-refinement adaptation or mesh to interpolate from for adaptative remeshing
-	pMesh m2;							// Mesh which receives interpolated data from mesh m1 for adaptative remeshing
-	Octree *theOctree;					// Octree structure for finding elements
+	pMesh m1;							// From:   sends interpolated data to m2
+	pMesh m2;							// To:     receives interpolated data from m1
+	Octree *theOctree;					// Octree_ structure for finding elements
 
 	// Array size equal number fo fields
 	GetDblFunction* pGetDblFunctions; 	// pointer to an array of function pointer. Type: get
@@ -83,8 +83,8 @@ typedef mMeshEntityContainer::iter iterall;
 //
 //  public:
 //
-//  /*! \brief: Constructor is called when the class is created. It creates the GeomCoeff, pLinear, NodeValues and Octree.
-//   * \param mesh1 GeomCoeff, NodeValues and Octree is constructed based on this mesh.
+//  /*! \brief: Constructor is called when the class is created. It creates the GeomCoeff, pLinear, NodeValues and Octree_.
+//   * \param mesh1 GeomCoeff, NodeValues and Octree_ is constructed based on this mesh.
 //   * \param mesh2 pLinear is constructed based on this mesh.
 //   */
 //  DataTransfer(pMesh mesh1, pMesh mesh2);
@@ -207,7 +207,7 @@ typedef mMeshEntityContainer::iter iterall;
 //
 //  /*! \brief: Allocate the calculated geometric coefficients in a matrix.
 //   * \param row It is the node id from the mesh to where the data is being transfered.
-//   * \param column It can be 3 or 4, dependind on the dimension. It is related to the nodes of the element found with the Octree.
+//   * \param column It can be 3 or 4, dependind on the dimension. It is related to the nodes of the element found with the Octree_.
 //   * \param value Value to be stored.
 //   */
 //
@@ -217,7 +217,7 @@ typedef mMeshEntityContainer::iter iterall;
 //
 //  /*! \brief: Get the calculated geometric coefficient.
 //   * \param row It is the node id from the mesh to where the data is being transfered.
-//   * \param column It can be 3 or 4, dependind on the dimension. It is related to the nodes of the element found with the Octree.
+//   * \param column It can be 3 or 4, dependind on the dimension. It is related to the nodes of the element found with the Octree_.
 //   */
 //
 //  double getGeomCoeff(int row, int column) {

@@ -119,7 +119,7 @@ namespace PRS{
 	// 		Q1 = (V1/Vt)Qt 	- flow rate in node 1
 	// 		Q2 = (V2/Vt)Qt 	- flow rate in node 2
 	// 		Qn = (Vn/Vt)Qt 	- flow rate in node n
-	void SimulatorParameters::weightWellFlowRateByVolume(GeomData *pGCData){
+	void SimulatorParameters::weightWellFlowRateByVolume(pMesh theMesh, GeomData *pGCData){
 		double Vi, Vt;
 		pVertex node;
 		map<int,set<int> >::iterator miter;	// for each well flag
@@ -138,6 +138,14 @@ namespace PRS{
 				for (SIter_const sit=setOfDomains.begin(); sit!=setOfDomains.end(); sit++)	{
 					int dom = *sit;	// domains flag
 					node = (mEntity*)theMesh->getVertex( id );
+
+					#ifdef _SEEKFORBUGS_
+					if (!node){
+					  char msg[256]; sprintf(msg,"NULL node with ID %d",id);
+					  throw Exception(__LINE__,__FILE__,msg);
+					}
+					#endif
+					
 					pGCData->getVolume(node,dom,Vi);
 				}
 				Vt += Vi;///(pGCData->getNumRemoteCopies(node)+1.0);
@@ -211,6 +219,9 @@ namespace PRS{
 				EIter_delete(eit);
 			}
 		}
+		else{
+		  throw Exception(__LINE__,__FILE__,"Problems here!");
+		}
 	}
 
 	bool SimulatorParameters::isInjectionWell(int flag) const{
@@ -266,7 +277,7 @@ namespace PRS{
 	 * make a loop over all control volumes from all partitions (if there are two
 	 * or more)
 	 */
-	void SimulatorParameters::setInitialOilVolume(GeomData *pGCData){
+	void SimulatorParameters::setInitialOilVolume(pMesh theMesh, GeomData *pGCData){
 		pVertex node;
 		double TPV = .0;	// Total Porous Volume
 		for (SIter_const dom = setDomain_begin(); dom!=setDomain_end(); dom++){
