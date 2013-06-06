@@ -266,7 +266,7 @@ void saveMesh_gmsh1(pMesh theMesh, const char* filename){
 	if (dim==2){
 		fid << M_numFaces(theMesh) << std::endl;
 		FIter fit = M_faceIter(theMesh);
-		while ( face = FIter_next(fit) ){
+		while ( (face = FIter_next(fit)) ){
 			int flag = GEN_tag(face->getClassification());
 			fid << ++count << " 2 " << flag << " 1 3 ";
 			for (int i=0; i<3; i++) fid << EN_id(face->get(0,i)) << " ";
@@ -277,7 +277,7 @@ void saveMesh_gmsh1(pMesh theMesh, const char* filename){
 	else if (dim==3){
 		fid << M_numRegions(theMesh) << std::endl;
 		RIter rit = M_regionIter(theMesh);
-		while ( tetra = VIter_next(rit) ){
+		while ( (tetra = VIter_next(rit)) ){
 			int flag = GEN_tag(tetra->getClassification());
 			fid << ++count << " 4 " << flag << " 1 4 ";
 			for (int i=0; i<4; i++) fid << EN_id(tetra->get(0,i)) << " ";
@@ -573,6 +573,7 @@ void calculateEdgeLength(pMesh theMesh, GeomData *pGCData){
 				char msg[256]; sprintf(msg,"Edge [%d %d] has null length!",EN_id(edge->get(0,0)),EN_id(edge->get(0,1)));
 				throw Exception(__LINE__,__FILE__,msg);
 			}
+			//cout << "elength = " << elength << endl;
 			pGCData->setEdgeLength(edge,elength);
 			for (i=0; i<dim; i++){
 				vec[i] /= elength;
@@ -601,11 +602,14 @@ void calculateCijNorm(pMesh theMesh, GeomData *pGCData, std::set<int> setOfDomai
 	std::set<int>::iterator iter = setOfDomains.begin();
 	for(;iter!=setOfDomains.end();iter++){
 		EIter eit = M_edgeIter(theMesh);
-		while (pEntity edge = EIter_next(eit)){
+		pEdge edge;
+		while ( (edge = EIter_next(eit)) ){
 			if (!theMesh->getRefinementDepth(edge)){
 				pGCData->getCij(edge,*iter,Cij);
+				//printf("edge flag: %d Cij: %.6f %.6f\t",GEN_tag( edge->getClassification() ),Cij[0],Cij[1]);
 				//double Cij_norm = sqrt(Cij[0]*Cij[0] + Cij[1]*Cij[1]);
 				double Cij_norm = norm_L2(Cij,dim);
+				//printf("Cij_norm: %.6f\n",Cij_norm);
 				if (Cij_norm > 0.0){
 					pGCData->setCij_norm(edge,*iter,Cij_norm);
 					int flag = EN_getFlag(edge);

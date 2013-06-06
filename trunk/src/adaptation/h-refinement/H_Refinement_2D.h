@@ -29,7 +29,7 @@ public:
 	void secondLeavesCorrection(ErrorAnalysis*, pMesh, pEntity, int depth, bool&);
 	void refreshDataStructure(pMesh);
 	void elementsFlagsCorrection(ErrorAnalysis*, pMesh);
-	void run(ErrorAnalysis *pErrorAnalysis, pMesh theMesh);
+	void rodar(ErrorAnalysis  *pErrorAnalysis, pMesh & theMesh);
 
 	// Inline functions (do not use it!)
 	int getNumElements(pMesh theMesh){

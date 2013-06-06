@@ -29,6 +29,12 @@
  */
 
 bool calculate_ErrorAnalysis(ErrorAnalysis *pEA, pMesh theMesh, SimulatorParameters *pSimPar, double tol1, double tol2, GetPFuncGrad* pGetFuncArray, int numScalarFields){
+#ifdef TRACKING_PROGRAM_STEPS
+	cout << "TRACKING_PROGRAM_STEPS: Error Analysis\tIN\n";
+#endif
+
+	// for remeshing use
+	pEA->_pSimPar = pSimPar;
 	/*
 	 * Says if it will be necessary perform a mesh adaptation
 	 */
@@ -85,5 +91,8 @@ bool calculate_ErrorAnalysis(ErrorAnalysis *pEA, pMesh theMesh, SimulatorParamet
 		cout << "Num elements: " << pEA->getNumElements() << endl;
 	}
 	pEA->monitoring(theMesh);
+#ifdef TRACKING_PROGRAM_STEPS
+	cout << "TRACKING_PROGRAM_STEPS: Error Analysis\tOUT\n";
+#endif
 	return adapt;
 }

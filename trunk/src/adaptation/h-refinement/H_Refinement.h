@@ -128,7 +128,7 @@ public:
 	 */
 	void adaptation(pMesh);
 
-	virtual void run(ErrorAnalysis *pErrorAnalysis, pMesh theMesh)=0;
+	virtual void rodar(ErrorAnalysis *pErrorAnalysis, pMesh & theMesh)=0;
 
 protected:
 

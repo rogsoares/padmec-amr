@@ -26,17 +26,19 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 	}
 
 	// solves system of equation for pressure field
-	double EBFV1_elliptic::solver(){
-		if (!P_pid()) std::cout << "Elliptic solver...";
-		double cpu_time = assembly_EFG_RHS();
+	double EBFV1_elliptic::solver(pMesh theMesh){
+#ifdef TRACKING_PROGRAM_STEPS
+	cout << "TRACKING_PROGRAM_STEPS: pressure solver\tIN\n";
+#endif
+		double cpu_time = assembly_EFG_RHS(theMesh);
 //		cout << "assembly time: " << cpu_time << endl;
 		// which scheme should be used to solve pressure field
 		if (pSimPar->useDefectCorrection())
 			cpu_time += solveIteratively();
 		else
-			cpu_time += setMatrixFreeOperation();
+			cpu_time += setMatrixFreeOperation(theMesh);
 //		cout << "solver time: " << cpu_time << endl;
-		cpu_time += updatePressure();
+		cpu_time += updatePressure(theMesh);
 //		cout << "updatePressure time: " << cpu_time << endl;
 #ifdef CRUMPTON_EXAMPLE
 		// Output data (VTK)
@@ -46,15 +48,17 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 		char msg[256]; sprintf(msg,"CRUMPTON_EXAMPLE:\t\tCPU time elapsed: %f\n",cpu_time);
 		throw Exception(__LINE__,__FILE__,msg);
 #endif
-		cpu_time += pressureGradient();
+		cpu_time += pressureGradient(theMesh);
 //		cout << "pressureGradient time: " << cpu_time << endl;
 	//	STOP();
 		cpu_time += freeMemory();
-		if (!P_pid()) std::cout << "done.\n\n";
+#ifdef TRACKING_PROGRAM_STEPS
+	cout << "TRACKING_PROGRAM_STEPS: pressure solver\tOUT\n";
+#endif
 		return cpu_time;
 	}
 
-	double EBFV1_elliptic::updatePressure(){
+	double EBFV1_elliptic::updatePressure(pMesh theMesh){
 		double startt = MPI_Wtime();
 
 		PetscScalar *sol, val;

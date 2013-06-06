@@ -8,6 +8,10 @@
 #include "EBFV1__pre-processors.h"
 
 int EBFV1_preprocessor(pMesh theMesh, void *pData){
+#ifdef TRACKING_PROGRAM_STEPS
+	cout << "TRACKING_PROGRAM_STEPS: Preprocessor\tIN\n";
+#endif
+
 	int ndom;
 	if (theMesh->getDim()==2){
 		EBFV1_preprocessor_2D(theMesh,pData,ndom);
@@ -15,5 +19,9 @@ int EBFV1_preprocessor(pMesh theMesh, void *pData){
 	else{
 		EBFV1_preprocessor_3D(theMesh,pData,ndom);
 	}
+
+#ifdef TRACKING_PROGRAM_STEPS
+	cout << "TRACKING_PROGRAM_STEPS: Preprocessor\tOUT\n";
+#endif
 	return 0;
 }

@@ -68,13 +68,23 @@ namespace PRS{
 	}
 
 	void SimulatorParameters::initialize(GeomData *pGCData, pMesh theMesh){
+	  #ifdef TRACKING_PROGRAM_STEPS
+	  cout << "TRACKING_PROGRAM_STEPS: SimulatorParameters::initialize\tIN\n";
+	  #endif
+	  if (!M_numFaces(theMesh)){
+		  throw Exception(__LINE__,__FILE__,"Number of mesh elements null!");
+		}
+		
 		setStepOutputFile(0);
 		getWells(theMesh,pGCData->getMeshDim());
-		weightWellFlowRateByVolume(pGCData);
+		weightWellFlowRateByVolume(theMesh,pGCData);
 		checkIfRankHasProductionWell();
-		setInitialOilVolume(pGCData);
+		setInitialOilVolume(theMesh,pGCData);
 		setNumElementDomain(theMesh);
 		setLocalNodeIDNumbering(theMesh);
+		#ifdef TRACKING_PROGRAM_STEPS
+	cout << "TRACKING_PROGRAM_STEPS: SimulatorParameters::initialize\tIN\n";
+#endif
 	}
 
 	void SimulatorParameters::deallocateData(){
@@ -92,6 +102,7 @@ namespace PRS{
 			cout << prepFilename().c_str() << endl;
 			// load mesh using FMDB
 			M_load(theMesh,prepFilename().c_str());
+
 			if (theMesh->getDim()==2){
 				EBFV1_preprocessor_2D(theMesh,pData,ndom);
 			}
@@ -642,8 +653,19 @@ namespace PRS{
 	void SimulatorParameters::setNumElementDomain(pMesh theMesh){
 		pEntity elem;
 		bool check = true;
+		
+		if (!setOfDomains.size()){
+		  throw Exception(__LINE__,__FILE__,"Number of domains null!");
+		}
+		
+		if (!M_numFaces(theMesh)){
+		  throw Exception(__LINE__,__FILE__,"Number of mesh elements null!");
+		}
+
+		
 		numNodesDom = new int[setOfDomains.size()];
 		int k = 0; //numNodesDom counter
+		AOMD::AOMD_Util::Instance()->exportGmshFile("setNumElementDomain.msh",theMesh);
 		std::set<int> setIDs, setLocalIDs_perDomain;
 		std::set<int>::iterator iter = setOfDomains.begin();
 		// loop over domains flags
@@ -684,7 +706,7 @@ namespace PRS{
 		}
 	}
 
-	void SimulatorParameters::setLocalNodeIDNumbering(pMesh){
+	void SimulatorParameters::setLocalNodeIDNumbering(pMesh theMesh){
 		int k = 0;
 		pEntity elem;
 		std::set<pEntity> nodesDomain;

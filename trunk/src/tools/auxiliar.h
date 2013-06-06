@@ -3,6 +3,20 @@
 
 #include "includes.h"
 
+struct PADMEC_mesh{
+	int numVertices;
+	int numElements;
+	int numbeges;
+	double* coords;
+	int *ID;
+	int* bedges;
+	int* elements;
+	double *field1;
+	double *field2;
+};
+
+
+
 const double pi = 3.14159265359;
 
 double F_area(const double *ptn1, const double *ptn2, const double *ptn3);
@@ -161,4 +175,24 @@ void getChildren (pMesh theMesh, pEntity parent, std::vector<pFace> &fchildren);
 void getEdgesNodeIDs(pEdge edge, int &ID1, int &ID2);
 bool isNotEdgeOnBdry(pEdge edge);
 
+/*! \brief: Makes a copy from mesh m1 to mesh m2
+ * \param pMesh m1 from
+ * \param pMesh m2 tp
+ */
+void makeMeshCopy(pMesh m1, pMesh m2, 
+				  void(*pSetPressure)(pEntity,double), double(*pGetPressure)(pEntity),
+				  void(*pSetSaturation)(pEntity,double), double(*pGetSaturation)(pEntity));
+
+void makeMeshCopy2(pMesh m, PADMEC_mesh *pm, double(*pGetPressure)(pEntity), double(*pGetSaturation)(pEntity));
+
+void makeMeshCopy2(PADMEC_mesh* pm,pMesh m, void(*pSetPressure)(pEntity,double), void(*pSetSaturation)(pEntity,double));
+
+/*! \brief: delete elements mesh
+ * \param pMesh m
+ */
+void deleteMesh(pMesh m);
+
+void deleteMesh(PADMEC_mesh* pm);
+
+void PADMEC_GAMBIARRA(pMesh m);
 #endif /*AUXILIAR_H_*/

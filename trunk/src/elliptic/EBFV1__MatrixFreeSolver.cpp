@@ -11,7 +11,7 @@
 namespace PRS           // PRS: Petroleum Reservoir Simulator
 {
 
-double EBFV1_elliptic::setMatrixFreeOperation(){
+double EBFV1_elliptic::setMatrixFreeOperation(pMesh theMesh){
 	double startt = MPI_Wtime();
 	PetscLogDouble flops1;
 	PetscGetFlops(&flops1);

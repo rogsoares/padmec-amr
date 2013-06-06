@@ -44,7 +44,7 @@ namespace PRS
 		 * 		settingFreeAndPrescribedNodes
 		 * 		createVectorsForRHS
 		 */
-		void initialize(GeomData *);
+		void initialize(pMesh theMesh, GeomData *);
 
 		void deallocateData();
 		void destroyPointers();
@@ -77,7 +77,7 @@ namespace PRS
 		/**
 		 * Generates node ID ordering
 		 */
-		void reorderVerticesIds( int(*)(pEntity));
+		void reorderVerticesIds(pMesh theMesh, int(*)(pEntity));
 
 
 		/**
@@ -118,11 +118,11 @@ namespace PRS
 		PetscInt *F_rows;
 		PetscInt *F_cols;
 
-		void createVectorsForRHS(int);
+		void createVectorsForRHS(pMesh theMesh, int);
 		int createVectorsForMatrixF(Mat &);
 
-		int rowsToImport(int &, int *&);
-		void settingFreeAndPrescribedNodes();
+		int rowsToImport(pMesh theMesh, int &, int *&);
+		void settingFreeAndPrescribedNodes(pMesh theMesh);
 
 		// Rogerio, try to think in something more clear in the future!
 		void getRemoteIDs(int &nLIDs, int** IDs_ptr);

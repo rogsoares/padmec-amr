@@ -13,7 +13,7 @@ void exportSolutionToVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3
 		throw Exception(__LINE__,__FILE__,msg);
 	}
 
-	//PRS::PhysicPropData *pPPData  = (PRS::PhysicPropData*)pData1;
+	PRS::PhysicPropData *pPPData  = (PRS::PhysicPropData*)pData1;
 	ErrorAnalysis *pErrorAnalysis  = (ErrorAnalysis*)pData2;
 	PRS::SimulatorParameters *pSimPar = (PRS::SimulatorParameters*)pData3;
 	// print data to file
@@ -25,12 +25,16 @@ void exportSolutionToVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3
 	int dim = theMesh->getDim();
 	pErrorAnalysis->countElements(theMesh,false);
 	int numElements = pErrorAnalysis->getNumElements();
+	
+	if (!numElements){
+	  throw Exception(__LINE__,__FILE__,"Number of elements NULL!");
+	}
 
 	printVerticesCoordenates(fid,theMesh);
 	printElementConnectivities(fid,theMesh,dim,numElements);
 	printCellTypeList(fid,dim,numElements);
-//	printPressure(fid,theMesh,pPPData);
-//	printSaturation(fid,theMesh,pPPData);
+	printPressure(fid,theMesh,pPPData);
+	printSaturation(fid,theMesh,pPPData);
 
 	if ( pSimPar->userRequiresAdaptation() ){
 //		print_Swgrad(fid,theMesh,pSimPar,pPPData);

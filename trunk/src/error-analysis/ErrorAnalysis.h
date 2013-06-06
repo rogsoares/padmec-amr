@@ -162,6 +162,15 @@ public:
 
 	bool checkMaximumNumberOfSubdivision(pMesh theMesh, const int &maxNumberOfSubdivision);
 
+	/*! \brief: returns a list of elements flagged to be (un)refine
+	 * \param theMesh mesh
+	 * \param elementList output
+	 * \param nodesBGMesh output
+	 */
+	void getRefUnrefElementsList(pMesh theMesh, std::list<pEntity> &elementList, std::set<pEntity>& nodesBGMesh);
+
+	SimulatorParameters *_pSimPar;
+
 private:
 
 	int singular;

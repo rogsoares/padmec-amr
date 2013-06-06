@@ -14,7 +14,7 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 
 		Elliptic_equation(){}
 		virtual ~Elliptic_equation(){}
-		virtual double solver()=0;
+		virtual double solver(pMesh)=0;
 
 	protected:
 

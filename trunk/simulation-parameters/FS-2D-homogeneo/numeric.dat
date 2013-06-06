@@ -37,10 +37,10 @@ where i = processor-rank-number and N = number-of-processors
 You MUST provide only filename, i.e, filename = (filename-i-of-N.dat) - (-i-of-N.dat)
 
 mesh filename:
-/Users/rogsoares/programacao/projetos/SimAdapt__project/simulation-parameters/FS-2D-homogeneo/pp-data-files/msh_unstructured_32x32.msh
+/home/padmec/Downloads/PADMEC_AMR/saulo_AMR/simulation-parameters/FS-2D-homogeneo/pp-data-files/start-mesh.msh
 
 export filename (to VTK format without extension .vtk):
-/Users/rogsoares/programacao/projetos/SimAdapt__project/simulation-parameters/FS-2D-homogeneo/results/fs-2d-hom
+/home/padmec/Downloads/PADMEC_AMR/saulo_AMR/simulation-parameters/FS-2D-homogeneo/results/fs-2d-hom
 
 
 Start simulation from <restart> file?

@@ -4,7 +4,7 @@ namespace PRS{
 
 void calculateGradient__bdryFaces(pMesh theMesh, SimulatorParameters *pSimPar, PhysicPropData* pPPData, GeomData *pGCData, int dom, int dom_counter, char* tag);
 
-double EBFV1_elliptic::pressureGradient(){
+double EBFV1_elliptic::pressureGradient(pMesh theMesh){
 
 #ifdef _SEEKFORBUGS_
 	bool check1 = false;
@@ -27,7 +27,7 @@ double EBFV1_elliptic::pressureGradient(){
 
 		int dom = *iter;	// domain's flag
 		// before any calculation, reset all previous values
-		resetPressureGradient(dom_counter,tag);
+		resetPressureGradient(theMesh,dom_counter,tag);
 
 		// loop over all edges
 		EIter eit = M_edgeIter(theMesh);
@@ -172,7 +172,7 @@ double EBFV1_elliptic::pressureGradient(){
 	return 0;
 }
 
-int EBFV1_elliptic::resetPressureGradient(int dom, char *tag){
+int EBFV1_elliptic::resetPressureGradient(pMesh theMesh, int dom, char *tag){
 	pEntity node;
 	int row_I;
 	double pw_grad_I[3] = {.0,.0,.0};

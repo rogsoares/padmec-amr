@@ -46,5 +46,5 @@ relative permeability model:
 3 -> krw=((Sw-Swr)/(1-Swr-Sor))^2, kwo=((1-Sw-Swr)/(1-Swr-Sor))^2
 
 type model ID right above:
-3
+2
 

@@ -48,6 +48,7 @@ void getEdgesContribution(GeomData *pGCData, pMesh theMesh, mapSUM &mapNodeCVsum
 			int ID_I = EN_id(edge->get(0,0));		// edge ID I
 			int ID_J = EN_id(edge->get(0,1));		// edge ID J
 			pGCData->getCij(edge,flag_domain,Cij);	// Cij coefficient
+//			cout << "Cij = " << Cij[0] << "\t" << Cij[1] << "\t" << Cij[2] << "\n";
 			sum_I = mapNodeCVsum[ ID_I ];			// get SC volume summation node ID_I
 			sum_J = mapNodeCVsum[ ID_J ];			// get SC volume summation node ID_I
 			double sinal = (ID_I < ID_J)?1.0:-1.0;	// verify edge orientation

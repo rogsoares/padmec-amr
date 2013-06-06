@@ -6,7 +6,7 @@ SIMULATION_core::SIMULATION_core(){
 	pElliptic_eq = 0;
 	pHyperbolic_eq = 0;
 	theMesh = MS_newMesh(0);
-	pMeshAdapt = 0;
+	//pMeshAdapt = NULL;
 }
 
 SIMULATION_core::~SIMULATION_core(){
@@ -49,6 +49,9 @@ int SIMULATION_core::initialize(int argc, char **argv){
 		// 1- Adaptation Pointer (h-Refinement or adaptative remeshing)
 		// ----------------------------------------------------------------------------------
 		int dim = pGCData->getMeshDim();
+		if (dim<2 || dim>3){
+		  throw Exception(__LINE__,__FILE__,"Mesh dimension unknown.");
+		}
 		if (dim==3){
 			throw Exception(__LINE__,__FILE__,"Only 2-D adaptation allowed for while.");
 		}
@@ -66,6 +69,7 @@ int SIMULATION_core::initialize(int argc, char **argv){
 		pIData->pGetDblFunctions[1] = pPPData->getSaturation;
 		pIData->pSetDblFunctions[0] = pPPData->setPressure;
 		pIData->pSetDblFunctions[1] = pPPData->setSaturation;
+		pIData->m2 = MS_newMesh(0);
 
 		switch( pSimPar->getRefStrategy() ){
 		case H_REFINEMENT:
@@ -73,7 +77,7 @@ int SIMULATION_core::initialize(int argc, char **argv){
 			pIData->isElementSpecial = H_Refinement_2D::isElementSpecial;
 			break;
 		case ADAPTATIVE_REMESHING:
-			pMeshAdapt = new AdaptativeRemeshing;
+			pMeshAdapt = new AdaptiveRemeshing;
 			break;
 		default:
 			throw Exception(__LINE__,__FILE__,"Unknown adaptation strategy.");
@@ -81,34 +85,34 @@ int SIMULATION_core::initialize(int argc, char **argv){
 
 		// 3- Interpolation Function
 		// ----------------------------------------------------------------------------------
-		switch ( pSimPar->getInterpolationMethod() ){
-		case h_REFINEMENT:
-			pInterpolateData = hRefinement;
-			break;
-		case LINEAR:
-			pInterpolateData = Linear;
-			break;
-//		case QUADRATIC:
-//			pInterpolateData = Quadratic;
-//			break;
-//		case ADAPTATIVE:
-//			pInterpolateData = Adaptative;
-//			break;
-//		case CONSERVATIVE:
-//			pInterpolateData = Conservative;
-//			break;
-//		case PURE_INJECTION:
-//			pInterpolateData = PureInjection;
-//			break;
-//		case HALF_WEIGHTING:
-//			pInterpolateData = HalfWeighting;
-//			break;
-//		case FULL_WEIGHTING:
-//			pInterpolateData = FullWighting;
-//			break;
-		default:
-			throw Exception(__LINE__,__FILE__,"Interpolation method unknown. Exiting....");
-		}
+				switch ( pSimPar->getInterpolationMethod() ){
+				case h_REFINEMENT:
+					pInterpolateData = hRefinement;
+					break;
+				case LINEAR:
+					pInterpolateData = Linear;
+					break;
+		//		case QUADRATIC:
+		//			pInterpolateData = Quadratic;
+		//			break;
+		//		case ADAPTATIVE:
+		//			pInterpolateData = Adaptative;
+		//			break;
+		//		case CONSERVATIVE:
+		//			pInterpolateData = Conservative;
+		//			break;
+		//		case PURE_INJECTION:
+		//			pInterpolateData = PureInjection;
+		//			break;
+		//		case HALF_WEIGHTING:
+		//			pInterpolateData = HalfWeighting;
+		//			break;
+		//		case FULL_WEIGHTING:
+		//			pInterpolateData = FullWighting;
+		//			break;
+				default:
+					throw Exception(__LINE__,__FILE__,"Interpolation method unknown. Exiting....");
+				}
 	}
 
 
@@ -120,7 +124,7 @@ int SIMULATION_core::initialize(int argc, char **argv){
 	 */
 	pSimPar->initialize(pGCData,theMesh);
 	pPPData->initialize(pMData,pSimPar,theMesh,false);
-	pMData->initialize(pGCData);
+	pMData->initialize(theMesh,pGCData);
 
 	if (!P_pid()) printf("Number of processes required: %d\n",P_size());
 
@@ -170,8 +174,13 @@ Hyperbolic_equation* SIMULATION_core::init_HyperbolicSolverPointer(int hyperboli
 		throw Exception(__LINE__,__FILE__,"Could not initialize a pointer to pHiperbolic_eq. Unknown method.\n");
 	}
 }
-
-void SIMULATION_core::updatePointersData(){
+///#define TRACKING_PROGRAM_STEPS
+void SIMULATION_core::updatePointersData(pMesh theMesh){
+#ifdef TRACKING_PROGRAM_STEPS
+	cout << "TRACKING_PROGRAM_STEPS: updating Pointers\tIN\n";
+#endif
+        cout << "line: " << __LINE__ << "  Number of mesh elements: !" << M_numFaces(theMesh) << endl;
+		
 	// starting deallocating data related to simulation pointers
 	pSimPar->deallocateData();
 	pPPData->deallocateData(pSimPar);
@@ -180,7 +189,10 @@ void SIMULATION_core::updatePointersData(){
 	// initialize them once more
 	pSimPar->initialize(pGCData,theMesh);
 	pPPData->initialize(pMData,pSimPar,theMesh,true);
-	pMData->initialize(pGCData);
+	pMData->initialize(theMesh,pGCData);
+#ifdef TRACKING_PROGRAM_STEPS
+	cout << "TRACKING_PROGRAM_STEPS: updating Pointers\tOUT\n";
+#endif
 }
 
 int SIMULATION_core::finalize(){
