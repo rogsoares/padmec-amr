@@ -34,31 +34,30 @@ void Linear(InterpolationDataStruct* pIntpData){
 #endif
 }
 
-void Quadratic(InterpolationDataStruct* pIntpData){
-//	int dim = pIntpData->m1->getDim();
+//void Quadratic(InterpolationDataStruct* pIntpData){
 //	Linear(pIntpData);
 //	calculate_Gradients(pIntpData);
 //	calculate_DerivativesError(pIntpData);
 //	calculate_QuadraticInterpolation(pIntpData);
-}
-
-void Adaptative(InterpolationDataStruct* pIntpData){
-	throw Exception(__LINE__,__FILE__,"Under construction!");
-}
-
-void Conservative(InterpolationDataStruct* pIntpData){
-	throw Exception(__LINE__,__FILE__,"Under construction!");
-}
-
-void PureInjection(InterpolationDataStruct* pIntpData){
-	throw Exception(__LINE__,__FILE__,"Under construction!");
-}
-
-void HalfWeighting(InterpolationDataStruct* pIntpData){
-	throw Exception(__LINE__,__FILE__,"Under construction!");
-}
-
-void FullWighting(InterpolationDataStruct* pIntpData){
-	throw Exception(__LINE__,__FILE__,"Under construction!");
-}
+//}
+//
+//void Adaptative(InterpolationDataStruct* pIntpData){
+//	throw Exception(__LINE__,__FILE__,"Under construction!");
+//}
+//
+//void Conservative(InterpolationDataStruct* pIntpData){
+//	throw Exception(__LINE__,__FILE__,"Under construction!");
+//}
+//
+//void PureInjection(InterpolationDataStruct* pIntpData){
+//	throw Exception(__LINE__,__FILE__,"Under construction!");
+//}
+//
+//void HalfWeighting(InterpolationDataStruct* pIntpData){
+//	throw Exception(__LINE__,__FILE__,"Under construction!");
+//}
+//
+//void FullWighting(InterpolationDataStruct* pIntpData){
+//	throw Exception(__LINE__,__FILE__,"Under construction!");
+//}
 

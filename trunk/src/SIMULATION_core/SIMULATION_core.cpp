@@ -45,7 +45,7 @@ int SIMULATION_core::initialize(int argc, char **argv){
 	 * 		2- Error Analysis Pointer
 	 * 		3- Interpolation Function
 	 */
-	if (pSimPar->userRequiresAdaptation()){
+	//if (pSimPar->userRequiresAdaptation()){
 		// 1- Adaptation Pointer (h-Refinement or adaptative remeshing)
 		// ----------------------------------------------------------------------------------
 		int dim = pGCData->getMeshDim();
@@ -71,14 +71,18 @@ int SIMULATION_core::initialize(int argc, char **argv){
 		pIData->pSetDblFunctions[1] = pPPData->setSaturation;
 		pIData->m2 = MS_newMesh(0);
 
+		//switch( pSimPar->getRefStrategy() ){
 		switch( pSimPar->getRefStrategy() ){
 		case H_REFINEMENT:
 			pMeshAdapt = new H_Refinement_2D;
 			pIData->isElementSpecial = H_Refinement_2D::isElementSpecial;
 			break;
-		case ADAPTATIVE_REMESHING:
-			pMeshAdapt = new AdaptiveRemeshing;
+		case ADAPTIVE_REMESHING:
+			pMeshAdapt = new AdaptiveRemeshing(argc, argv);
 			break;
+ 		case RH_REFINEMENT:
+ 			//pMeshAdapt = new RH_Refinement(argc, argv);
+ 			break;
 		default:
 			throw Exception(__LINE__,__FILE__,"Unknown adaptation strategy.");
 		}
@@ -113,7 +117,7 @@ int SIMULATION_core::initialize(int argc, char **argv){
 				default:
 					throw Exception(__LINE__,__FILE__,"Interpolation method unknown. Exiting....");
 				}
-	}
+	//}
 
 
 	/*
@@ -128,11 +132,10 @@ int SIMULATION_core::initialize(int argc, char **argv){
 
 	if (!P_pid()) printf("Number of processes required: %d\n",P_size());
 
-	/*
-	 *  If restart required, physical properties come from a specified vtk
-	 *  file provided by user.
-	 */
-	if ( pSimPar->useRestart() ) restartSimulation(pSimPar,pPPData,theMesh);
+	// If restart required, physical properties come from a specified vtk file provided by user.
+// 	if (pSimPar->useRestart()){
+// 		restartSimulation(pSimPar,pPPData,theMesh);
+// 	} 
 
 	/*
 	 * Oil production output
@@ -141,9 +144,7 @@ int SIMULATION_core::initialize(int argc, char **argv){
 		string path = pSimPar->getOutputPathName();
 		char tmp[256]; sprintf(tmp,"%s_oil-production-%d.xls",path.c_str(),P_size());
 		string FileName(tmp);
-		pOilProduction = new OilProductionManagement(FileName,
-				pSimPar->getInitialOilVolume(),
-				pSimPar->getTotalInjectionFlowRate());
+		pOilProduction = new OilProductionManagement(FileName,pSimPar->getInitialOilVolume(),pSimPar->getTotalInjectionFlowRate());
 	}
 
 	/*
@@ -176,23 +177,30 @@ Hyperbolic_equation* SIMULATION_core::init_HyperbolicSolverPointer(int hyperboli
 }
 ///#define TRACKING_PROGRAM_STEPS
 void SIMULATION_core::updatePointersData(pMesh theMesh){
+	cout<< "UPDATEPOINTERS"<<endl;
 #ifdef TRACKING_PROGRAM_STEPS
 	cout << "TRACKING_PROGRAM_STEPS: updating Pointers\tIN\n";
 #endif
-        cout << "line: " << __LINE__ << "  Number of mesh elements: !" << M_numFaces(theMesh) << endl;
-		
 	// starting deallocating data related to simulation pointers
-	pSimPar->deallocateData();
-	pPPData->deallocateData(pSimPar);
-	pMData->deallocateData();
-
+	cout << __LINE__ << endl;
+	
+	pSimPar->deallocateData(); cout << __LINE__ << endl;
+	pPPData->deallocateData(pSimPar); cout << __LINE__ << endl;
+	FIter fit = M_faceIter( theMesh );
+	FIter_delete(fit);
+	cout << __LINE__ << endl;
+	pMData->deallocateData(); cout << __LINE__ << endl;
+	
+	
+	
 	// initialize them once more
-	pSimPar->initialize(pGCData,theMesh);
-	pPPData->initialize(pMData,pSimPar,theMesh,true);
-	pMData->initialize(theMesh,pGCData);
+	pSimPar->initialize(pGCData,theMesh); cout << __LINE__ << endl;
+	pPPData->initialize(pMData,pSimPar,theMesh,true); cout << __LINE__ << endl;
+	pMData->initialize(theMesh,pGCData); cout << __LINE__ << endl;
 #ifdef TRACKING_PROGRAM_STEPS
 	cout << "TRACKING_PROGRAM_STEPS: updating Pointers\tOUT\n";
 #endif
+	
 }
 
 int SIMULATION_core::finalize(){

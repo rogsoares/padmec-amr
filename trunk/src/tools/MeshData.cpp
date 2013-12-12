@@ -12,20 +12,23 @@ namespace PRS{
 
 	void MeshData::destroyPointers(){
 		if (P_pid()>=1 && rowToImport){
-			delete[] rowToImport;
-			rowToImport = 0;
 			MatDestroy(joinNodes);
 			MatDestroy(updateValues);
 		}
-		//delete pMS;
+		if (pMS)         { delete pMS; pMS = 0; }
+		if (rowToImport){ delete[] rowToImport; rowToImport = 0; }
+		if (F_rows)      { delete[] F_rows; F_rows=0; }
+		if (F_cols)      { delete[] F_cols; F_cols=0; }
+		if (pos)         { delete[] pos; pos=0; }
+		if (idxn)        { delete[] idxn; idxn=0; }
+		if (idxFreecols) { delete[] idxFreecols; idxFreecols=0; }
+		if (FP_Array)    { delete[] FP_Array; FP_Array=0; }
+		if (localIDs)    { delete[] localIDs; localIDs=0; }
+		dirichlet.clear();
+		setOfDomains.clear();
+		localIDNumbering.clear();
+		mapPB_nodes.clear();
 		AODestroy(ao);
-		delete[] pos; pos=0;
-		delete[] idxn; idxn=0;
-		delete[] idxFreecols; idxFreecols=0;
-		delete[] FP_Array; FP_Array=0;
-		delete[] F_rows; F_rows=0;
-		delete[] F_cols; F_cols=0;
-		delete[] localIDs; localIDs=0;
 	}
 
 	MeshData::MeshData(SimulatorParameters *sp, pMesh mesh){
@@ -172,15 +175,15 @@ namespace PRS{
 	void MeshData::settingFreeAndPrescribedNodes(pMesh theMesh){
 		if (!numGN)
 			throw Exception(__LINE__,__FILE__,"Number of global nodes is unknown. Did you call reorderVerticesIds before?\n");
-		FreePrescribedNodes();
+		FreePrescribedNodes(theMesh);
 		mappingUnknowns();
 	}
 
-	int MeshData::FreePrescribedNodes(){
+	int MeshData::FreePrescribedNodes(pMesh theMesh){
 		if (!P_pid()) std::cout << "\tDefining free and nonfree nodes...";
 		// all processors must hold all prescribed nodes
 		// (that's ONLY true for EBFV1 elliptic equation!!!)
-		getNodesWithKnownValues();
+		getNodesWithKnownValues(theMesh);
 
 		numGP = dirichlet.size();
 		numGF = numGN - numGP;
@@ -199,7 +202,7 @@ namespace PRS{
 		return 0;
 	}
 
-	int MeshData::getNodesWithKnownValues(){
+	int MeshData::getNodesWithKnownValues(pMesh theMesh){
 		//pEntity edge
 		pEntity node, face;
 		int i,ID;
@@ -207,10 +210,12 @@ namespace PRS{
 
 		// search for flagged nodes
 		// =========================================================================
+		cout << "\nsearching for flagged nodes\n ";
+		cout << "num nodes = " << M_numVertices(theMesh) << endl;
 		VIter vit = M_vertexIter( theMesh );
 		while ( (node = VIter_next(vit)) ){
 			int flag = (!node->getClassification())?0:GEN_tag(node->getClassification());
-//			cout << "\nID = " << EN_id(node) << "\tID_petsc:" << get_AppToPETSc_Ordering(EN_id(node)) << "\tflag" << flag << "\tCC: " << !pSimPar->isNodeFree(flag);
+			//cout << "\nID = " << EN_id(node) << "\tID_petsc:" << get_AppToPETSc_Ordering(EN_id(node)) << "\tflag" << flag << "\tCC: " << !pSimPar->isNodeFree(flag);
 			if ( !pSimPar->isNodeFree(flag) ){
 				ID = get_AppToPETSc_Ordering(EN_id(node));
 				dirichlet[ID] = pSimPar->getBC_Value(flag);
@@ -367,7 +372,9 @@ namespace PRS{
 
 		int i,k;
 		int RANGE[P_size()];
-		for (i=0; i<P_size(); i++) RANGE[i] = ranges[0][i+1]-ranges[0][i];
+		for (i=0; i<P_size(); i++){
+			RANGE[i] = ranges[0][i+1]-ranges[0][i];
+		}
 
 		//printf("[%d] - RANGE %d %d %d\n",P_pid(),RANGE[0],RANGE[1],RANGE[2]);
 
@@ -376,11 +383,9 @@ namespace PRS{
 		//printf("[%d] - from %d  to %d\n",P_pid(),from,to); exit(1);
 		ierr = MatDestroy(temp); CHKERRQ(ierr);
 
-		/*
-		 * Inform which ROWS from A, on processor p, must be copied to assembly
-		 * LHS matrix (free nodes). For each rank, the number of rows associated
-		 * to free nodes cannot be forecast so a list is used.
-		 */
+		
+		// Inform which ROWS from A, on processor p, must be copied to assembly LHS matrix (free nodes). For each rank, the number of 
+		// rows associated to free nodes cannot be forecast so a list is used.
 		list<int> freerowsList;
 		k = 0;
 		if (P_pid()==0){
@@ -403,7 +408,9 @@ namespace PRS{
 
 		// transfer row indices from list to array
 		nrows = freerowsList.size();
-		if ( !nrows ) throw Exception(__LINE__,__FILE__,"numLocalRows = 0\n");
+		if ( !nrows ){
+			throw Exception(__LINE__,__FILE__,"numLocalRows = 0\n");
+		}
 		rows = new int[nrows];
 
 		i=0;

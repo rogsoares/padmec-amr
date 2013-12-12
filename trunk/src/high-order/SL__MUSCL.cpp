@@ -45,10 +45,7 @@ namespace PRS{
 	Edge_MUSCL::~Edge_MUSCL(){
 	}
 
-	void Edge_MUSCL::calculateEdgeSlopeLimiters(pEntity edge, const double &Sw_I,
-			                                    const double &Sw_J,double& SLII,
-			                                    double& SLJJ, double& DSwII,
-			                                    double& DSwJJ, int dim){
+	void Edge_MUSCL::calculateEdgeSlopeLimiters(pEntity edge, const double &Sw_I,const double &Sw_J,double& SLII,double& SLJJ, double& DSwII,double& DSwJJ, int dim){
 		int dom=3300;
 
 		// get nodes I and J
@@ -62,7 +59,7 @@ namespace PRS{
 		double coord1[3]; V_coord(I,coord1);
 		double coord2[3]; V_coord(J,coord2);
 		dblarray edIJ(dim);
-		for (int i=0; i<dim; i++) edIJ[i] = coord2[i]-coord1[i];
+		for (int i=0; i<dim; i++) edIJ[i] = (coord2[i]-coord1[i]);
 
 		/*
 		 * Take saturation gradients from nodes I and J
@@ -70,7 +67,7 @@ namespace PRS{
 		dblarray Sw_grad_I(dim,.0), Sw_grad_J(dim,.0);
 //		pStruct->pPPData->get_Sw_Grad(I,dom,Sw_grad_I);
 //		pStruct->pPPData->get_Sw_Grad(J,dom,Sw_grad_J);
-		double delta_Sw = Sw_J - Sw_I;
+		double delta_Sw = (Sw_J - Sw_I);
 
 		// Upwind-biased Interpolations
 		DSwII = 2.*inner_product(Sw_grad_I,edIJ) - delta_Sw;

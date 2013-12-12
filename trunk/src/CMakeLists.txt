@@ -43,8 +43,8 @@ set(HDRS ${headers} ${HDRS})
 # ============================================================================================================
 # Create main executable
 # ============================================================================================================
-add_executable(SimAdapt__Proj main.cpp ${HDRS})
-target_link_libraries(SimAdapt__Proj preprocessorslib ellipticlib hyperboliclib hrefinementlib adaptativeremeshinglib erroranalysislib highorderlib interpolationlib toolslib simulationcorelib)
+add_executable(PADMEC_AMR main.cpp ${HDRS})
+target_link_libraries(PADMEC_AMR preprocessorslib ellipticlib hyperboliclib hrefinementlib adaptativeremeshinglib erroranalysislib highorderlib interpolationlib toolslib simulationcorelib)
 
 
 # ============================================================================================================

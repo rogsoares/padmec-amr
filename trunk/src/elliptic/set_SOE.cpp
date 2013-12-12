@@ -17,14 +17,28 @@ namespace PRS{
 		 @*/
 	//static bool assembly_F = true; // It will remain commented until a solution be found for adaptative simulations where the size of F varies.
 
-	double EBFV1_elliptic::assembly_EFG_RHS(){
+	double EBFV1_elliptic::assembly_EFG_RHS(pMesh mesh){
+		
+		ofstream fid;
+		//fid.open("debugging-pressure.txt");
+		
+		
 		double startt = MPI_Wtime();
 		int np = pMData->getNum_GNodes();
 		int numGF = pMData->getNum_GF_Nodes();
 		int dim = pGCData->getMeshDim();
 		int ndom = pSimPar->getNumDomains();
+		fid << "np = " << np << endl;
+		fid << "numGF = " << numGF << endl;
+		fid << "dim = " << dim << endl;
+		fid << "ndom = " << ndom << endl;
+		
 		// auxiliar vector to assembly distributed matrix system of equations
-		pMData->rowsToImport(matvec_struct->nrows,matvec_struct->rows);
+		pMData->rowsToImport(mesh,matvec_struct->nrows,matvec_struct->rows);
+		fid << "matvec_struct->nrows = " << matvec_struct->nrows << endl;
+		for (int i=0; i<matvec_struct->nrows; i++){
+			fid << "matvec_struct->rows[" << i <<"] = " << matvec_struct->rows[i] << endl;
+		}
 
 		if (!dim || !np || !numGF || !ndom){
 			char msg[256]; sprintf(msg,"dim = %d, np = %d, numGF = %d, ndom = %d.  NULL parameters found!\n",dim,np,numGF,ndom);
@@ -36,38 +50,31 @@ namespace PRS{
 		matvec_struct->F_nrows = np*dim;
 		matvec_struct->F_ncols = np;
 		dblarray Cij(3);
-
-
-		// these matrices take all mesh vertices and will be delete very soon.
-		Mat G_tmp, E[ndom];
-		F = new Mat[ndom];
-
-		/*
-		 * Create matrix G.
-		 * */
-		ierr = MatCreateMPIAIJ(PETSC_COMM_WORLD,
-				PETSC_DECIDE,PETSC_DECIDE,np,np,80,
-				PETSC_NULL,80,PETSC_NULL,&G_tmp); CHKERRQ(ierr);
+		
 		SIter_const dom;
 		if (!pSimPar->setOfDomains.size()){
 			throw Exception(__LINE__,__FILE__,"Size zero!");
 		}
+		if (!M_numEdges(mesh)){
+			throw Exception(__LINE__,__FILE__,"Mesh has any edge!");
+		}
 
+		// these matrices take all mesh vertices and will be delete very soon.
+		Mat G_tmp, E[ndom], F[ndom];
+
+		// Create matrix G.
+		ierr = MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np,np,80,PETSC_NULL,80,PETSC_NULL,&G_tmp); CHKERRQ(ierr);
 		for (dom=pSimPar->setDomain_begin(); dom!=pSimPar->setDomain_end(); dom++){
-			/*
-			 * Matrices E and F are created to each domain.
-			 */
+			// Matrices E and F are created to each domain.
 			ierr = MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np,np*dim,100,PETSC_NULL,100,PETSC_NULL,&E[i]);CHKERRQ(ierr);
 			ierr = MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np*dim,np,100,PETSC_NULL,100,PETSC_NULL,&F[i]);CHKERRQ(ierr);
-
-			/*
-			 * Matrices E,F,G are assembled edge-by-edge.
-			 * */
-			//int k=0;
-			EIter eit = M_edgeIter(theMesh);
+			cout << __LINE__ << endl;
+			// Matrices E,F,G are assembled edge-by-edge.
+			EIter eit = M_edgeIter(mesh);
 			while (pEntity edge = EIter_next(eit) ){
-				if (!theMesh->getRefinementDepth(edge)){
+				if (!mesh->getRefinementDepth(edge)){
 					if (  pGCData->edgeBelongToDomain(edge,*dom) ){
+						//cout << "dom = " << *dom << "\tedge: " << EN_id(edge->get(0,0)) << " - " << EN_id(edge->get(0,1)) << endl;
 						pGCData->getCij(edge,*dom,Cij);
 						divergence_E(E[i],edge,*dom,dim,Cij);
 						divergence_G(G_tmp,edge,*dom,dim,Cij);
@@ -76,131 +83,68 @@ namespace PRS{
 				}
 			}
 			EIter_delete(eit);
-
-
-			/*
-			 * Matrix F needs boundary (external and inter-domains) faces
-			 * contributions.
-			 * */
-			gradient_F_bdry(F[i],*dom);
+			
+			// Matrix F needs boundary (external and inter-domains) faces contributions.
+			gradient_F_bdry(mesh,F[i],*dom);
 			assemblyMatrix(F[i]);
 			assemblyMatrix(E[i]);
 			i++;
-
 		}
 		assemblyMatrix(G_tmp);
-
-		//double step1 = MPI_Wtime();
-		//if (!P_pid()) printf("Time to assembly matrices: %.5f\n",step1 - startt);
+ 		//printMatrixToFile(G_tmp,"G_tmp__PA.txt");
+ 		//printMatrixToFile(E[0],"E__PA.txt");
+ 		//printMatrixToFile(F[0],"F__PA.txt");
+			
+		//int printVectorToFile(Vec& v,const char* filename){
 
 		// Get from matrix G its contribution to RHS. matvec_struct->G correspond to all free nodes
-		//Vec G_rhs;
-		//PetscInt m, n;
-		set_SOE(G_tmp,matvec_struct->G,true,matvec_struct->RHS,true,true);
+		set_SOE(mesh,G_tmp,matvec_struct->G,true,matvec_struct->RHS,true,true);
 
-		/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-		 * Get from matrices E and F their contribution to RHS. E and F
-		 * must be handled domain by domain.
-		 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-		Mat EF,tmp;
+		// Get from matrices E and F their contribution to RHS. E and F must be handled domain by domain.
+		Mat EF, tmp;
 		Vec EF_rhs;
-		EF_multiDom = new Mat[ndom];
-
-		//ierr = MatView(matvec_struct->G,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr); throw 1;
-		//ierr = MatView(E[1],PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr); throw 1;
-
+		//EF_multiDom = new Mat[ndom];
 		for (i=0; i<ndom; i++){
 			ierr = MatMatMult(E[i],F[i],MAT_INITIAL_MATRIX,1.0,&EF); CHKERRQ(ierr);
-			//printMatrixToFile(EF,"Matrix_EF.txt");
-
-			if (pSimPar->useDefectCorrection())
-				set_SOE(EF,
-						EF_multiDom[i],
-						true,
-						EF_rhs,
-						true,
-						false);
-			else
-				set_SOE(EF,		/* EF matrix include all mesh nodes 			*/
-						tmp,	/* tmp matrix exclude dirichlet nodes			*/
-						false,	/* ask to assembly tmp matrix					*/
-						EF_rhs,	/* Ef contribution to RHS vector				*/
-						true,	/* ask to assembly EF_rhs						*/
-						false);	/* ask to include neumann condition to EF_rhs	*/
-
-			//ierr = VecView(EF_rhs,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr); throw 1;
-
+			if (pSimPar->useDefectCorrection()){
+				//set_SOE(mesh,EF,EF_multiDom[i],true,EF_rhs,true,false);
+			}
+			else{
+				// EF matrix is destroyed inside set_SOE function
+				set_SOE(mesh,EF,tmp,false,EF_rhs,true,false);
+			}
 			ierr = VecAXPY(matvec_struct->RHS,1.0,EF_rhs); CHKERRQ(ierr);
-			//			printVectorToFile(matvec_struct->RHS,"RHS_EF.txt");
-			//			STOP();
 			ierr = VecDestroy(EF_rhs);CHKERRQ(ierr);
 		}
 
-		//	ierr = VecView(matvec_struct->RHS,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr); throw 1;
-
-		/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-		 * Create E and F matrices related to free nodes only. Note that they were been
-		 * created using all mesh nodes.
-		 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
+		// Create E and F matrices related to free nodes only. Note that they were been created using all mesh nodes.
 		/* TRANSFER VALUES FROM TEMPORARY E MATRIX TO matvec_struct->E */
-		//if (assembly_F){
 		matvec_struct->F = new Mat[ndom];
-		//}
 		matvec_struct->E = new Mat[ndom];
 		// Gets all E[i] columns. Same for all processors
 		int nrows = matvec_struct->nrows;
 		int *rows = matvec_struct->rows;
+		
+		
 
-		//if (assembly_F){
 		pMData->createVectorsForMatrixF(F[0]);
-		//}
-
 		for (i=0; i<ndom; i++){
-			//if (assembly_F){
-			ierr = MatGetSubMatrixRaw(F[i],
-					pMData->get_F_nrows(),
-					pMData->get_F_rows_ptr(),
-					numGF,
-					pMData->get_F_cols_ptr(),
-					PETSC_DECIDE,
-					MAT_INITIAL_MATRIX,&matvec_struct->F[i]);CHKERRQ(ierr);
-			//}
-			ierr = MatGetSubMatrixRaw(E[i],
-					nrows,
-					rows,
-					np*dim,
-					pMData->get_pos_ptr(),
-					PETSC_DECIDE,
-					MAT_INITIAL_MATRIX,&matvec_struct->E[i]);CHKERRQ(ierr);
+			ierr = MatGetSubMatrixRaw(F[i],pMData->get_F_nrows(),pMData->get_F_rows_ptr(),numGF,pMData->get_F_cols_ptr(),PETSC_DECIDE,MAT_INITIAL_MATRIX,&matvec_struct->F[i]);CHKERRQ(ierr);
+			ierr = MatGetSubMatrixRaw(E[i],nrows,rows,np*dim,pMData->get_pos_ptr(),PETSC_DECIDE,MAT_INITIAL_MATRIX,&matvec_struct->E[i]);CHKERRQ(ierr);
 			ierr = MatDestroy(E[i]);CHKERRQ(ierr);
+			ierr = MatDestroy(F[i]);CHKERRQ(ierr);
 		}
-		//		printMatrixToFile(matvec_struct->E[0],"Matrix_E_free.txt");
-		//		printMatrixToFile(matvec_struct->F[0],"Matrix_F_free.txt");STOP();
-		//assembly_F = false;
+// 		printMatrixToFile(matvec_struct->G,"matvec_struct_G__PA.txt");
+// 		printMatrixToFile(matvec_struct->E[0],"matvec_struct_E__PA.txt");
+// 		printMatrixToFile(matvec_struct->F[0],"matvec_struct_F__PA.txt");
+// 		printVectorToFile(matvec_struct->RHS,"matvec_struct_RHS__PA.txt");
 
-		/* Create the output vector*/
+		// Create the output vector
 		ierr = VecCreate(PETSC_COMM_WORLD,&output);CHKERRQ(ierr);
 		ierr = VecSetSizes(output,PETSC_DECIDE,numGF);CHKERRQ(ierr);
 		ierr = VecSetFromOptions(output);CHKERRQ(ierr);
 
-	#ifdef _SEEKFORBUGS_
-		Vec y;
-		PetscScalar sum;
-		ierr = VecDuplicate(matvec_struct->RHS,&y);CHKERRQ(ierr);
-		ierr = VecCopy(matvec_struct->RHS,y);CHKERRQ(ierr);
-		ierr = VecAbs(y);CHKERRQ(ierr);
-		ierr = VecSum(y,&sum);CHKERRQ(ierr);
-		ierr = VecDestroy(y);CHKERRQ(ierr);
-		if (sum < 1e-12) throw Exception(__LINE__,__FILE__,"Nothing on RHS vector.\n");
-		else
-			//if (!P_pid()) printf("\tRHS sum: %f\n",sum);
-	#endif
-
 		//double step2 = MPI_Wtime();
-		//if (!P_pid()) printf("Time to operate matrices: %.5f\n",step2-step1);
-
-		//throw 1;
 		return MPI_Wtime() - startt;
 	}
 
@@ -210,7 +154,7 @@ namespace PRS{
 		return 0;
 	}
 
-	int EBFV1_elliptic::set_SOE(Mat A, Mat &LHS, bool assemblyLHS, Vec &RHS,bool assemblyRHS, bool includeWell){
+	int EBFV1_elliptic::set_SOE(pMesh mesh, Mat A, Mat &LHS, bool assemblyLHS, Vec &RHS,bool assemblyRHS, bool includeWell){
 		int i=0, j=0;
 		int numGF = pMData->getNum_GF_Nodes();	// set global free nodes
 		int numGP = pMData->getNum_GP_Nodes();	// set global prescribed (dirichlet) nodes
@@ -220,6 +164,15 @@ namespace PRS{
 		// -------------------------------------------------------------------------
 		int nrows = matvec_struct->nrows;
 		int *rows = matvec_struct->rows;
+
+#ifdef _SEEKFORBUGS_
+		if (!nrows){
+			throw Exception(__LINE__,__FILE__,"nrows NULL!");
+		}
+		if (!rows || !pMData->get_idxFreecols_ptr()){
+			throw Exception(__LINE__,__FILE__,"rows NULL!");
+		}
+#endif
 
 		if (assemblyLHS){
 			MatGetSubMatrixRaw(A,nrows,rows,numGF,pMData->get_idxFreecols_ptr(),PETSC_DECIDE,MAT_INITIAL_MATRIX,&LHS);
@@ -231,7 +184,7 @@ namespace PRS{
 		if (assemblyRHS){
 			Mat rhs;
 			int m,n;
-			MatGetSubMatrixRaw(A,nrows,                  rows,numGP,pMData->get_idxn_ptr(),PETSC_DECIDE,MAT_INITIAL_MATRIX,&rhs);
+			MatGetSubMatrixRaw(A,nrows,rows,numGP,pMData->get_idxn_ptr(),PETSC_DECIDE,MAT_INITIAL_MATRIX,&rhs);
 
 			ierr = MatDestroy(A); CHKERRQ(ierr);
 			VecCreate(PETSC_COMM_WORLD,&RHS);
@@ -249,18 +202,17 @@ namespace PRS{
 					ierr = MatGetValues(rhs,1,&i,1,&col,&val); CHKERRQ(ierr);
 					//printf("sum_old = %f  ",sum);
 					sum += -val*prescribedIter->second;
-					//printf("val: %f  prescVal: %f     sum = %f",val,prescribedIter->second,sum);
+					//printf("val: %f  prescVal: %f     sum = %f\n",val,prescribedIter->second,sum);
 				}
 				ierr = VecSetValue(RHS,i,sum,ADD_VALUES); CHKERRQ(ierr);
 			}
 
 			if ( includeWell ){
-				wellsContributionToRHS(RHS);
+				wellsContributionToRHS(mesh,RHS);
 			}
 			ierr = VecAssemblyBegin(RHS); CHKERRQ(ierr);
 			ierr = VecAssemblyEnd(RHS); CHKERRQ(ierr);
 			ierr = MatDestroy(rhs); CHKERRQ(ierr);
-
 		}
 		return 0;
 	}
@@ -268,7 +220,7 @@ namespace PRS{
 
 	// NOTE: mapNodesOnWells should not be available in the way it appears here. Some function should be implemented inside SimulatorParameters
 	// to provide only the data required.
-	int EBFV1_elliptic::wellsContributionToRHS(Vec &RHS){
+	int EBFV1_elliptic::wellsContributionToRHS(pMesh mesh, Vec &RHS){
 		int node_ID, row;
 		double Vt, Vi, Qi, Qt;
 
@@ -286,7 +238,6 @@ namespace PRS{
 				throw Exception(__LINE__,__FILE__,"Flow rate NULL!");
 			}
 
-			//double sum = .0;
 
 			// get all flagged node IDs for that well
 			if (!mit->second.size()){
@@ -294,12 +245,19 @@ namespace PRS{
 			}
 			SIter sit = mit->second.begin();
 			for (; sit!=mit->second.end(); sit++){
-				node_ID = *sit;
 				Vt = pSimPar->getWellVolume(well_flag);
+				#ifdef _SEEKFORBUGS_
+					if ( Vt<1e-12 ){
+						char msg[256]; sprintf(msg,"Well with null volume. Vertex (%d)",node_ID);
+						throw Exception(__LINE__,__FILE__,msg);
+					}
+				#endif //_SEEKFORBUGS_
+
 				Vi = .0;
+				node_ID = *sit;
 				for (SIter_const dom=pSimPar->setDomain_begin(); dom!=pSimPar->setDomain_end(); dom++){
-					pVertex node = (mEntity*)theMesh->getVertex( node_ID );
-					Vi += pGCData->getVolume(node,*dom);///(pGCData->getNumRemoteCopies(node)+1.0);
+					pVertex node = (mEntity*)mesh->getVertex( node_ID );
+					Vi += pGCData->getVolume(node,*dom);
 				}
 
 				// for node i, Q is a fraction of total well flow rate
@@ -314,14 +272,14 @@ namespace PRS{
 				 * Do not include well flux on nodes with prescribed pressure
 				 */
 				if (pSimPar->isNodeFree(well_flag)){
-					//					cout << "---------------------------------------------\n";
-					//					cout << "Node = " << node_ID << endl;
-					//					cout << "Qt = " << Qt << endl;
-					//					cout << "Qi = " << Qi << endl;
-					//					cout << "Vt = " << Vt << endl;
-					//					cout << "Vi = " << Vi << endl;
-					//				//	cout << "row = " << row << endl;
-					//					cout << "---------------------------------------------\n";
+// 										cout << "---------------------------------------------\n";
+// 										cout << "Node = " << node_ID << endl;
+// 										cout << "Qt = " << Qt << endl;
+// 										cout << "Qi = " << Qi << endl;
+// 										cout << "Vt = " << Vt << endl;
+// 										cout << "Vi = " << Vi << endl;
+// 									//	cout << "row = " << row << endl;
+// 										cout << "---------------------------------------------\n";
 					ierr = VecSetValue(RHS,row,Qi,ADD_VALUES); CHKERRQ(ierr);
 
 				}
@@ -351,7 +309,7 @@ namespace PRS{
 		 *  4 - When a node's volume is entirely located in a sub-domain, vol1 or vol2 will be equal to zero.
 		 */
 		for (int i=0; i<nrows; i++){
-			pVertex vertex = theMesh->getVertex(rows[i]+1);
+			pVertex vertex = mesh->getVertex(rows[i]+1);
 			if (vertex){
 				V_coord(vertex,coord); x = coord[0]; y = coord[1];
 				vol1 = pGCData->getVolume(vertex,3300); 			// it supposes coord_x <= 0

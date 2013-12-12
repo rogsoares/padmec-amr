@@ -12,44 +12,34 @@ namespace PRS{
 	EBFV1_hyperbolic::EBFV1_hyperbolic(){
 	}
 
-	EBFV1_hyperbolic::EBFV1_hyperbolic(pMesh mesh, PhysicPropData *ppd,
-			SimulatorParameters *sp, GeomData *gcd,
-			MeshData *md, OilProductionManagement *popm, ErrorAnalysis *pEA){
+	EBFV1_hyperbolic::EBFV1_hyperbolic(pMesh mesh, PhysicPropData *ppd,SimulatorParameters *sp, GeomData *gcd,MeshData *md, OilProductionManagement *popm, ErrorAnalysis *pEA){
 
 		pGCData = gcd;
 		pOPManager = popm;
-		/*
-		 * Experimental:
-		 */
 		pStruct = new PointerStruct;
 		pStruct->pPPData = ppd;
-		//pGCData = gcd;
 		pStruct->pSimPar = sp;
-		pStruct->theMesh = mesh;
 		pStruct->pErrorAnalysis = pEA;
 		pHOApproximation = new HighOrderApproximation(pStruct);
 		pMData = md;
-		//rowToImport = 0;
 	}
 
 	EBFV1_hyperbolic::~EBFV1_hyperbolic(){
 		delete pStruct;
 		delete pHOApproximation;
-//		if (rowToImport){
-//			delete[] rowToImport; rowToImport = 0;
-//			MatDestroy(joinNodes);
-//			MatDestroy(updateValues);
-//		}
 	}
 
-	double EBFV1_hyperbolic::solver(double &timeStep){
+	double EBFV1_hyperbolic::solver(pMesh theMesh, double &timeStep){
 	#ifdef _SEEKFORBUGS_
 		if (!P_pid()) std::cout << "Hyperbolic solver...\n";
+		if (!M_numEdges(theMesh)){
+			throw Exception(__LINE__,__FILE__,"Number of edges: 0!\n");
+		}
 	#endif
 		double hyp_time = .0;
 
 		// set to 0 all fluxes across control volumes from previous time-step
-		resetNodalNonviscTerms();
+		resetNodalNonviscTerms(theMesh);
 
 		/*
 		 * For each domain, calculate:
@@ -60,25 +50,20 @@ namespace PRS{
 
 		// loop over domains
 		// calculate saturation gradient if adaptation or high order approximation were required
-		if (  pStruct->pSimPar->userRequiresAdaptation() || pStruct->pSimPar->useHOApproximation())
-			hyp_time += calculateSaturationGradient();
+		if (  pStruct->pSimPar->userRequiresAdaptation() || pStruct->pSimPar->useHOApproximation()){
+			hyp_time += calculateSaturationGradient(theMesh);
+		}
 
 		int dom_counter = 0;
 		for (SIter_const dom=pStruct->pSimPar->setDomain_begin(); dom!=pStruct->pSimPar->setDomain_end();dom++){
-			hyp_time += calculateVelocityField(*dom,dom_counter);
-
-			/*
-			 * Some physical/numeric properties must be calculated before get high
-			 * order approximations for saturation.
-			 */
+			hyp_time += calculateVelocityField(theMesh,*dom,dom_counter);
 			if ( pStruct->pSimPar->useHOApproximation() ){
 				NodeSlopeLimiter* pNodeSL = pHOApproximation->getNodeSL_Ptr();
 				hyp_time += pNodeSL->defineSlopeLimiters();
 			}
-			hyp_time += calculateIntegralAdvectiveTerm(*dom);
+			hyp_time += calculateIntegralAdvectiveTerm(theMesh,*dom);
 			dom_counter++;
 		}
-		//pMData->unifyScalarsOnMeshNodes(PhysicPropData::getNonViscTerm,PhysicPropData::setNonViscTerm,pGCData,0);
 
 		// take minimum time-step calculated by domain
 		 timeStep = getTimeStep();
@@ -101,20 +86,17 @@ namespace PRS{
 	#endif
 
 		// Calculate saturation field: Sw(n+1)
-		 hyp_time += calculateExplicitAdvanceInTime(timeStep);
+		hyp_time += calculateExplicitAdvanceInTime(theMesh,timeStep);
 
 		// Output data (VTK) VAZAMANETO NA SAIDA DO VTK
-		pStruct->pSimPar->printOutVTK(pStruct->theMesh,pStruct->pPPData,pStruct->pErrorAnalysis,pStruct->pSimPar,exportSolutionToVTK);
+		//pStruct->pSimPar->printOutVTK(theMesh,pStruct->pPPData,pStruct->pErrorAnalysis,pStruct->pSimPar,exportSolutionToVTK);
 
 		/*
 		 * The following lines below will be condensed to a function member call
 		 * and it will belong to EBFV1_hyperbolic
 		 */
 		if (pStruct->pSimPar->rankHasProductionWell()){
-			pOPManager->printOilProduction(timeStep,
-					pStruct->pSimPar->getAccumulatedSimulationTime(),
-					pStruct->pSimPar->getSimTime(),
-					getRecoveredOilValue());
+			pOPManager->printOilProduction(timeStep,pStruct->pSimPar->getAccumulatedSimulationTime(),pStruct->pSimPar->getSimTime(),getRecoveredOilValue());
 		}
 
 		if (!P_pid()) std::cout << "done.\n\n";

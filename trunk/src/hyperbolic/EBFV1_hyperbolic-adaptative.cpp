@@ -13,9 +13,7 @@ namespace PRS{
 	EBFV1_hyperbolic_adaptative::EBFV1_hyperbolic_adaptative(){
 	}
 
-	EBFV1_hyperbolic_adaptative::EBFV1_hyperbolic_adaptative(pMesh mesh,
-			PhysicPropData *ppd, SimulatorParameters *sp,
-			GeomData *gcd,MeshData *md, OilProductionManagement *popm, ErrorAnalysis *pEA){
+	EBFV1_hyperbolic_adaptative::EBFV1_hyperbolic_adaptative(pMesh mesh,PhysicPropData *ppd, SimulatorParameters *sp,GeomData *gcd,MeshData *md, OilProductionManagement *popm, ErrorAnalysis *pEA){
 
 		pMData = md;
 		pOPManager = popm;
@@ -27,7 +25,7 @@ namespace PRS{
 		pStruct->pPPData = ppd;
 		pGCData = gcd;
 		pStruct->pSimPar = sp;
-		pStruct->theMesh = mesh;
+		//theMesh = mesh;
 		pStruct->pErrorAnalysis = pEA;
 		pHOApproximation = new HighOrderApproximation(pStruct);
 
@@ -43,7 +41,7 @@ namespace PRS{
 	EBFV1_hyperbolic_adaptative::~EBFV1_hyperbolic_adaptative(){
 	}
 
-	double EBFV1_hyperbolic_adaptative::solver(double &timeStep){
+	double EBFV1_hyperbolic_adaptative::solver(pMesh theMesh, double &timeStep){
 		if (!P_pid()) std::cout << "Adaptative Hyperbolic solver...\n";
 
 		// reset logical variables which control programming flux.
@@ -53,10 +51,10 @@ namespace PRS{
 		while ( allowAdaptativeTimeAdvance ){
 
 			// Set flux to zero before evaluate saturation equation.
-			resetNodalNonviscTerms();
+			resetNodalNonviscTerms(theMesh);
 
 			// calculate saturation gradient
-			if (pStruct->pSimPar->useHOApproximation()) hyp_time += calculateSaturationGradient();
+			if (pStruct->pSimPar->useHOApproximation()) hyp_time += calculateSaturationGradient(theMesh);
 
 			/*
 			 * Loop over domains:
@@ -66,16 +64,16 @@ namespace PRS{
 			SIter dom=pStruct->pSimPar->setDomain_begin();
 			for (; dom!=pStruct->pSimPar->setDomain_end();dom++){
 
-				if (allowVelocityCalculation) hyp_time += calculateVelocityField(*dom,dom_counter);
+				if (allowVelocityCalculation) hyp_time += calculateVelocityField(theMesh,*dom,dom_counter);
 
 				// If a high order approximation for saturation equation is required...
 				if (pStruct->pSimPar->useHOApproximation()){
 					//NodeSlopeLimiter* pNodeSL = pHOApproximation->getNodeSL_Ptr();
 					hyp_time += pHOApproximation->getNodeSL_Ptr()->defineSlopeLimiters();
 				}
-				hyp_time += calculateIntegralAdvectiveTerm(*dom);
+				hyp_time += calculateIntegralAdvectiveTerm(theMesh,*dom);
 			}
-			pMData->unifyScalarsOnMeshNodes(PhysicPropData::getNonViscTerm,PhysicPropData::setNonViscTerm,pStruct->pGCData,0);
+			//pMData->unifyScalarsOnMeshNodes(PhysicPropData::getNonViscTerm,PhysicPropData::setNonViscTerm,pStruct->pGCData,0);
 
 			// calculate explicit time-step (CFL constrained)
 			sat_ts = getTimeStep();
@@ -85,14 +83,14 @@ namespace PRS{
 			pStruct->pSimPar->correctTimeStep(sat_ts);
 
 			// calculate implicit time-step
-			vel_ts = calculateNewImplicitTS();
+			vel_ts = calculateNewImplicitTS(theMesh);
 
 			/*
 			 * Compute saturation field for n+1 (explicit saturation).
 			 * If saturation is bigger that 1.0 an exception will be thrown.
 			 */
 			try{
-				hyp_time += calculateExplicitAdvanceInTime(sat_ts);
+				hyp_time += calculateExplicitAdvanceInTime(theMesh,sat_ts);
 			}
 			catch (Exception excp){
 				excp.showExceptionMessage();
@@ -102,17 +100,13 @@ namespace PRS{
 			sat_ts_counter++;
 
 			// Output data (VTK)
-			pStruct->pSimPar->printOutVTK(pStruct->theMesh,pStruct->pPPData,pStruct->pErrorAnalysis,pStruct->pSimPar,exportSolutionToVTK);
+			pStruct->pSimPar->printOutVTK(theMesh,pStruct->pPPData,pStruct->pErrorAnalysis,pStruct->pSimPar,exportSolutionToVTK);
 
 			/*
 			 * The following lines below will be condensed to a function member call
 			 * and it will belong to EBFV1_hyperbolic
 			 */
-			if (pStruct->pSimPar->rankHasProductionWell()){
-				pOPManager->printOilProduction(sat_ts,
-						pStruct->pSimPar->getAccumulatedSimulationTime(),
-						pStruct->pSimPar->getSimTime(),
-						getRecoveredOilValue());
+			if (pStruct->pSimPar->rankHasProductionWell()){pOPManager->printOilProduction(sat_ts,pStruct->pSimPar->getAccumulatedSimulationTime(),pStruct->pSimPar->getSimTime(), getRecoveredOilValue());
 			}
 		}
 		vel_ts_counter++;
@@ -125,12 +119,8 @@ namespace PRS{
 		return hyp_time;
 	}
 
-	/*
-	 * Compute a new implicit time-step (vel_ts) if necessary. This happens
-	 * either at the beginning of simulation or when sum of sat_ts is greater
-	 * than DT.
-	 */
-	double EBFV1_hyperbolic_adaptative::calculateNewImplicitTS(){
+	// Compute a new implicit time-step (vel_ts) if necessary. This happens either at the beginning of simulation or when sum of sat_ts is greater than DT.
+	double EBFV1_hyperbolic_adaptative::calculateNewImplicitTS(pMesh theMesh){
 		if (allowVelocityCalculation){
 			/*
 			 *  stop velocity field be evaluated during saturation advance.
@@ -149,7 +139,7 @@ namespace PRS{
 			vel_ts_old *= time_factor;
 
 			// implicitTS returns a dimensionless delta T
-			dv_norm = calculateVelocityVariationNorm();
+			dv_norm = calculateVelocityVariationNorm(theMesh);
 
 			// Update new implicit time step: vel_ts
 			vel_ts = (DVTOL/dv_norm)*vel_ts_old;
@@ -199,7 +189,7 @@ namespace PRS{
 	 * Compute a new implicit time-step as function of the last implicit time-step,
 	 * velocity norm and DVTOL. DVTOL comes from the input data file 'numeric.dat'.
 	 */
-	double EBFV1_hyperbolic_adaptative::calculateVelocityVariationNorm(){
+	double EBFV1_hyperbolic_adaptative::calculateVelocityVariationNorm(pMesh theMesh){
 		const int dim = pGCData->getMeshDim();
 		const int ndom = pStruct->pSimPar->getNumDomains();
 		const int numGEdges = pGCData->getNumGEdges();
@@ -217,7 +207,7 @@ namespace PRS{
 			Dv_dom[k] = .0;
 			// loop over domains edges
 
-			EIter eit = M_edgeIter(pStruct->theMesh);
+			EIter eit = M_edgeIter(theMesh);
 			while ( (edge = EIter_next(eit)) ){
 			// we are supposing only one domain for while
 				if ( pGCData->edgeBelongToDomain(edge,*dom) ){
@@ -236,7 +226,7 @@ namespace PRS{
 
 					// number of remote copies
 					//double nrc = (double)pGCData->getNumRC(edge,*dom) + 1.0;
-					double nrc = (double)pGCData->getNumRC(pStruct->theMesh,edge) + 1.0;
+					double nrc = (double)pGCData->getNumRC(theMesh,edge) + 1.0;
 					cout << nrc << endl;
 
 
@@ -312,17 +302,10 @@ namespace PRS{
 			// convert numeric data into a string
 			char lineStr[256];
 			sprintf(lineStr,"%f %f %f",accSimTime/simTime,time_ratio,dv_norm);
-
 			cout << "\n\n\n" << lineStr << endl;
-
-
-
 			string theString(lineStr);
 			replaceAllOccurencesOnString(theString,1,".",",");
-
 			cout << "\n\n\n" << theString << endl;
-
-
 			fid <<  theString << std::endl;
 		}
 	}

@@ -7,7 +7,8 @@ static bool check_IAT = false;
 #endif //_SEEKFORBUGS_
 
 // computes total velocity on edges for domain dom
-double EBFV1_hyperbolic::calculateIntegralAdvectiveTerm(int dom){
+double EBFV1_hyperbolic::calculateIntegralAdvectiveTerm(pMesh theMesh, int dom){
+	cout << "calculateIntegralAdvectiveTerm\n";
 	int dim = pGCData->getMeshDim();
 	double startt = MPI_Wtime();
 
@@ -16,9 +17,9 @@ double EBFV1_hyperbolic::calculateIntegralAdvectiveTerm(int dom){
 	double dt = 1e+10, Sw_I, Sw_J, fwII, fwJJ, fwIJ, df_dsIJ, n, alpha;
 	double  non_visc_fv, non_visc_ad, nonvisc_I, nonvisc_J;
 	double courant, phi, length;
-
+	
 	// loop over edges
-	EIter eit = M_edgeIter(pStruct->theMesh);
+	EIter eit = M_edgeIter(theMesh);
 	while ( (edge = EIter_next(eit)) ){
 		if ( pGCData->edgeBelongToDomain(edge,dom) ){
 			pGCData->getCij(edge,dom,Cij);
@@ -36,11 +37,10 @@ double EBFV1_hyperbolic::calculateIntegralAdvectiveTerm(int dom){
 			Sw_I = pStruct->pPPData->getSaturation(I);
 			Sw_J = pStruct->pPPData->getSaturation(J);
 
-			/*
-			 * get high order approximation for saturation
-			 */
-			if ( pStruct->pSimPar->useHOApproximation() )
+			// get high order approximation for saturation
+			if ( pStruct->pSimPar->useHOApproximation() ){
 				pHOApproximation->getSw_HighOrderApproximation(edge,dom,Sw_I,Sw_J,dim);
+			}
 
 			fwII = pStruct->pPPData->getFractionalFlux(Sw_I);
 			fwJJ = pStruct->pPPData->getFractionalFlux(Sw_J);
@@ -57,29 +57,35 @@ double EBFV1_hyperbolic::calculateIntegralAdvectiveTerm(int dom){
 
 			// Approximate Eigenvalue (Note that we are using the linearized form of df_dsIJ)
 			n = .0;
-			for (int i=0; i<dim; i++) n += pow(vel[i],2);
+			for (int i=0; i<dim; i++){
+				n += pow(vel[i],2);
+			}
 			alpha = sqrt(n)*df_dsIJ;
 
 			// get the maximum alpha to compute the time step
-			//if ( alpha > alpha_max) alpha_max = alpha;
 			alpha_max = std::max(alpha,alpha_max);
 
 			// Central difference Contribution
 			non_visc_fv = .0;
-			for (int i=0; i<dim; i++) non_visc_fv +=  FluxIJ[i]*Cij[i];
+			for (int i=0; i<dim; i++){
+				non_visc_fv +=  FluxIJ[i]*Cij[i];
+			}
 
 			// Numerical Diffusion
 			non_visc_ad = 0.5*pGCData->getCij_norm(edge,dom)*alpha*(Sw_J - Sw_I);
-			double nrc = (double)pGCData->getNumRC(pStruct->theMesh,edge) + 1.0;
 
-
-#ifdef _SEEKFORBUGS_
+			#ifdef _SEEKFORBUGS_
 			if ( fabs(non_visc_ad) > 0.0 || fabs(non_visc_fv) > 0.0 ) check_IAT = true;
-#endif
+			#endif
 
+//			cout << setprecision(5) << fixed;
+//			cout << "alpha: " << alpha << " Cij_norm: " << pGCData->getCij_norm(edge,dom);
+//			cout << "  Cij: " << Cij[0] << ", " << Cij[1];
+//			cout << "  vel: " << vel[0] << ", " << vel[1];
+//			cout << "  FluxIJ: " << FluxIJ[0] << ", " << FluxIJ[1] << endl;
 			// Computing "Non-Viscous" Terms
-			nonvisc_I = pStruct->pPPData->getNonViscTerm(I) + (non_visc_fv - non_visc_ad)/nrc;
-			nonvisc_J = pStruct->pPPData->getNonViscTerm(J) - (non_visc_fv - non_visc_ad)/nrc;
+			nonvisc_I = pStruct->pPPData->getNonViscTerm(I) + (non_visc_fv - non_visc_ad);///nrc;
+			nonvisc_J = pStruct->pPPData->getNonViscTerm(J) - (non_visc_fv - non_visc_ad);///nrc;
 
 			// update nonvisc term. it will be set to 0 at the next time iteration
 			pStruct->pPPData->setNonViscTerm(I,nonvisc_I);
@@ -87,36 +93,27 @@ double EBFV1_hyperbolic::calculateIntegralAdvectiveTerm(int dom){
 		}
 	}
 	EIter_delete(eit);
-
 	#ifdef _SEEKFORBUGS_
-	   if (!check_IAT) throw Exception(__LINE__,__FILE__,"non_visc_fv and non_visc_ad are always null!\n");
+	   if (!check_IAT){
+		   char msg[256]; sprintf(msg,"For domain %d, non_visc_fv and non_visc_ad are always null!\n",dom);
+		   throw Exception(__LINE__,__FILE__,msg);
+	   }
 	#endif //_SEEKFORBUGS_
-
 
 	alpha_max = P_getMaxDbl(alpha_max);
 	courant = pStruct->pSimPar->CFL();
 	phi = pStruct->pSimPar->getPorosity(dom);
 	length = pGCData->getSmallestEdgeLength();
+	
+	#ifdef _SEEKFORBUGS_
+	if ( fabs(alpha_max) < 1e-8){
+		throw Exception(__LINE__,__FILE__,"alpha_max NULL\n");
+	}
+	#endif //_SEEKFORBUGS_
+	
 	dt = (courant*length*phi)/alpha_max;
+	cout << setprecision(8) << fixed << " ##### TIME STEP = " << dt << endl;
 
-//	pEntity node;
-//	ofstream fid;
-//			fid.open("SimPar.txt");
-//			char text[256];
-//	VIter vit = M_vertexIter(pStruct->theMesh);
-//	while ( (node = VIter_next(vit)) ){
-//		sprintf(text,"%d - %.8E\n",EN_id(node),pStruct->pPPData->getNonViscTerm(node));
-//		//fid << text;
-//	}
-//	VIter_delete(vit);
-//	sprintf(text,"delta T: %.8E\tCFL: %.8E\tmaxlength: %.8E\tphi: %.8E\talphamax: %.8E\n",dt,
-//			pStruct->pSimPar->CFL(),
-//					                                                                          length,
-//					                                                                          phi,
-//					                                                                          alpha_max);
-//	fid << text;
-//	fid.close();
-//	STOP();
 	// use dt as time step to advance saturation
 	timeStepByDomain.insert(dt);
 
@@ -124,12 +121,13 @@ double EBFV1_hyperbolic::calculateIntegralAdvectiveTerm(int dom){
 	return endt-startt;
 }
 
-void EBFV1_hyperbolic::resetNodalNonviscTerms(){
+void EBFV1_hyperbolic::resetNodalNonviscTerms(pMesh theMesh){
 	pEntity node;
 	alpha_max = .0;
-	VIter vit = M_vertexIter(pStruct->theMesh);
-	while ( (node = VIter_next(vit)) )
+	VIter vit = M_vertexIter(theMesh);
+	while ( (node = VIter_next(vit)) ){
 		pStruct->pPPData->setNonViscTerm(node,.0);
+	}
 	VIter_delete(vit);
 }
 }

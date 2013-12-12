@@ -487,10 +487,13 @@ void makeMeshCopy2(pMesh m, PADMEC_mesh *pm, double(*pGetPressure)(pEntity), dou
 		//cout << endl;
 		pm->field1[iter] = pGetPressure(ent);
 		pm->field2[iter] = pGetSaturation(ent);
+		//cout << "Sw = " << pm->field2[iter] << endl;
 		iter++;
 	}
 	VIter_delete(vit);
-
+	//STOP();
+	
+	
 	k = 0;
 	FIter fit = M_faceIter(m);
 	while ( (ent = FIter_next(fit)) ){
@@ -513,6 +516,7 @@ void makeMeshCopy2(PADMEC_mesh* pm,pMesh m, void(*pSetPressure)(pEntity,double),
 		mVertex* v = m->createVertex(pm->ID[i],x,y,z,0);
 		pSetPressure((pEntity)v,pm->field1[i]);
 		pSetSaturation((pEntity)v,pm->field2[i]);
+		//cout << "Set Sw = " << pm->field2[i] << endl;
 	}
 
 	k = 0;
@@ -524,20 +528,18 @@ void makeMeshCopy2(PADMEC_mesh* pm,pMesh m, void(*pSetPressure)(pEntity,double),
 	//	cout << EN_id(vertices[0]) << "\t" << EN_id(vertices[1]) << "\t" << EN_id(vertices[2]) << endl;
 		m->createFaceWithVertices(vertices[0],vertices[1],vertices[2],0);
 	}
+	m->modifyState(0,2,0);
+	m->modifyState(0,2);
 	m->modifyState(2,0);
-	//m->modifyState(0,2);
-	//STOP();
 }
 
-void makeMeshCopy(pMesh m1, pMesh m2, 
-				  void(*pSetPressure)(pEntity,double), double(*pGetPressure)(pEntity),
-				  void(*pSetSaturation)(pEntity,double), double(*pGetSaturation)(pEntity)){
+void makeMeshCopy(pMesh m1, pMesh m2, void(*pSetPressure)(pEntity,double), double(*pGetPressure)(pEntity), void(*pSetSaturation)(pEntity,double), double(*pGetSaturation)(pEntity)){
 	mEntity* ent;
 	mVertex* v;
-	mVertex* vertices[4];
+	//mVertex* vertices[4];
 	pGEntity pGEnt;
 	double coord[3];
-	int i,j,k,ID[4];
+	//int i,j,k,ID[4];
 	double val;
 
 	VIter vit = M_vertexIter(m1);
@@ -681,10 +683,14 @@ void deleteMesh(PADMEC_mesh* pm){
 }
 
 void deleteMesh(pMesh m){
+// 	cout << "V: " << M_numVertices(m) << endl;
+// 	cout << "E: " << M_numEdges(m) << endl;
+// 	cout << "F: " << M_numFaces(m) << endl;
+// 	cout << "R: " << M_numRegions(m) << endl;
 	pEntity ent;
 	cout << "Deleting mesh: \n";
 	if (m->getDim()==3){
-		cout << "Deleting tetrahedras\n";
+		///cout << "Deleting tetrahedras\n";
 		RIter rit = M_regionIter(m);
 		while ( (ent = RIter_next(rit)) ){
 			m->DEL(ent);
@@ -692,26 +698,37 @@ void deleteMesh(pMesh m){
 		RIter_delete(rit);
 	}
 
-	cout << "Deleting triangles\n";
+//	cout << "Deleting triangles\n";
 	FIter fit = M_faceIter(m);
 	while ( (ent = FIter_next(fit)) ){
 		m->DEL(ent);
 	}
 	FIter_delete(fit);
 
-	cout << "Deleting edges\n";
+//	cout << "Deleting edges\n";
 	EIter eit = M_edgeIter(m);
 	while ( (ent = EIter_next(eit)) ){
 		m->DEL(ent);
 	}
 	EIter_delete(eit);
+	
+	VIter vit = M_vertexIter(m);
+	while ( (ent = VIter_next(vit)) ){
+		m->DEL(ent);
+	}
+	VIter_delete(vit);
+// 	cout << "V: " << M_numVertices(m) << endl;
+// 	cout << "E: " << M_numEdges(m) << endl;
+// 	cout << "F: " << M_numFaces(m) << endl;
+// 	cout << "R: " << M_numRegions(m) << endl;
+	
 }
 
 
 /*
  * 
  * seta as entidade das malhas com os flags necessarios para uma nova simulação (condições de contorno). 
- * isso deve vir ja do adaptador. mas , enquanto isso nao é resolvido por saulo, vamos "adpatando" as coisas.
+ * isso deve vir direto do adaptador. Mas, enquanto isso nao é resolvido por saulo, vamos "adaptando" as coisas.
  * Rogério: 23/05/2013
  * 
  * ---------------------------------------------------------------------------------------------------------------
@@ -724,142 +741,162 @@ void PADMEC_GAMBIARRA(pMesh m){
 	
 	m->modifyState(2,1);
 	m->modifyState(1,2);
-	m->modifyState(2,0);
-	m->modifyState(0,2);
-
-	// insere flag nas aresta do  contorno da geometria
- 	EIter eit = M_edgeIter(m);
-// 	while ( (ent = EIter_next(eit)) ){
-// 	  if ( E_numFaces(ent)==1 )
-// 		cout << GEN_tag( ent->getClassification() ) << endl;
-// 	}
-// 	EIter_delete(eit);
-	
-	std::list<pEntity> belist;
-	int c1 = 0, c2 = 0;
-	eit = M_edgeIter(m);
-	while ( (ent = EIter_next(eit)) ){
-	  if ( E_numFaces(ent)==1 ){
-		ent->classify( m->getGEntity(2000,1) );
-		c1++;
-		belist.push_back(ent);
-	  }
-	  c2++;
-	}
-	EIter_delete(eit);
-	
-	
-// 	eit = M_edgeIter(m);
-// 	while ( (ent = EIter_next(eit)) ){
-// 	  if ( E_numFaces(ent)==1 ){
-// 	    cout << GEN_tag( ent->getClassification() ) << endl;
-// 	  }
-// 	}
-// 	EIter_delete(eit);
-	
-	cout << " All edges: " << c2 << "\t\tBoundary Edges = " << c1 << endl;
-	
-	if (!belist.size()){
-		throw Exception(__LINE__,__FILE__,"Num of boundary edges NULL!\n");
-	}
-
-	// insere flag nos nós dos poços
-	// primeiro temos que encontar estes nós que estão nas quinas inferior esquerda e superior direita
-	std::list<pEntity>::iterator iter = belist.begin();
-	mVertex *v1, *v2;
-	double coord1[3], coord2[3];
-	double xmax = 0.0, xmin = 1e3;
-	double ymax = 0.0, ymin = 1e3;
-	
-	mVertex* injectionWell;
-	mVertex* productionWell;
-	for (; iter!=belist.end(); iter++){
-	  // pegue coordenadas dos nos e guarde a que tiver menor/maior valor para x e y.
-	  ent = *iter;
-	  v1 = (mVertex*)ent->get(0,0);
-	  v2 = (mVertex*)ent->get(0,1);
-	  V_coord(v1,coord1);
-	  V_coord(v2,coord2);
-	  
-	  
-	  
-	  if (coord1[0] < xmin){
-	    xmin = coord1[0];
-	    injectionWell = v1;
-	  }
-	  if (coord1[1] < ymin){
-	    ymin = coord1[1];
-	  //  injectionWell = v1;
-	  }
-
-	  if (coord1[0] > xmax){
-	    xmax = coord1[0];
-	    //productionWell = v1;
-	  }
-	  if (coord1[1] > ymax){
-	    ymax = coord1[1];
-	    //productionWell = v1;
-	  }
-
-	  if (coord2[0] < xmin){
-	    xmin = coord2[0];
-	    //injectionWell = v2;
-	  }
-	  if (coord2[1] < ymin){
-	    ymin = coord2[1];
-	   // injectionWell = v2;
-	  }
-
-	  if (coord2[0] > xmax){
-	    xmax = coord2[0];
-	    //productionWell = v2;
-	  }
-	  if (coord2[1] > ymax){
-	    ymax = coord2[1];
-	    //productionWell = v2;
-	  }
-	  
-	  if (coord1[0] >= xmax && coord1[1] >= ymax){
-	    productionWell = v1;
-	  }
-	  if (coord2[0] >= xmax && coord2[1] >= ymax){
-	    productionWell = v2;
-	  }
-
-	  
-	  if (coord1[0] <= xmin && coord1[1] <= ymin){
-	    injectionWell = v1;
-	  }
-	  if (coord2[0] <= xmin && coord2[1] <= ymin){
-	    injectionWell = v2;
-	  }
-	  
-	  
-	}
-	
-	injectionWell->classify( m->getGEntity(10,0) );
-	productionWell->classify( m->getGEntity(51,0) );
-	cout << "min: " << xmin <<"\t"<< ymin << "injectionWell ID: " << EN_id(injectionWell) << "  flag " << GEN_tag( injectionWell->getClassification() ) << endl;
-	cout << "max: " << xmax <<"\t"<< ymax << "productionWell ID: " << EN_id(productionWell) << "  flag " << GEN_tag( productionWell->getClassification() ) << endl;
-	belist.clear();
-	//STOP();
 	
 	// insere flag nos elementos
- 	FIter fit = M_faceIter(m);
-// 	while ( (ent = FIter_next(fit)) ){
-// 		cout << GEN_tag( ent->getClassification() ) << endl;
-// 	}
-// 	FIter_delete(fit);
-	
-	fit = M_faceIter(m);
+	FIter fit = M_faceIter(m);
 	while ( (ent = FIter_next(fit)) ){
 		ent->classify( m->getGEntity(3300,2) );
 	}
 	FIter_delete(fit);
 	
-// 	fit = M_faceIter(m);
-// 	while ( (ent = FIter_next(fit)) ){
-// 		cout << GEN_tag( ent->getClassification() ) << endl;
-// 	}
-// 	FIter_delete(fit);
+	/// first, set to all nodes the triangles' flags
+	VIter vit = M_vertexIter(m);
+	while ( (ent = VIter_next(vit)) ){		
+		ent->classify( m->getGEntity(3300,0) );
+	}
+	VIter_delete(vit);
+	
+	/// second, set to all nodes on boundary edges the boundary flag
+	mVertex *v1, *v2, *p1, *p2, *injectionWell, *productionWell;
+	double coord1[3], coord2[3];
+	double xmax = 0.0, xmin = 1e3;
+	double ymax = 0.0, ymin = 1e3;
+	
+	EIter eit = M_edgeIter(m);
+	while ( (ent = EIter_next(eit)) ){
+		ent->classify( m->getGEntity(3300,1) );
+		if ( E_numFaces(ent)==1 ){
+			v1 = (mVertex*)ent->get(0,0);
+			v2 = (mVertex*)ent->get(0,1);
+			v1->classify( m->getGEntity(2000,0) );
+			v2->classify( m->getGEntity(2000,0) );
+			ent->classify( m->getGEntity(2000,1) );
+			V_coord(v1,coord1);
+			V_coord(v2,coord2);
+			
+			/// look for dirichlet and neumann nodes 
+			if (coord1[0] < xmin){
+				xmin = coord1[0];
+				injectionWell = v1;
+			}
+			if (coord1[1] < ymin){
+				ymin = coord1[1];
+			}
+			if (coord1[0] > xmax){
+				xmax = coord1[0];
+			}
+			if (coord1[1] > ymax){
+				ymax = coord1[1];
+			}
+			if (coord2[0] < xmin){
+				xmin = coord2[0];
+			}
+			if (coord2[1] < ymin){
+				ymin = coord2[1];
+			}
+			if (coord2[0] > xmax){
+				xmax = coord2[0];
+			}
+			if (coord2[1] > ymax){
+				ymax = coord2[1];
+			}
+			if (coord1[0] >= xmax && coord1[1] >= ymax){
+				productionWell = v1;
+			}
+			if (coord2[0] >= xmax && coord2[1] >= ymax){
+				productionWell = v2;
+			}
+			if (coord1[0] <= xmin && coord1[1] <= ymin){
+				injectionWell = v1;
+			}
+			if (coord2[0] <= xmin && coord2[1] <= ymin){
+				injectionWell = v2;
+			}
+			if (coord1[0] <= xmin && coord1[1] >= ymax){
+				p1 = v1;
+			}
+			if (coord2[0] <= xmin && coord2[1] >= ymax){
+				p1 = v2;
+			}
+			if (coord1[0] >= xmax && coord1[1] <= ymin){
+				p2 = v1;
+			}
+			if (coord2[0] >= xmax && coord2[1] <= ymin){
+				p2 = v2;
+			}
+		}
+	}
+	EIter_delete(eit);	
+	
+	/// set dirichlet and neumann nodes flags
+	injectionWell->classify( m->getGEntity(10,0) );
+	productionWell->classify( m->getGEntity(51,0) );
+	p1->classify( m->getGEntity(1100,0) );
+	p2->classify( m->getGEntity(1100,0) );
+}
+
+
+void checkNumEdges(pMesh theMesh, int line, char* file){
+	if (!M_numEdges(theMesh)){
+		throw Exception(line,file,"Number of edges is 0!");
+	}
+}
+
+void checkMesh(pMesh m){
+	ofstream fid;
+	fid.open("checkingMesh.txt");
+	fid << "Nodes: " << M_numVertices(m) << endl;
+	pEntity ent;
+	double coords[3];
+	VIter vit = M_vertexIter(m);
+	while ( (ent = VIter_next(vit)) ){
+		fid << EN_id(ent) << "\t";
+		V_coord(ent,coords);
+		for(int i=0;i<3;i++){
+			fid << coords[i] << "\t";
+		}
+		fid << endl;
+	}
+	VIter_delete(vit);
+	fid << endl;
+	fid << endl;
+	fid << "Elements: " << M_numFaces(m) << endl;
+	int IDs[3];
+	
+	FIter fit = M_faceIter(m);
+	while ( (ent = FIter_next(fit)) ){
+		getTriVerticesIDs(ent,IDs);
+		fid << "Face IDs: " << IDs[0] << " " << IDs[1] << " "<< IDs[2] << "\n";
+	}
+	FIter_delete(fit);
+	fid.close();
+}
+
+void calculateNumFacesAroundVertices(pMesh m, std::map<int,int> &facesAroundVertices){
+	pEntity ent, v;
+	int n;
+	
+	
+	VIter vit = M_vertexIter(m);
+	while ( (ent = VIter_next(vit)) ){
+		EN_attachDataInt(ent,MD_lookupMeshDataId( "numfaces" ),0);
+	}
+	VIter_delete(vit);
+
+	FIter fit = M_faceIter(m);
+	while ( (ent = FIter_next(fit)) ){
+		for (int i=0; i<3; i++){
+			v = (pEntity)ent->get(0,i);
+			EN_getDataInt(v,MD_lookupMeshDataId( "numfaces" ),&n);
+			EN_attachDataInt(v,MD_lookupMeshDataId( "numfaces" ),++n);
+		}
+	}
+	FIter_delete(fit);
+	
+	vit = M_vertexIter(m);
+	while ( (ent = VIter_next(vit)) ){
+		EN_getDataInt(ent,MD_lookupMeshDataId( "numfaces" ),&n);
+		facesAroundVertices[EN_id(ent)] = n;
+	}
+	VIter_delete(vit);
 }

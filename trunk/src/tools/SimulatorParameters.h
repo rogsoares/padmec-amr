@@ -7,7 +7,8 @@
 
 
 typedef std::set<int> setNodes;
-enum RefinementStrategies{H_REFINEMENT, ADAPTATIVE_REMESHING};
+enum RefinementStrategies{H_REFINEMENT, ADAPTIVE_REMESHING, RH_REFINEMENT};
+//enum RefinementStrategies{H_REFINEMENT, ADAPTIVE_REMESHING};
 enum INTERPOLATION_OPTIONS {h_REFINEMENT,LINEAR, QUADRATIC, ADAPTATIVE, CONSERVATIVE, PURE_INJECTION, HALF_WEIGHTING, FULL_WEIGHTING};
 
 namespace PRS{
@@ -285,12 +286,8 @@ public:
 		return remeshing_param2;
 	}
 
-	void Remeshing_param1(double param){
-		remeshing_param1 = param;
-	}
-
-	void Remeshing_param2(double param){
-		remeshing_param2 = param;
+	double Remeshing_param3() const{
+		return remeshing_param3;
 	}
 
 private:
@@ -451,15 +448,12 @@ private:
 	// domains
 	int *numNodesDom;
 	int *numEdgesDom;
-
-
 	std::map<int,setNodes> _mapNodesDomain;	      	// for each domain -> there is a set o of global node IDs
-	//std::map<int,setNodes> _mapLocalID_perDomain;	// for each domain -> there is a set o of local node IDs
 
 	INTERPOLATION_OPTIONS _intpmethod;	// interpolation method for adaptative mesh refinement
 
 	// remshing parameters to decide if an element must be (un)refined or not.
-	double remeshing_param1, remeshing_param2;
+	double remeshing_param1, remeshing_param2, remeshing_param3;
 };
 }
 #endif /*SimulatorParameters_H_*/

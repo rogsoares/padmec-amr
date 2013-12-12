@@ -13,13 +13,21 @@ void printElementConnectivities(ofstream&, pEntity, int);
 void printCellTypeList(ofstream &, int, int);
 void printPressure(ofstream &, pMesh, PRS::PhysicPropData*);
 void printSaturation(ofstream &, pMesh, PRS::PhysicPropData*);
+
 void printDegreeOfRefinement(ofstream &, pMesh, ErrorAnalysis*);
+void printCharacteristicLentgh(ofstream &fid, pMesh theMesh);
+void print_hNew(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis);
+void print_hOld(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis);
+void print_ElementsToBeRemoved(ofstream &fid, pMesh theMesh);
+void print_hnew_hold_percentual(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis);
+
 void printElementError(ofstream &, pMesh, ErrorAnalysis*);
 void printCharac_Lenth(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis);
 void print_Swgrad(ofstream &fid, pMesh theMesh, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData);
 void print_pw_GradientNorm(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData);
 void print_Sw_GradientNorm(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData);
 void print_Sw_GradientNorm2(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData);
+void print_SingularElements(ofstream& fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis);
 
 
 #endif /*EXPORT_VTK_H_*/

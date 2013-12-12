@@ -65,11 +65,12 @@ public:
 	//calculate functions
 	virtual void calculate_ElementsError(pMesh theMesh, SimulatorParameters *pSimPar, GetPFuncGrad) = 0;
 	virtual void calculate_SmoothedGradientNorm(pMesh, SimulatorParameters *pSimPar, GetPFuncGrad) = 0;
-	virtual void calculate_SmoothedGradientNorm_excludingSingularities(pMesh, SimulatorParameters *pSimPar, GetPFuncGrad) = 0;
+	virtual void calculate_SmoothedGradientNorm_Singularity(pMesh, SimulatorParameters *pSimPar, GetPFuncGrad) = 0;
 	virtual void calculate_CharacteristicDimensionLength(pMesh) = 0;
-	virtual void calculate_DegreeOfRefinement(pMesh, int, int, bool) = 0;
+	virtual void calculate_DegreeOfRefinement(pMesh, SimulatorParameters *, int, int, bool) = 0;
 
 	void calculate_GlobalError(pMesh, GetPFuncGrad);
+	void calculate_GlobalError_Singularity(pMesh theMesh, GetPFuncGrad pGetGradient);
 	void calculate_AvgError(pMesh,double,bool);
 	void initializeParameters(pMesh);
 
@@ -88,7 +89,13 @@ public:
 	int getMinRefinementFlag() const { return minRefFlag; }
 
 	//!brief write on file error analysis data
-	void monitoring(pMesh theMesh);
+	void monitoring(pMesh theMesh,double,double);
+	
+	
+	// Remeshing: store h_new weighted per node (for multi-field problems: pressure, saturation, etc, it stores only the smallest)
+	void store_h_new(pMesh);
+	void update_h_new(pMesh);
+	void deletePointers();
 
 //protected:
 
@@ -103,26 +110,36 @@ public:
 	 * \param fine fine mesh
 	 * \param coarse coarse mesh.
 	 */
-	double calculate_ErrorSum(pMesh);
+	double calculate_ErrorSum(pMesh, bool excludingSingularities);
 
 	// set/get functions
-	void setNumElements_excludingSingularities(int n) { numElements_excludingSingularities = n; }
-	int getNumElements_excludingSingularities() const { return numElements_excludingSingularities; }
+	void setNumElements_Singularity(int n) { 
+		numElements_Singularity = n;
+	}
+	
+	int getNumElements_Singularity() const{
+		return numElements_Singularity;
+	}
 
 	void setSmoothedGradNorm(double n) { SGN = n; }
 	double getSmoothedGradNorm() const { return SGN; }
 
-	void setSmoothedGradNorm_singular(double n) { SGN_sing = n; }
-	double getSmoothedGradNorm_singular() const { return SGN_sing; }
+	void setSmoothedGradNorm_Singularity(double n) { SGN_sing = n; }
+	double getSmoothedGradNorm_Singularity() const { return SGN_sing; }
 
-	void setNumElements(int n) { numElements = n; }
-	int getNumElements() const { return numElements; }
+	void setNumElements(int n) {
+		numElements = n;
+	}
+	int getNumElements() const{
+		return numElements;
+	}
 
 	int isSingular(pEntity elem) const{
 		int sing;
 		EN_getDataInt(elem,sing_id,&sing);
 		return sing;
 	}
+	
 	void setElementAsSingular(pEntity elem){
 		EN_attachDataInt(elem,sing_id,1);
 	}
@@ -131,14 +148,41 @@ public:
 		EN_attachDataInt(elem,sing_id,0);
 	}
 
-	void setGlobalError(double ge){ globalError = ge; }
-	double getGlobalError() const { return globalError; }
+	void resetAllElementsAsSingular(pMesh);
 
-	void setAverageError(double ae){ averageError = ae; }
-	double getAverageError() const { return averageError; }
+	void setElementsAsSingular(std::list<pEntity> &singularElemList);
 
-	void setAverageError_excludingSingularities(double ae){ averageError_excludingSingularities = ae; }
-	double getAverageError_excludingSingularities() const { return averageError_excludingSingularities; }
+	void resetElemHeightPerNode(pMesh);
+
+	void resetElemHeightPerNodeSingularity(pMesh);
+
+	void setGlobalError(double ge){ 
+		globalError = ge;
+	}
+	double getGlobalError() const{
+		return globalError;
+	}
+	
+	void setGlobalError_Singularity(double ge){
+		globalError_Singularity = ge;
+	}
+	double getGlobalError_Singularity() const{
+		return globalError_Singularity;
+	}
+
+	void setAverageError(double ae){
+		averageError = ae;
+	}
+	double getAverageError() const{
+		return averageError;
+	}
+
+	void setAverageError_Singularity(double ae){ 
+		averageError_Singularity = ae;
+	}
+	double getAverageError_Singularity() const{
+		return averageError_Singularity;
+	}
 
 	void setElementError(pEntity elem, double error){
 		EN_attachDataDbl(elem,elem_id,error);
@@ -160,6 +204,8 @@ public:
 		return CDL;
 	}
 
+	void calculate_height_ratio(pMesh);
+
 	bool checkMaximumNumberOfSubdivision(pMesh theMesh, const int &maxNumberOfSubdivision);
 
 	/*! \brief: returns a list of elements flagged to be (un)refine
@@ -169,19 +215,36 @@ public:
 	 */
 	void getRefUnrefElementsList(pMesh theMesh, std::list<pEntity> &elementList, std::set<pEntity>& nodesBGMesh);
 
+
+	/*! \brief: set the minimum element height used as lower limit for remeshing
+	 * \param theMesh mesh
+	 */
+	void set_h_min(pMesh theMesh);
+
+	double get_h_min() const{
+		return h_min;
+	}
+
+	void resetNumFacesAroundNode(pMesh);
+	void countNumFaceAroundNode(pMesh, bool);
+
 	SimulatorParameters *_pSimPar;
+	
+	bool adapt;
+	std::list<pEntity> singularElemList;
 
 private:
 
 	int singular;
 	int numElements;
-	int numElements_excludingSingularities;
+	int numElements_Singularity;
 	double SGN;
 	double SGN_sing;
 
 	double globalError;
+	double globalError_Singularity;
 	double averageError;
-	double averageError_excludingSingularities;
+	double averageError_Singularity;
 
 	pMeshDataId elem_id;
 	pMeshDataId levelRef_id;
@@ -191,8 +254,11 @@ private:
 	int maxDepth;		// says how many times an element has been subdivided
 	int maxRefFlag;		// says the highest element's level flag for refinement
 	int minRefFlag;		// says the lowest element's level flag for refinement
+	double h_min;		// minimum element height used as parameter for remeshing. It does not allow small elements to be removed.
 
 	ofstream fid;		// error analysis output
+	
+	double* pStore_h_new;	// store the smallest h_new for remeshing
 };
 
 

@@ -54,6 +54,10 @@ void FullWighting(InterpolationDataStruct*);
  */
 void calculate_GeometricCoefficients(InterpolationDataStruct*, int dim);
 void calculate_LinearInterpolation(InterpolationDataStruct*, int dim);
+double calculate_Gradients(InterpolationDataStruct*);
+void calculate_DerivativesError(InterpolationDataStruct*);
+double calculate_QuadraticInterpolation(InterpolationDataStruct*);
+
 
 //void interpolate(pMesh theMesh, std::list<mEntity*> &leaves, int parentDepth, GetPFuncScalar* pArray_GetFunctions, SetPFuncScalar* pArray_SetFunctions, int numFields);
 //
@@ -190,7 +194,7 @@ typedef mMeshEntityContainer::iter iterall;
 //   * \param theMesh The mesh on which the gradients must be calculated.
 //   */
 //
-//    void calculate_DerivativesError(pMesh theMesh);
+
 //
 //  /*! \brief: Once the interpolation is done, the neighborhood is used to weight the interpolation value.
 //   * \param mesh The mesh on which the gradients must be calculated.
@@ -248,13 +252,13 @@ typedef mMeshEntityContainer::iter iterall;
 //   * \param mesh mesh from where the data is being transfered.
 //   * \param dim mesh dimension.
 //   */
-//  double calculate_QuadraticInterpolation(pMesh theMesh, int dim);
+
 //
 //  /*! \brief: Calculate gradients (used for quadratic interpolation).
 //   * \param theMesh mesh from where the data is being transfered.
 //   */
 //
-//  double calculate_Gradients(pMesh theMesh);
+
 //
 //  /*! \brief: Allocate the gradients in a array.
 //   * \param id It is the node id from the mesh from where the data is being transfered.

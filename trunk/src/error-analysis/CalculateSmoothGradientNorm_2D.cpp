@@ -38,7 +38,7 @@ void ErrorAnalysis_2D::calculate_SmoothedGradientNorm(pMesh theMesh, SimulatorPa
 	this->setSmoothedGradNorm(sqrt(SGN));
 }
 
-void ErrorAnalysis_2D::calculate_SmoothedGradientNorm_excludingSingularities(pMesh theMesh, SimulatorParameters *pSimPar, GetPFuncGrad pGetGradient){
+void ErrorAnalysis_2D::calculate_SmoothedGradientNorm_Singularity(pMesh theMesh, SimulatorParameters *pSimPar, GetPFuncGrad pGetGradient){
 	double grad[3];
 	double SGN = .0;
 	int row, dom_counter = 0;
@@ -60,5 +60,5 @@ void ErrorAnalysis_2D::calculate_SmoothedGradientNorm_excludingSingularities(pMe
 		}
 	}
 	FIter_delete(fit);
-	this->setSmoothedGradNorm_singular( sqrt(SGN) );
+	this->setSmoothedGradNorm_Singularity( sqrt(SGN) );
 }

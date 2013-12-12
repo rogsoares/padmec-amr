@@ -19,7 +19,7 @@ public:
 	AMR(){}
 	virtual ~AMR(){}
 
-	virtual void run(ErrorAnalysis *pErrorAnalysis, pMesh theMesh)=0;
+	virtual void rodar(ErrorAnalysis *pErrorAnalysis, pMesh & theMesh)=0;
 };
 
 

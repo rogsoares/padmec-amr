@@ -49,14 +49,10 @@ namespace PRS
 		void deallocateData();
 		void destroyPointers();
 
-		/**
-		 * Seek on mesh entities nodes with prescribed values (dirichlet condition)
-		 */
-		int getNodesWithKnownValues();
+		// Seek on mesh entities nodes with prescribed values (dirichlet condition)
+		int getNodesWithKnownValues(pMesh theMesh);
 
-		/**
-		 * If node is set as a dirichlet it returns true, otherwise returns false
-		 */
+		// If node is set as a dirichlet it returns true, otherwise returns false
 		bool getDirichletValue(int ID, double *val);
 
 		inline int getNum_GF_Nodes() const { return numGF; }	/// global free nodes
@@ -64,39 +60,25 @@ namespace PRS
 		inline int getNum_LF_Nodes() const { return numLF; }	/// local free nodes
 		inline int getNum_GNodes() const { return numGN; }		/// global nodes
 
-		/**
-		 * Get ordering number to be used in matrix assembling
-		 */
+		// Get ordering number to be used in matrix assembling
 		int get_AppToPETSc_Ordering(int n) const;
 
-		/**
-		 * Get previous ordering number to be used in matrix assembling
-		 */
+		// Get previous ordering number to be used in matrix assembling
 		int get_PETScToApp_Ordering(int n) const;
 
-		/**
-		 * Generates node ID ordering
-		 */
+		// Generates node ID ordering
 		void reorderVerticesIds(pMesh theMesh, int(*)(pEntity));
-
-
-		/**
-		 * returns a map iterator to access all dirichlet nodes and their prescribed values
-		 */
+		
+		// returns a map iterator to access all dirichlet nodes and their prescribed values
 		inline MIter dirichletBegin() const { return dirichlet.begin(); }
 		inline MIter dirichletEnd() const { return dirichlet.end(); }
 
-
-		/**
-		 * return mapped position for all nodes
-		 */
+		// return mapped position for all nodes
 		inline int FPArray(int pos) const { return FP_Array[pos]; }
 		inline int get_idxFreecols(int pos) const { return idxFreecols[pos]; }
 		inline int get_idxn(int pos) const { return idxn[pos]; }
 
-		/**
-		 * Return pointer to assemble matrices
-		 */
+		// Return pointer to assemble matrices
 		inline const PetscInt* get_F_cols_ptr() { return F_cols; }
 		inline const PetscInt* get_F_rows_ptr() { return F_rows; }
 		inline const PetscInt* get_idxFreecols_ptr() { return idxFreecols; }
@@ -105,15 +87,12 @@ namespace PRS
 		inline PetscInt get_F_nrows() const { return F_nrows; }
 		inline void set_F_nrows(int val) { F_nrows = val; }
 
-		/* Inform which COLUMNS from global matrix A must be copied to assembly
-		 * LHS matrix (free nodes). this vector is the same for all processors.
-		 */
+		// Inform which COLUMNS from global matrix A must be copied to assembly LHS matrix (free nodes). 
+		// this vector is the same for all processors.
 		PetscInt *idxFreecols;
-		/* inform which columns from A must be copied to assembly RHS vector (prescribed nodes)
-		 * this vector is the same for all processors.
-		 */
+		
+		// inform which columns from A must be copied to assembly RHS vector (prescribed nodes) this vector is the same for all processors.
 		PetscInt *idxn;
-
 		PetscInt *pos;
 		PetscInt *F_rows;
 		PetscInt *F_cols;
@@ -181,8 +160,7 @@ namespace PRS
 		SimulatorParameters *pSimPar;
 		pMesh theMesh;
 
-
-		int FreePrescribedNodes();
+		int FreePrescribedNodes(pMesh theMesh);
 		void mappingUnknowns();
 		int M_numGVertices();
 
