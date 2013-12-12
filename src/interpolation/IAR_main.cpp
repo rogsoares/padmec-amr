@@ -11,53 +11,53 @@
 
 #include "interpolation.h"
 
-void Linear(InterpolationDataStruct* pIntpData){
-#ifdef TRACKING_PROGRAM_STEPS
-	cout << "TRACKING_PROGRAM_STEPS: Interpolation (Linear Method)\tIN\n";
-#endif
-
-	int dim = pIntpData->m1->getDim();
-	/*
-	 * Octree structure is created for searching the element on base mesh which contains data fields to be interpolated to the adaptaded mesh.
-	 *
-	 * pIntpData->m2:	Base mesh
-	 * pIntpData->m1:	To receive interpolated data from pIntpData->m2
-	 */
-	pIntpData->theOctree = OctreeCreate2<iterall>(pIntpData->m2->beginall(dim),pIntpData->m2->endall(dim),dim);
-
-
-	calculate_GeometricCoefficients(pIntpData,dim);
-	calculate_LinearInterpolation(pIntpData,dim);
-
-#ifdef TRACKING_PROGRAM_STEPS
-	cout << "TRACKING_PROGRAM_STEPS: Interpolation (Linear Method)\tOUT\n";
-#endif
-}
-
-//void Quadratic(InterpolationDataStruct* pIntpData){
-//	Linear(pIntpData);
-//	calculate_Gradients(pIntpData);
-//	calculate_DerivativesError(pIntpData);
-//	calculate_QuadraticInterpolation(pIntpData);
+//void Linear(InterpolationDataStruct* pIData){
+//#ifdef TRACKING_PROGRAM_STEPS
+//	cout << "TRACKING_PROGRAM_STEPS: Interpolation (Linear Method)\tIN\n";
+//#endif
+//	int dim = pIData->m1->getDim();
+//	pIData->theOctree = OctreeCreate2<iterall>(pIData->m2->beginall(dim),pIData->m2->endall(dim),dim);
+//	calculate_GeometricCoefficients(pIData,dim);
+//	calculate_LinearInterpolation(pIData,dim);
+//#ifdef TRACKING_PROGRAM_STEPS
+//	cout << "TRACKING_PROGRAM_STEPS: Interpolation (Linear Method)\tOUT\n";
+//#endif
 //}
 //
-//void Adaptative(InterpolationDataStruct* pIntpData){
+//void Quadratic(InterpolationDataStruct* pIData){
+//#ifdef TRACKING_PROGRAM_STEPS
+//	cout << "TRACKING_PROGRAM_STEPS: Interpolation (Quadratic Method)\tIN\n";
+//#endif
+//	initialize(pIData); cout << __LINE__ << endl;
+//	Linear(pIData); cout << __LINE__ << endl;
+//	for (int field=0; field<pIData->numFields; field++){
+//		calculate_Gradients(pIData,field); cout << __LINE__ << endl;
+//		calculate_DerivativesError(pIData); cout << __LINE__ << endl;
+//		calculate_QuadraticInterpolation(pIData); cout << __LINE__ << endl;
+//	}
+//	finalize(pIData); cout << __LINE__ << endl;
+//#ifdef TRACKING_PROGRAM_STEPS
+//	cout << "TRACKING_PROGRAM_STEPS: Interpolation (Quadratic Method)\tIN\n";
+//#endif
+//}
+
+//void Adaptative(InterpolationDataStruct* pIData){
 //	throw Exception(__LINE__,__FILE__,"Under construction!");
 //}
 //
-//void Conservative(InterpolationDataStruct* pIntpData){
+//void Conservative(InterpolationDataStruct* pIData){
 //	throw Exception(__LINE__,__FILE__,"Under construction!");
 //}
 //
-//void PureInjection(InterpolationDataStruct* pIntpData){
+//void PureInjection(InterpolationDataStruct* pIData){
 //	throw Exception(__LINE__,__FILE__,"Under construction!");
 //}
 //
-//void HalfWeighting(InterpolationDataStruct* pIntpData){
+//void HalfWeighting(InterpolationDataStruct* pIData){
 //	throw Exception(__LINE__,__FILE__,"Under construction!");
 //}
 //
-//void FullWighting(InterpolationDataStruct* pIntpData){
+//void FullWighting(InterpolationDataStruct* pIData){
 //	throw Exception(__LINE__,__FILE__,"Under construction!");
 //}
 

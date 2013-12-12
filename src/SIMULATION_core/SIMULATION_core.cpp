@@ -87,36 +87,36 @@ int SIMULATION_core::initialize(int argc, char **argv){
 			throw Exception(__LINE__,__FILE__,"Unknown adaptation strategy.");
 		}
 
-		// 3- Interpolation Function
-		// ----------------------------------------------------------------------------------
-				switch ( pSimPar->getInterpolationMethod() ){
-				case h_REFINEMENT:
-					pInterpolateData = hRefinement;
-					break;
-				case LINEAR:
-					pInterpolateData = Linear;
-					break;
-		//		case QUADRATIC:
-		//			pInterpolateData = Quadratic;
-		//			break;
-		//		case ADAPTATIVE:
-		//			pInterpolateData = Adaptative;
-		//			break;
-		//		case CONSERVATIVE:
-		//			pInterpolateData = Conservative;
-		//			break;
-		//		case PURE_INJECTION:
-		//			pInterpolateData = PureInjection;
-		//			break;
-		//		case HALF_WEIGHTING:
-		//			pInterpolateData = HalfWeighting;
-		//			break;
-		//		case FULL_WEIGHTING:
-		//			pInterpolateData = FullWighting;
-		//			break;
-				default:
-					throw Exception(__LINE__,__FILE__,"Interpolation method unknown. Exiting....");
-				}
+//		// 3- Interpolation Function
+//		// ----------------------------------------------------------------------------------
+//				switch ( pSimPar->getInterpolationMethod() ){
+//				case h_REFINEMENT:
+//					pInterpolateData = hRefinement;
+//					break;
+//				case LINEAR:
+//					pInterpolateData = Linear;
+//					break;
+//				case QUADRATIC:
+//					pInterpolateData = Quadratic;
+//					break;
+//		//		case ADAPTATIVE:
+//		//			pInterpolateData = Adaptative;
+//		//			break;
+//		//		case CONSERVATIVE:
+//		//			pInterpolateData = Conservative;
+//		//			break;
+//		//		case PURE_INJECTION:
+//		//			pInterpolateData = PureInjection;
+//		//			break;
+//		//		case HALF_WEIGHTING:
+//		//			pInterpolateData = HalfWeighting;
+//		//			break;
+//		//		case FULL_WEIGHTING:
+//		//			pInterpolateData = FullWighting;
+//		//			break;
+//				default:
+//					throw Exception(__LINE__,__FILE__,"Interpolation method unknown. Exiting....");
+//				}
 	//}
 
 

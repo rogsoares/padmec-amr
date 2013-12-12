@@ -24,6 +24,7 @@ namespace PRS{
 		default:
 			throw Exception(__LINE__,__FILE__, Exception::INIT_ERROR );
 		}
+		return 0;
 	}
 
 	/*                       ATENCAO
@@ -39,11 +40,7 @@ namespace PRS{
 		bool adapt;
 		double tol1 = pSimPar->getToleranceForAllElements();
 		double tol2 = pSimPar->getToleranceForAllElements_excludingSingularities();
-	
-		// Define field:
-		// 0 - pressure
-		// 1 - saturation
-		int field = 0;
+		int numFields = 1;
 	
 		pPPData->setSimulationState(false);
 		pIData->m1 = theMesh;
@@ -51,8 +48,8 @@ namespace PRS{
 		int count = 0;
 
 		do{
-			double t1 = pElliptic_eq->solver(theMesh);
-			adapt = calculate_ErrorAnalysis(pErrorAnalysis,theMesh,pSimPar,tol1,tol2,pPPData->get_getPFuncArray(),field);
+			pElliptic_eq->solver(theMesh);
+			adapt = calculate_ErrorAnalysis(pErrorAnalysis,theMesh,pSimPar,tol1,tol2,pPPData->get_getPFuncArray(),numFields);
 			pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
 			if ( adapt ){
 				makeMeshCopy2(pIData->m1,pm,pPPData->getPressure,pPPData->getSaturation_Old);
@@ -65,7 +62,9 @@ namespace PRS{
 				makeMeshCopy2(pm,pIData->m2,pPPData->setPressure,pPPData->setSaturation);
 				PADMEC_GAMBIARRA(pIData->m1);
 				cout<< "Interpolador"<<endl;
-				pInterpolateData(pIData);
+				interpolation(pIData,pSimPar->getInterpolationMethod());
+				pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
+				//STOP();
 				EBFV1_preprocessor(pIData->m1,pGCData);
 	#ifdef __ADAPTATION_DEBUG__
 				validate_EBFV1(pGCData,pIData->m1,pSimPar->setOfDomains);
@@ -97,17 +96,18 @@ namespace PRS{
 		bool adapt;
 		double tol1 = pSimPar->getToleranceForAllElements();
 		double tol2 = pSimPar->getToleranceForAllElements_excludingSingularities();
+		int numFields = 2;
 		pIData->m1 = theMesh;
 		PADMEC_mesh *pm = new PADMEC_mesh;
 
 		while ( !pSimPar->finishSimulation() ){
-			double t1 = pElliptic_eq->solver(theMesh);
-			pSimPar->printOutVTK(pIData->m1,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
-			double t2 = pHyperbolic_eq->solver(theMesh,timeStep);
+			pElliptic_eq->solver(theMesh);
+			//pSimPar->printOutVTK(pIData->m1,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
+			pHyperbolic_eq->solver(theMesh,timeStep);
 			pSimPar->printOutVTK(pIData->m1,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
 			if ( pSimPar->userRequiresAdaptation() ){
-				adapt = calculate_ErrorAnalysis(pErrorAnalysis,theMesh,pSimPar,tol1,tol2,pPPData->get_getPFuncArray(),1);
-				pSimPar->printOutVTK(pIData->m1,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
+				adapt = calculate_ErrorAnalysis(pErrorAnalysis,theMesh,pSimPar,tol1,tol2,pPPData->get_getPFuncArray(),numFields);
+				//pSimPar->printOutVTK(pIData->m1,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
 				if (adapt){
 					makeMeshCopy2(pIData->m1,pm,pPPData->getPressure,pPPData->getSaturation_Old);
 					pMeshAdapt->rodar(pErrorAnalysis,pIData->m1);
@@ -119,7 +119,8 @@ namespace PRS{
 					makeMeshCopy2(pm,pIData->m2,pPPData->setPressure,pPPData->setSaturation);
 					PADMEC_GAMBIARRA(pIData->m1);
 					cout<< "Interpolador"<<endl;
-					pInterpolateData(pIData);
+					interpolation(pIData,pSimPar->getInterpolationMethod());
+					//pInterpolateData(pIData);
 					EBFV1_preprocessor(pIData->m1,pGCData);
 
 					#ifdef __ADAPTATION_DEBUG__

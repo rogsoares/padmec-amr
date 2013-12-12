@@ -29,7 +29,7 @@
  */
 
 bool calculate_ErrorAnalysis(ErrorAnalysis *pEA, pMesh theMesh, SimulatorParameters *pSimPar, double tol1, 
-							 double tol2, GetPFuncGrad* pGetFuncArray, int field){
+							 double tol2, GetPFuncGrad* pGetFuncArray, int numFields){
 	#ifdef TRACKING_PROGRAM_STEPS
 	cout << "TRACKING_PROGRAM_STEPS: Error Analysis\tIN\n";
 	#endif
@@ -48,8 +48,8 @@ bool calculate_ErrorAnalysis(ErrorAnalysis *pEA, pMesh theMesh, SimulatorParamet
 		return pEA->adapt;
 	}
 
-	for (field=0; field<2; field++){
-	//field=1;
+	for (int field=0; field<numFields; field++){
+	//field=0;
 		pEA->resetAllElementsAsSingular(theMesh);									// do not preserve any element flagged as singular from previous analysis
 		pEA->calculate_ElementsError(theMesh,pSimPar,pGetFuncArray[field]);
 		pEA->calculate_SmoothedGradientNorm(theMesh,pSimPar,pGetFuncArray[field]);
