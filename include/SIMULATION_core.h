@@ -2,6 +2,7 @@
 #define _IMPES_FORMULATION_H_
 
 #include "solverEquation_methods.h"
+#include "RH_Refinement.h"
 #include "H_Refinement_2D.h"
 #include "AdaptiveRemeshing.h"
 #include "ErrorAnalysis_2D.h"
@@ -13,9 +14,6 @@ namespace PRS
 {
 
 void initializeParameters(pMesh theMesh, ErrorAnalysis* pErrorAnalysis, AMR* pMeshAdapt);
-void createRefinementLevel(ErrorAnalysis* pErrorAnalysis, pMesh theMesh, double x_center, double step);
-void createUnrefinementLevel(ErrorAnalysis* pErrorAnalysis, pMesh theMesh, double x_center, double step);
-
 
 	class SIMULATION_core{
 	public:
@@ -45,14 +43,10 @@ void createUnrefinementLevel(ErrorAnalysis* pErrorAnalysis, pMesh theMesh, doubl
 		 */
 		int solver();
 
-		/*!Time stepping solver: that's the heart of simulation. For each loop over time elliptic and hyperbolic equations are computed.
-		 */
-		int tsSolver();
-
 		/*! \brief: performs a transient simulation
 		 */
 		int transient();
-
+		
 		/*! \brief: performs a steady state simulation
 		 */
 		int steadyState();

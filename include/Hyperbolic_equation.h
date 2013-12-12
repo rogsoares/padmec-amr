@@ -23,7 +23,7 @@ namespace PRS
 
 		Hyperbolic_equation() {}
 		virtual ~Hyperbolic_equation(){}
-		virtual double solver(double&)=0;
+		virtual double solver(pMesh,double&)=0;
 
 	protected:
 		PointerStruct *pStruct;
