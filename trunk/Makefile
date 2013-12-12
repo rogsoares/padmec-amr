@@ -18,10 +18,10 @@
 #	__ERROR_ANALYSIS_DEBUG__: Debug error analysis functions only
 #	_SEEKFORBUGS_           : Debuggin in general (whole code)
 #
-CXXFLAGS=-DPARALLEL -g -Wall -Wunused -D__ADAPTATION_DEBUG__ -D__ERROR_ANALYSIS_DEBUG__ -D_SEEKFORBUGS_ -DTRACKING_PROGRAM_STEPS -DFVPO
+CXXFLAGS=-Wno-unused-local-typedefs -DPARALLEL -g -Wall -Wunused -D__ADAPTATION_DEBUG__ -D__ERROR_ANALYSIS_DEBUG__ -D_SEEKFORBUGS_ -DTRACKING_PROGRAM_STEPS -DFVPO
 # -DTRACKING_PROGRAM_STEPS -D_SEEKFORBUGS_ 
 APP_DIR=$(HOME)/scientific_applications
-PROJ_DIR=/home/rogerio/projetos/TwoPhase_Adaptation/corrigindo-interp-quad/TwoPhases_Adaptation
+PROJ_DIR=$(HOME)/projetos/GOOGLE_CODES/padmec-amr/trunk
 GMSH_DIR=$(APP_DIR)/gmshGMSH
 
 # compilers
