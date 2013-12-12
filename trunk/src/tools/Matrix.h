@@ -50,6 +50,13 @@ public:
 		allocateMemory();
 	}
 
+	// we are supposing matrix has one column: matrix is  a vector
+	void allocateMemory(int rows){
+		_rows = rows;
+		_cols = 1;
+		allocateMemory();
+	}
+
 	void allocateMemory(){
 		mat = new T*[_rows];
 		for (int i=0; i<_rows; i++) mat[i] = new T[_cols];
@@ -85,11 +92,25 @@ public:
 			return mat[i][j];
 	}
 
+	T& operator()( int i) {
+		if ((i<0 && i>=_rows))
+			throw Exception(__LINE__,__FILE__,"Attempt of getting value out of bound\n");
+		else
+			return mat[i][0];
+	}
+
 	void setValue(int i, int j, const T &val){
 		if ((i<0 && i>=_rows) || (j<0 && j>=_cols))
 			throw Exception(__LINE__,__FILE__,"Attempt of getting value out of bound\n");
 		else
 			mat[i][j] = val;
+	}
+
+	void setValue(int i, const T &val){
+		if ((i<0 && i>=_rows))
+			throw Exception(__LINE__,__FILE__,"Attempt of getting value out of bound\n");
+		else
+			mat[i][0] = val;
 	}
 
 	void getRow(int row,T **vec){ 
