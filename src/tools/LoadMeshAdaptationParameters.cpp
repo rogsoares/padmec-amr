@@ -25,15 +25,18 @@ namespace PRS{
 		fid >> str;
 		if (!str.compare("yes")) setAdaptation();
 
-		setPositionToRead(fid,"Refinement Strategy: {h-refinement, remeshing}");
+		setPositionToRead(fid,"Refinement Strategy: {h-refinement, remeshing, rh-refinement}");
 		fid >> str;
 		if (!str.compare("h-refinement")){
 			refstrategy = H_REFINEMENT;
 		}
 		else if (!str.compare("remeshing")){
-			refstrategy = ADAPTATIVE_REMESHING;
+			refstrategy = ADAPTIVE_REMESHING;
 		}
-
+		else if (!str.compare("rh-refinement")){
+			refstrategy = RH_REFINEMENT;
+		}
+		
 		setPositionToRead(fid,"Error tolerance for all mesh elements:");
 		fid >> str;
 
@@ -100,6 +103,15 @@ namespace PRS{
 		remeshing_param1 = strtod(str.c_str(), 0);
 		fid >> str;
 		remeshing_param2 = strtod(str.c_str(), 0);
+
+		if (remeshing_param1 > remeshing_param2){
+			char msg[256]; sprintf(msg,"Remeshing adaptation: param1 (%.5f) must be less than param2 (%.5f)",remeshing_param1,remeshing_param2);
+			throw Exception(__LINE__,__FILE__,msg);
+		}
+
+		setPositionToRead(fid,"h_min_allowed = h_min/n, where h_min is the minimum element height of the initial mesh.");
+		fid >> str; cout << str << endl;
+		remeshing_param3 = strtod(str.c_str(), 0);
 
 		if (!P_pid()) std::cout << "done.\n";
 	}

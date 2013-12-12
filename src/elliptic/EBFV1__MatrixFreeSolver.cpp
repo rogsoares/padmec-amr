@@ -11,7 +11,7 @@
 namespace PRS           // PRS: Petroleum Reservoir Simulator
 {
 
-double EBFV1_elliptic::setMatrixFreeOperation(pMesh theMesh){
+	double EBFV1_elliptic::setMatrixFreeOperation(pMesh theMesh){
 	double startt = MPI_Wtime();
 	PetscLogDouble flops1;
 	PetscGetFlops(&flops1);
@@ -36,8 +36,28 @@ double EBFV1_elliptic::setMatrixFreeOperation(pMesh theMesh){
 	ierr = VecCreate(PETSC_COMM_WORLD,&matvec_struct->z); CHKERRQ(ierr);
 	ierr = VecSetSizes(matvec_struct->z,PETSC_DECIDE,matvec_struct->F_nrows); CHKERRQ(ierr);
 	ierr = VecSetFromOptions(matvec_struct->z); CHKERRQ(ierr);
+	
+	// use last pressure solution as guess solution for iterative solver and then reduce number of iterations
+	static bool guess_sol = false;
+	PetscTruth guessNonZero = PETSC_FALSE;
+	if (guess_sol){
+		int row = 0;
+		guessNonZero = PETSC_TRUE;
+		// get solution from mesh nodes and set output vector for guess solution
+		VIter vit = M_vertexIter(theMesh);
+		while (pEntity node = VIter_next(vit)){
+			if ( pSimPar->isNodeFree( GEN_tag( node->getClassification() )) ){
+				ierr = VecSetValue(output,row++,pPPData->getPressure(node),INSERT_VALUES); CHKERRQ(ierr);
+			}
+		}
+		VIter_delete(vit);
+	}
+	guess_sol = true;
 
-	KSP_solver(matrix,matvec_struct->G,matvec_struct->RHS,output,pSimPar,PETSC_FALSE,KSPGMRES,PCASM,its);
+	// call PETSc to solver system of equation
+	KSP_solver(matrix,matvec_struct->G,matvec_struct->RHS,output,pSimPar,guessNonZero,KSPBCGS,PCASM,its);
+	cout << "KSP_Solver: Num. iter =  " << its << endl;
+	
 	//printVectorToFile(output,"SOLUTION.txt");
 	//VecView(matvec_struct->RHS,PETSC_VIEWER_STDOUT_WORLD); //STOP();
 	//MatView(matvec_struct->G,PETSC_VIEWER_STDOUT_WORLD); //STOP();
@@ -46,8 +66,6 @@ double EBFV1_elliptic::setMatrixFreeOperation(pMesh theMesh){
 	//			VecNorm(output,NORM_2,&val);
 	//			PetscPrintf(PETSC_COMM_WORLD,"norm: %f",val);
 	//			STOP();
-
-
 
 	PetscLogDouble flops2;
 	PetscGetFlops(&flops2);

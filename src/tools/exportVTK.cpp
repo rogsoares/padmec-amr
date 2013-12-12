@@ -1,5 +1,8 @@
 #include "exportVTK.h"
 
+void print_pwgrad(ofstream &fid, pMesh theMesh, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData);
+void printNonVisc(ofstream &fid, pMesh theMesh, PRS::PhysicPropData *pPPData);
+
 void exportSolutionToVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3, string filename){
 	// open file
 	ofstream fid;
@@ -33,17 +36,33 @@ void exportSolutionToVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3
 	printVerticesCoordenates(fid,theMesh);
 	printElementConnectivities(fid,theMesh,dim,numElements);
 	printCellTypeList(fid,dim,numElements);
+
+	// start print nodal values
+	fid << "\nPOINT_DATA "<< M_numVertices(theMesh) << endl;
 	printPressure(fid,theMesh,pPPData);
 	printSaturation(fid,theMesh,pPPData);
+	printNonVisc(fid,theMesh,pPPData);
+	
 
 	if ( pSimPar->userRequiresAdaptation() ){
-//		print_Swgrad(fid,theMesh,pSimPar,pPPData);
-//		print_Sw_GradientNorm2(fid,theMesh,pErrorAnalysis,pSimPar,pPPData);
-		printDegreeOfRefinement(fid,theMesh,pErrorAnalysis);
-//		printElementError(fid,theMesh,pErrorAnalysis);
-//		printCharac_Lenth(fid,theMesh,pErrorAnalysis);
-//		print_pw_GradientNorm(fid,theMesh,pErrorAnalysis,pSimPar,pPPData);
-//		print_Sw_GradientNorm(fid,theMesh,pErrorAnalysis,pSimPar,pPPData);
+		///	nodal field
+		print_Sw_GradientNorm2(fid,theMesh,pErrorAnalysis,pSimPar,pPPData);
+	//	print_Swgrad(fid,theMesh,pSimPar,pPPData);
+	//	print_pwgrad(fid,theMesh,pSimPar,pPPData);
+	//	printCharacteristicLentgh(fid,theMesh);
+		print_hNew(fid,theMesh,pErrorAnalysis);
+		
+		/// cell field
+		fid << "\nCELL_DATA " << pErrorAnalysis->getNumElements() << endl;
+	//	printDegreeOfRefinement(fid,theMesh,pErrorAnalysis);
+	//	print_hOld(fid,theMesh,pErrorAnalysis);
+	//	printElementError(fid,theMesh,pErrorAnalysis);
+	//	print_ElementsToBeRemoved(fid,theMesh);
+	//	print_SingularElements(fid,theMesh,pErrorAnalysis);
+		print_hnew_hold_percentual(fid,theMesh,pErrorAnalysis);
+	//	printCharac_Lenth(fid,theMesh,pErrorAnalysis);
+	//	print_pw_GradientNorm(fid,theMesh,pErrorAnalysis,pSimPar,pPPData);
+	//	print_Sw_GradientNorm(fid,theMesh,pErrorAnalysis,pSimPar,pPPData);
 	}
 
 	fid.close();
@@ -104,9 +123,6 @@ void printCellTypeList(ofstream &fid, int dim, int numElements){
 }
 
 void printPressure(ofstream &fid, pMesh theMesh, PRS::PhysicPropData *pPPData){
-	// print pressure
-	// = = = = = = = = = = = = = = = =  = = = = = = = = = = = = = = = = = =
-	fid << "\nPOINT_DATA "<< M_numVertices(theMesh) << endl;
 	fid << "SCALARS Pressure float 1\n";
 	fid << "LOOKUP_TABLE default\n";
 	pEntity node;
@@ -120,8 +136,6 @@ void printPressure(ofstream &fid, pMesh theMesh, PRS::PhysicPropData *pPPData){
 }
 
 void printSaturation(ofstream &fid, pMesh theMesh, PRS::PhysicPropData *pPPData){
-	// print saturation
-	// = = = = = = = = = = = = = = = =  = = = = = = = = = = = = = = = = = =
 	fid << "SCALARS Saturation float 1\n";
 	fid << "LOOKUP_TABLE default\n";
 	pEntity node;
@@ -134,32 +148,22 @@ void printSaturation(ofstream &fid, pMesh theMesh, PRS::PhysicPropData *pPPData)
 	VIter_delete(vit);
 }
 
-void print_Sw_GradientNorm2(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData){
+void printNonVisc(ofstream &fid, pMesh theMesh, PRS::PhysicPropData *pPPData){
 	// print saturation
 	// = = = = = = = = = = = = = = = =  = = = = = = = = = = = = = = = = = =
-	double grad[3];
-	int dom_counter = 0; // one domain for while (soon multiple domains)
-	int row, dim = theMesh->getDim();
-	char tag[4]; sprintf(tag,"%d",dom_counter);
-
-	fid << "SCALARS Satgrad float 1\n";
+	fid << "SCALARS nonvisc float 1\n";
 	fid << "LOOKUP_TABLE default\n";
 	pEntity node;
 	VIter vit = M_vertexIter(theMesh);
 	while( (node = VIter_next(vit)) ){
-		pSimPar->getLocalNodeIDNumbering(node,tag,row);
-		pPPData->get_Sw_Grad(dom_counter,row,grad);
-		double norm_0 = .0;
-		for (int j=0;j<dim;j++){
-			norm_0 += grad[j]*grad[j];
-		}
-		fid << sqrt(norm_0) << endl;
+		double val = .0;
+		val = pPPData->getNonViscTerm(node);
+		fid << val << endl;
 	}
 	VIter_delete(vit);
 }
 
 void printDegreeOfRefinement(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis){
-	fid << "\nCELL_DATA " << pErrorAnalysis->getNumElements() << endl;
 	fid << "SCALARS LevelOfRefinement int 1 " << endl;
 	fid << "LOOKUP_TABLE default " << endl;
 	FIter fit = M_faceIter(theMesh);
@@ -183,6 +187,43 @@ void printElementError(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalys
 	FIter_delete(fit);
 }
 
+void print_hNew(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis){
+	fid << "SCALARS h_new float 1 " << endl;
+	fid << "LOOKUP_TABLE default " << endl;
+	double h_new;
+	pEntity node;
+	VIter vit = M_vertexIter(theMesh);
+	while( (node = VIter_next(vit)) ){
+		EN_getDataDbl(node,MD_lookupMeshDataId( "elem_height" ),&h_new);
+		fid << h_new << endl;
+	}
+	VIter_delete(vit);
+}
+
+void print_hOld(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis){
+	fid << "SCALARS h_old float 1 " << endl;
+	fid << "LOOKUP_TABLE default " << endl;
+	FIter fit = M_faceIter(theMesh);
+	while(pFace face = FIter_next(fit)){
+		if ( !theMesh->getRefinementDepth(face) ){
+			fid << pErrorAnalysis->getElement_CDL(face) << endl;
+		}
+	}
+	FIter_delete(fit);
+}
+
+void print_SingularElements(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis){
+	fid << "SCALARS sing_elem float 1 " << endl;
+	fid << "LOOKUP_TABLE default " << endl;
+	FIter fit = M_faceIter(theMesh);
+	while(pFace face = FIter_next(fit)){
+		if ( !theMesh->getRefinementDepth(face) ){
+			fid << (double)pErrorAnalysis->isSingular(face) << endl;
+		}
+	}
+	FIter_delete(fit);
+}
+
 void printCharac_Lenth(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis){
 	fid << "SCALARS Charac_Lenth float 1 " << endl;
 	fid << "LOOKUP_TABLE default " << endl;
@@ -191,6 +232,32 @@ void printCharac_Lenth(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalys
 		if ( !theMesh->getRefinementDepth(face) ){
 			fid << pErrorAnalysis->getElement_CDL(face) << endl;
 		}
+	}
+	FIter_delete(fit);
+}
+
+void print_ElementsToBeRemoved(ofstream &fid, pMesh theMesh){
+	fid << "SCALARS Elem_2B_Remove int 1 " << endl;
+	fid << "LOOKUP_TABLE default " << endl;
+	int n;
+	FIter fit = M_faceIter(theMesh);
+	while(pFace face = FIter_next(fit)){
+		if ( !theMesh->getRefinementDepth(face) ){
+			EN_getDataInt(face,MD_lookupMeshDataId( "elem_to_remove" ),&n);
+			fid << n << endl;
+		}
+	}
+	FIter_delete(fit);
+}
+
+void print_hnew_hold_percentual(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis){
+	fid << "SCALARS h_ratio float 1 " << endl;
+	fid << "LOOKUP_TABLE default " << endl;
+	double ratio;
+	FIter fit = M_faceIter(theMesh);
+	while(pFace face = FIter_next(fit)){
+		EN_getDataDbl(face,MD_lookupMeshDataId( "h_ratio" ),&ratio);
+		fid << ratio << endl;
 	}
 	FIter_delete(fit);
 }
@@ -224,6 +291,30 @@ void print_pw_GradientNorm(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAn
 	FIter_delete(fit);
 }
 
+void print_Sw_GradientNorm2(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData){
+	// print saturation
+	// = = = = = = = = = = = = = = = =  = = = = = = = = = = = = = = = = = =
+	double grad[3];
+	int dom_counter = 0; // one domain for while (soon multiple domains)
+	int row, dim = theMesh->getDim();
+	char tag[4]; sprintf(tag,"%d",dom_counter);
+	
+	fid << "SCALARS Satgrad float 1\n";
+	fid << "LOOKUP_TABLE default\n";
+	pEntity node;
+	VIter vit = M_vertexIter(theMesh);
+	while( (node = VIter_next(vit)) ){
+		pSimPar->getLocalNodeIDNumbering(node,tag,row);
+		pPPData->get_Sw_Grad(dom_counter,row,grad);
+		double norm_0 = .0;
+		for (int j=0;j<2;j++){
+			norm_0 += grad[j]*grad[j];
+		}
+		fid << sqrt(norm_0) << endl;
+	}
+	VIter_delete(vit);
+}
+
 void print_Sw_GradientNorm(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData){
 	fid << "SCALARS SwGrad_Norm float 1 " << endl;
 	fid << "LOOKUP_TABLE default " << endl;
@@ -254,7 +345,7 @@ void print_Sw_GradientNorm(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAn
 }
 
 void print_Swgrad(ofstream &fid, pMesh theMesh, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData){
-	fid << "VECTORS p_grad float\n";
+	fid << "VECTORS Sw_grad float\n";
 	pEntity node;
 	double grad[3];
 	int dom_counter = 0; // one domain for while (soon multiple domains)
@@ -265,8 +356,40 @@ void print_Swgrad(ofstream &fid, pMesh theMesh, PRS::SimulatorParameters *pSimPa
 	VIter vit = M_vertexIter(theMesh);
 	while( (node = VIter_next(vit)) ){
 		pSimPar->getLocalNodeIDNumbering(node,tag,row);
+		pPPData->get_Sw_Grad(dom_counter,row,grad);
+		fid << grad[0] << " " << grad[1] << " .0\n";
+	}
+	VIter_delete(vit);
+}
+
+void print_pwgrad(ofstream &fid, pMesh theMesh, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData){
+	fid << "VECTORS p_grad float\n";
+	pEntity node;
+	double grad[3];
+	int dom_counter = 0; // one domain for while (soon multiple domains)
+	int row;
+	//int dim = theMesh->getDim();
+	char tag[4]; sprintf(tag,"%d",dom_counter);
+	
+	VIter vit = M_vertexIter(theMesh);
+	while( (node = VIter_next(vit)) ){
+		pSimPar->getLocalNodeIDNumbering(node,tag,row);
 		pPPData->get_pw_Grad(dom_counter,row,grad);
 		fid << grad[0] << " " << grad[1] << " .0\n";
+	}
+	VIter_delete(vit);
+}
+
+void printCharacteristicLentgh(ofstream &fid, pMesh theMesh){
+	fid << "SCALARS CLentgh float 1\n";
+	fid << "LOOKUP_TABLE default\n";
+	pEntity node;
+	double height;
+	VIter vit = M_vertexIter(theMesh);
+	while( (node = VIter_next(vit)) ){
+		height = .0;
+		EN_getDataDbl(node,MD_lookupMeshDataId( "elem_height" ),&height);
+		fid << height << endl;
 	}
 	VIter_delete(vit);
 }

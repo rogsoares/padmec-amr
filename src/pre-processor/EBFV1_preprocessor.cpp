@@ -8,6 +8,7 @@
 #include "EBFV1__pre-processors.h"
 
 int EBFV1_preprocessor(pMesh theMesh, void *pData){
+	cout<< "EBFV1_preprocessor"<<endl;
 #ifdef TRACKING_PROGRAM_STEPS
 	cout << "TRACKING_PROGRAM_STEPS: Preprocessor\tIN\n";
 #endif

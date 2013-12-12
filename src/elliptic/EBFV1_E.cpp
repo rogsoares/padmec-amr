@@ -29,6 +29,10 @@ int EBFV1_elliptic::divergence_E(Mat E, pEntity edge, const int &dom, int dim, d
 	// index for global Fg
 	int id0 = pMData->get_AppToPETSc_Ordering(EN_id(I));
 	int id1 = pMData->get_AppToPETSc_Ordering(EN_id(J));
+		
+// 	cout << "node : " << EN_id(I) << "\t assembled in: " << id0 << endl; 
+// 	cout << "node : " << EN_id(J) << "\t assembled in: " << id1 << endl;
+	//STOP();
 
 	// get absolute K tensor: dim x dim
 	const double *K = pSimPar->getPermeability(dom);

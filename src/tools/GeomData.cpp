@@ -151,15 +151,23 @@ namespace PRS
 	}
 
 	bool GeomData::edgeBelongToDomain(pEntity edge, const int &dom){
-		Coefficients* pCoeffnt = getAttachedData_pointer<Coefficients>(edge);
-		MapDataArray::const_iterator MDA_citer = pCoeffnt->Cij.find(dom);
-		return ( MDA_citer != pCoeffnt->Cij.end() );
+//		Coefficients* pCoeffnt = getAttachedData_pointer<Coefficients>(edge);
+//		MapDataArray::const_iterator MDA_citer = pCoeffnt->Cij.find(dom);
+//		return ( MDA_citer != pCoeffnt->Cij.end() );
+		int belong = 0;
+		char dom_string[256]; sprintf(dom_string,"dom_str_%d",dom);
+		EN_getDataInt(edge,MD_lookupMeshDataId( dom_string ),&belong);
+		return belong;
 	}
 
 	bool GeomData::nodeBelongToDomain(pEntity node, const int &dom){
-		Coefficients* pCoeffnt = getAttachedData_pointer<Coefficients>(node);
-		MapData::const_iterator MDA_citer = pCoeffnt->volume.find(dom);
-		return ( MDA_citer != pCoeffnt->volume.end() );
+//		Coefficients* pCoeffnt = getAttachedData_pointer<Coefficients>(node);
+//		MapData::const_iterator MDA_citer = pCoeffnt->volume.find(dom);
+//		return ( MDA_citer != pCoeffnt->volume.end() );
+		int belong = 0;
+		char dom_string[256]; sprintf(dom_string,"dom_str_%d",dom);
+		EN_getDataInt(node,MD_lookupMeshDataId( dom_string ),&belong);
+		return belong;
 	}
 
 	void GeomData::setEdgeLength(pEntity edge, double length){

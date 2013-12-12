@@ -32,10 +32,9 @@ namespace PRS
 	public:
 
 		EBFV1_hyperbolic_adaptative();
-		EBFV1_hyperbolic_adaptative(pMesh, PhysicPropData *, SimulatorParameters *,
-				GeomData *, MeshData *, OilProductionManagement *, ErrorAnalysis*);
+		EBFV1_hyperbolic_adaptative(pMesh, PhysicPropData *, SimulatorParameters *,GeomData *, MeshData *, OilProductionManagement *, ErrorAnalysis*);
 		~EBFV1_hyperbolic_adaptative();
-		double solver(double&);
+		double solver(pMesh, double&);
 
 	private:
 
@@ -77,13 +76,13 @@ namespace PRS
 		 * either at the beginning of simulation or when sum of sat_ts be greater
 		 * than DT.
 		 */
-		double calculateNewImplicitTS();
+		double calculateNewImplicitTS(pMesh);
 
 		/**
 		 * Compute a new implicit time-step as function of the last implicit time-step,
 		 * velocity norm and DVTOL. DVTOL comes from the input data file 'numeric.dat'.
 		 */
-		double calculateVelocityVariationNorm();
+		double calculateVelocityVariationNorm(pMesh);
 
 		/**
 		 * reset logical variables which control programming flux.

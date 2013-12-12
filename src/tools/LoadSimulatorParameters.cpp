@@ -74,25 +74,33 @@ namespace PRS{
 	  if (!M_numFaces(theMesh)){
 		  throw Exception(__LINE__,__FILE__,"Number of mesh elements null!");
 		}
-		
-		setStepOutputFile(0);
-		getWells(theMesh,pGCData->getMeshDim());
-		weightWellFlowRateByVolume(theMesh,pGCData);
-		checkIfRankHasProductionWell();
-		setInitialOilVolume(theMesh,pGCData);
-		setNumElementDomain(theMesh);
-		setLocalNodeIDNumbering(theMesh);
+
+		setStepOutputFile(0); //cout << __LINE__ << endl;
+		getWells(theMesh,pGCData->getMeshDim()); // cout << __LINE__ << endl;
+		weightWellFlowRateByVolume(theMesh,pGCData);//  cout << __LINE__ << endl;
+		checkIfRankHasProductionWell();  //cout << __LINE__ << endl;
+		setInitialOilVolume(theMesh,pGCData);//  cout << __LINE__ << endl;
+		//FIter fit = M_faceIter( theMesh );
+		setNumElementDomain(theMesh);  //cout << __LINE__ << endl;
+		setLocalNodeIDNumbering(theMesh); // cout << __LINE__ << endl;
 		#ifdef TRACKING_PROGRAM_STEPS
 	cout << "TRACKING_PROGRAM_STEPS: SimulatorParameters::initialize\tIN\n";
 #endif
 	}
 
 	void SimulatorParameters::deallocateData(){
-		//MWells.clear();
-		//mapNodesOnWell.clear();
+		// MWells.clear(); 			WARNING: Cannot be cleaned
+		// setOfDomains.clear(); 	WARNING: Cannot be cleaned
+		// mapSL_edge.clear();		WARNING: Cannot be cleaned
+		// mapSL_node.clear(); 		WARNING: Cannot be cleaned
+		// map_koef.clear();		WARNING: Cannot be cleaned
+		// mapRockProp.clear(); 	WARNING: Cannot be cleaned
+		// mapBC.clear();			WARNING: Cannot be cleaned
+		// mapSaturation.clear();	WARNING: Cannot be cleaned
+		// mapPC.clear();			WARNING: Cannot be cleaned
+		mapNodesOnWell.clear();
 		_mapNodesDomain.clear();
-//		_mapLocalID_perDomain.clear();
-		delete[] numNodesDom; numNodesDom=0;
+		delete[] numNodesDom; numNodesDom = 0;
 	}
 
 	void SimulatorParameters::load_preprocessorData(void *pData){
@@ -102,7 +110,7 @@ namespace PRS{
 			cout << prepFilename().c_str() << endl;
 			// load mesh using FMDB
 			M_load(theMesh,prepFilename().c_str());
-
+			
 			if (theMesh->getDim()==2){
 				EBFV1_preprocessor_2D(theMesh,pData,ndom);
 			}
@@ -129,9 +137,11 @@ namespace PRS{
 		// read numeric parameters
 		string numeric(parametersPath + "/numeric.dat");
 		fid.open(numeric.c_str());
-		if ( !fid.is_open() )
-			throw Exception(__LINE__,__FILE__,"numeric.dat could not be opened or it"
-					" doesn't exist\n");
+		if ( !fid.is_open() ){
+			char msg[256]; sprintf(msg,"File: %s \ncould not be opened or it doesn't exist\n",numeric.c_str());
+			throw Exception(__LINE__,__FILE__,msg);
+		}
+
 
 		// start reading file
 		// -------------------------------------------------------------------------
@@ -467,8 +477,6 @@ namespace PRS{
 		do{
 			getline(fid,str1);
 			if (++count > 100){
-				//				char msg[256]; sprintf(msg,"Could not find %s\n",str2.c_str());
-				//				throw Exception(__LINE__,__FILE__,msg);
 				if (!P_pid()){
 					cout << "\n\nWARNING: Could not find <" << str2
 							<<">.\nProbably you are using an out of date input file."
@@ -662,14 +670,14 @@ namespace PRS{
 		  throw Exception(__LINE__,__FILE__,"Number of mesh elements null!");
 		}
 
-		
 		numNodesDom = new int[setOfDomains.size()];
 		int k = 0; //numNodesDom counter
-		AOMD::AOMD_Util::Instance()->exportGmshFile("setNumElementDomain.msh",theMesh);
-		std::set<int> setIDs, setLocalIDs_perDomain;
+		//AOMD::AOMD_Util::Instance()->exportGmshFile("setNumElementDomain.msh",theMesh);
+		std::set<int> setIDs;
 		std::set<int>::iterator iter = setOfDomains.begin();
+
 		// loop over domains flags
-		for (;iter!=setOfDomains.end();iter++){
+		for (; iter!=setOfDomains.end();iter++){
 			// loop over triangles
 			FIter fit = M_faceIter( theMesh );
 			while ( (elem = FIter_next(fit)) ) {
@@ -677,9 +685,6 @@ namespace PRS{
 					// check if element flag is the same as domain flag
 					// if true, store all element nodes IDs into a container
 					// at the end, the container size correspond to the number of nodes to domain dom.
-//					if (!elem->getClassification()){
-//						throw Exception(__LINE__,__FILE__,"Error!");
-//					}
 					int flag = EN_getFlag(elem);
 					if ( flag==*iter ){
 						for (int i=0;i<3;i++){

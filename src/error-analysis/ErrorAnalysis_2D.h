@@ -38,7 +38,7 @@ private:
 	 * \param fine fine mesh
 	 * \param coarse coarse mesh.
 	 */
-	void calculate_SmoothedGradientNorm_excludingSingularities(pMesh, SimulatorParameters*, GetPFuncGrad);
+	void calculate_SmoothedGradientNorm_Singularity(pMesh, SimulatorParameters*, GetPFuncGrad);
 
 	/*! \brief: Realize the data transfer from the fine to the coarse mesh.
 	 * \param fine fine mesh
@@ -50,7 +50,10 @@ private:
 	 * \param fine fine mesh
 	 * \param coarse coarse mesh.
 	 */
+	void calculate_DegreeOfRefinement(pMesh, SimulatorParameters *, int, int, bool);
 	void calculate_DegreeOfRefinement(pMesh, int, int, bool);
+	void calculate_NewElementHeight(pMesh, bool);
+	void weightNewElementHeight(pMesh,bool,std::list<pEntity> &);
 };
 
 

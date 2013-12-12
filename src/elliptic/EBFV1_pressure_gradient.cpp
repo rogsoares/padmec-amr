@@ -5,11 +5,12 @@ namespace PRS{
 void calculateGradient__bdryFaces(pMesh theMesh, SimulatorParameters *pSimPar, PhysicPropData* pPPData, GeomData *pGCData, int dom, int dom_counter, char* tag);
 
 double EBFV1_elliptic::pressureGradient(pMesh theMesh){
-
 #ifdef _SEEKFORBUGS_
+	cout << " pressureGradient\n";
 	bool check1 = false;
 	bool check2 = false;
 #endif
+
 
 	int i, row_I, row_J;//, row_K;
 	int dom_counter = 0;
@@ -64,8 +65,8 @@ double EBFV1_elliptic::pressureGradient(pMesh theMesh){
 				}
 #endif
 
-				double nrc = (double)pGCData->getNumRC(theMesh,edge) + 1.0;
-				double val = 0.5*(pressure_I + pressure_J)/nrc;
+				//double nrc = (double)pGCData->getNumRC(theMesh,edge) + 1.0;
+				double val = 0.5*(pressure_I + pressure_J);///nrc;
 				for (i=0; i<dim; i++){
 					pw_grad_I[i] +=  val*Cij[i];
 					pw_grad_J[i] += -val*Cij[i];
@@ -90,12 +91,8 @@ double EBFV1_elliptic::pressureGradient(pMesh theMesh){
 		if (dim==2){
 			eit = M_edgeIter(theMesh);
 			while ( (edge = EIter_next(eit)) ){
-				// get edge flag
-				//int flag = EN_getFlag(edge);
-
-				// get only edges on domain's boundaries
-				if ( !theMesh->getRefinementDepth(edge) && pGCData->belongsToBoundary(edge) )
-					if ( pGCData->edgeBelongToDomain(edge,dom) ){
+				if ( pGCData->edgeBelongToDomain(edge,dom) ){
+					if (pGCData->belongsToBoundary(edge)){
 						Dij[0] = .0; Dij[1] = .0;
 						pGCData->getDij(edge,dom,Dij);
 
@@ -123,6 +120,7 @@ double EBFV1_elliptic::pressureGradient(pMesh theMesh){
 						pPPData->set_pw_Grad(dom_counter,row_I,pw_grad_I);
 						pPPData->set_pw_Grad(dom_counter,row_J,pw_grad_J);
 					}
+				}
 			}
 			EIter_delete(eit);
 		}// end of loop over bdry edges
@@ -137,34 +135,38 @@ double EBFV1_elliptic::pressureGradient(pMesh theMesh){
 		VIter vit = M_vertexIter(theMesh);
 		while ( (node = VIter_next(vit)) ){
 			if ( pGCData->nodeBelongToDomain(node,dom) ){
-				//cout << EN_id(node) << ":\t";
+				//cout << "Vertex: " << EN_id(node) << " in domain " << dom << "\tp_grad: ";
 				vol = pGCData->getVolume(node,dom);
-				//pPPData->get_pw_Grad(node,dom,pw_grad_I);
 				pSimPar->getLocalNodeIDNumbering(node,tag,row_I);
 				pPPData->get_pw_Grad(dom_counter,row_I,pw_grad_I);
 				for (i=0; i<dim; i++) {
 					pw_grad_I[i] /= vol;
 					//cout << pw_grad_I[i] << "\t";
-#ifdef _SEEKFORBUGS_
-					if ( fabs(pw_grad_I[i]) > 0.0 ) check2 = true;
-#endif
+					#ifdef _SEEKFORBUGS_
+					if ( fabs(pw_grad_I[i]) > 0.0 ){
+						check2 = true;
+					}
+					if (vol == .0){
+						throw Exception(__LINE__,__FILE__,"Null volume!");
+					}
+					#endif
 				}
 				//cout << endl;
 				pPPData->set_pw_Grad(dom_counter,row_I,pw_grad_I);
 			}
 		}
 		VIter_delete(vit);
-		//STOP();
 
-		/*
-		 *  Calculate pressure gradient on nodes on partition boundaries.
-		 *  Only for parallel.
-		 */
+		// Calculate pressure gradient on nodes on partition boundaries. Only for parallel.
 		//pMData->unifyVectorsOnMeshNodes(pPPData->get_pw_Grad2,pPPData->set_pw_Grad2,pGCData,dom);
 
 #ifdef _SEEKFORBUGS_
-		if (!check1) throw Exception(__LINE__,__FILE__,"Pressure field null!\n");
-		if (!check2) throw Exception(__LINE__,__FILE__,"Gradient null!\n");
+		if (!check1){
+			throw Exception(__LINE__,__FILE__,"Pressure field null!\n");
+		}
+		if (!check2){
+			throw Exception(__LINE__,__FILE__,"Gradient null!\n");
+		}
 #endif
 
 		dom_counter++;

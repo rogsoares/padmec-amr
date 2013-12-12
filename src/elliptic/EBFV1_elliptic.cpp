@@ -5,10 +5,8 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 {
 	EBFV1_elliptic::EBFV1_elliptic(){
 	}
-
-	EBFV1_elliptic::EBFV1_elliptic(pMesh mesh, PhysicPropData *ppd,
-			SimulatorParameters *sp, GeomData *gcd,
-			MeshData *md){
+	
+	EBFV1_elliptic::EBFV1_elliptic(pMesh mesh, PhysicPropData *ppd, SimulatorParameters *sp, GeomData *gcd, MeshData *md){
 		matvec_struct = new Data_struct;
 		pPPData = ppd;
 		pGCData = gcd;
@@ -19,59 +17,66 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 		pVec = new Vectors;
 		DF_key = true;
 	}
-
+	
 	EBFV1_elliptic::~EBFV1_elliptic(){
-		delete[] matvec_struct->rows;
-		delete matvec_struct;
+		if (matvec_struct){
+			delete[] matvec_struct->rows;
+			matvec_struct->rows = 0;
+			delete matvec_struct;
+			matvec_struct = 0;
+		}
 	}
-
+	
 	// solves system of equation for pressure field
 	double EBFV1_elliptic::solver(pMesh theMesh){
-#ifdef TRACKING_PROGRAM_STEPS
-	cout << "TRACKING_PROGRAM_STEPS: pressure solver\tIN\n";
-#endif
+		if (pSimPar->userRequiresAdaptation()){
+			matvec_struct = new Data_struct;
+		}
+		
+		#ifdef TRACKING_PROGRAM_STEPS
+		cout << "TRACKING_PROGRAM_STEPS: pressure solver\tIN\n";
+		#endif
+		
+		if (M_numEdges(theMesh)==0){
+			throw Exception(__LINE__,__FILE__,"Can not proceed. Mesh edges missing!");
+		}
+		
 		double cpu_time = assembly_EFG_RHS(theMesh);
-//		cout << "assembly time: " << cpu_time << endl;
 		// which scheme should be used to solve pressure field
-		if (pSimPar->useDefectCorrection())
+		if (pSimPar->useDefectCorrection()){
 			cpu_time += solveIteratively();
-		else
+		}
+		else{
 			cpu_time += setMatrixFreeOperation(theMesh);
-//		cout << "solver time: " << cpu_time << endl;
+		}
 		cpu_time += updatePressure(theMesh);
-//		cout << "updatePressure time: " << cpu_time << endl;
-#ifdef CRUMPTON_EXAMPLE
-		// Output data (VTK)
-		//pSimPar->printOutVTK(theMesh,pPPData,exportSolutionToVTK);
+		#ifdef CRUMPTON_EXAMPLE
 		MPI_Barrier(MPI_COMM_WORLD);
-		// terminate elliptic equation evaluation
 		char msg[256]; sprintf(msg,"CRUMPTON_EXAMPLE:\t\tCPU time elapsed: %f\n",cpu_time);
 		throw Exception(__LINE__,__FILE__,msg);
-#endif
+		#endif
 		cpu_time += pressureGradient(theMesh);
-//		cout << "pressureGradient time: " << cpu_time << endl;
-	//	STOP();
 		cpu_time += freeMemory();
-#ifdef TRACKING_PROGRAM_STEPS
-	cout << "TRACKING_PROGRAM_STEPS: pressure solver\tOUT\n";
-#endif
+		#ifdef TRACKING_PROGRAM_STEPS
+		cout << "TRACKING_PROGRAM_STEPS: pressure solver\tOUT\n";
+		#endif
 		return cpu_time;
 	}
-
+	
 	double EBFV1_elliptic::updatePressure(pMesh theMesh){
 		double startt = MPI_Wtime();
-
+		
 		PetscScalar *sol, val;
 		PetscInt i,m,n,row,col=0;
 		PetscInt numGN = pMData->getNum_GNodes();
 		Mat mSol,mLSol;
-
+		
 		// create a column matrix to receive output vector values (mSol)
 		ierr = MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,numGN,1,0,PETSC_NULL,0,PETSC_NULL,&mSol);CHKERRQ(ierr);
-
+		
 		int nLIDs, *IDs_ptr;
 		pMData->getRemoteIDs(nLIDs,&IDs_ptr);
-
+		
 		// transference process: from vector to column matrix
 		ierr = VecGetArray(output,&sol);CHKERRQ(ierr);
 		ierr = MatSetValues(mSol,matvec_struct->nrows,matvec_struct->rows,1,&col,sol,INSERT_VALUES);CHKERRQ(ierr);
@@ -79,28 +84,27 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 		ierr = MatAssemblyBegin(mSol,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 		ierr = MatAssemblyEnd(mSol,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 		//ierr = VecView(output,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr); //throw 1;
-
-		// remote values cannot be gotten from remote matrix positions.
-		// transfer (via MatGetSubMatrixRaw) necessary remote values to each process
-		// to a second column matrix (mLSol).
+		
+		// remote values cannot be gotten from remote matrix positions. transfer (via MatGetSubMatrixRaw) necessary remote values 
+		// to each process to a second column matrix (mLSol).
 		ierr = MatGetSubMatrixRaw(mSol,nLIDs,IDs_ptr,1,&col,PETSC_DECIDE,MAT_INITIAL_MATRIX,&mLSol);CHKERRQ(ierr);
 		ierr = MatDestroy(mSol);CHKERRQ(ierr);
 		ierr = MatGetOwnershipRange(mLSol,&m,&n);CHKERRQ(ierr);
-
+		
 		// loop over IDs_ptr[i]
 		row = m;
 		for(i=0; i<nLIDs;i++){
 			int ID = pMData->get_PETScToApp_Ordering(IDs_ptr[i]+1);
 			pVertex node = theMesh->getVertex(ID);
-			if (!node) throw Exception(__LINE__,__FILE__,"Node does not exist.\n");
+			if (!node){
+				throw Exception(__LINE__,__FILE__,"Node does not exist.\n");
+			}
 			ierr = MatGetValues(mLSol,1,&row,1,&col,&val);CHKERRQ(ierr);
 			pPPData->setPressure(node,val);
-			//printf("p[%d] = %f\n",EN_id(node),val);
 			row++;
 		}
-		//STOP();
 		ierr = MatDestroy(mLSol);CHKERRQ(ierr);
-
+		
 		static bool key = true;
 		if (key){
 			VIter vit = M_vertexIter(theMesh);
@@ -114,7 +118,7 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 		}
 		return MPI_Wtime()-startt;
 	}
-
+	
 	double EBFV1_elliptic::freeMemory(){
 		double startt = MPI_Wtime();
 		// free matrices
@@ -126,11 +130,19 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 			ierr = MatDestroy(matvec_struct->E[i]);CHKERRQ(ierr);
 			ierr = MatDestroy(matvec_struct->F[i]);CHKERRQ(ierr);
 		}
+		
 		/// free vectors
 		ierr = VecDestroy(matvec_struct->RHS);CHKERRQ(ierr);
 		ierr = VecDestroy(matvec_struct->z);CHKERRQ(ierr);
 		ierr = VecDestroy(output);CHKERRQ(ierr);
-		double endt = MPI_Wtime();
-		return endt-startt;
+		if (pSimPar->userRequiresAdaptation()){
+			delete[] matvec_struct->F;
+			delete[] matvec_struct->E;
+			matvec_struct->F = 0;
+			matvec_struct->E = 0;
+			delete[] matvec_struct->rows; matvec_struct->rows = 0;
+			delete matvec_struct; matvec_struct = 0;
+		}
+		return MPI_Wtime()-startt;
 	}
 }

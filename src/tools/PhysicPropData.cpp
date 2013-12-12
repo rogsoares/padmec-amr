@@ -34,7 +34,6 @@ namespace PRS{
 		pEntity node;
 		VIter vit = M_vertexIter(theMesh);
 		while ( (node = VIter_next(vit)) ){
-			//int flag = GEN_tag(node->getClassification());
 			double Sw = this->getSaturation(node);
 			if ( Sw < 1e-8 ){
 				Sw = .0;
@@ -60,7 +59,7 @@ namespace PRS{
 			int nrows = pNumNodesDom[k];
 			pGrad_matrix[k].allocateMemory(nrows,3);
 			pGrad_matrix[k].initialize(.0);
-			pGrad_matrix[k].printNumRowsCols();
+			//pGrad_matrix[k].printNumRowsCols();
 		}
 		SwGrad_matrix.allocateMemory(numNodes,3);
 		SwGrad_matrix.initialize(.0);

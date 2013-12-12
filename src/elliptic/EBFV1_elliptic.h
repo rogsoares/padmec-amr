@@ -6,9 +6,8 @@
 namespace PRS           // PRS: Petroleum Reservoir Simulator
 {
 	/**
-	 * For EBFV1 elliptic formulation, a matrix-free procedure is applied to solve
-	 * pressure field. A pointer-function is used to tell Petsc how to make a matrix-vector
-	 * product and all matrices and vector are passed to this function as a structure.
+	 * For EBFV1 elliptic formulation, a matrix-free procedure is applied to solve pressure field. A pointer-function is used to tell 
+	 * Petsc how to make a matrix-vector product and all matrices and vector are passed to this function as a structure.
 	 */
 	struct Data_struct{
 		Mat *E;
@@ -39,65 +38,45 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 	public:
 
 		EBFV1_elliptic();
-		EBFV1_elliptic(pMesh,
-							PhysicPropData *,
-							SimulatorParameters *,
-							GeomData *,
-							MeshData *);
+		EBFV1_elliptic(pMesh, PhysicPropData *, SimulatorParameters *, GeomData *, MeshData *);
 		~EBFV1_elliptic();
 		double solver(pMesh);
+		double pressureGradient(pMesh theMesh);
 
 	private:
 		bool DF_key;
 		dblarray Lij;
 		Vectors* pVec;
-		Mat *F;
 		Mat *EF_multiDom;
 
-		/*
-		 * After fill the matrix, it must be assembled (PETSC)
-		 */
+		// After fill the matrix, it must be assembled (PETSC)
 		int assemblyMatrix(Mat);
-
-		/*
-		 * fill matrices E,G and F for a specific edge and domain.
-		 * Theses function are called inside a loop of domains
-		 */
+		
+		// Fill matrices E,G and F for a specific edge and domain. Theses function are called inside a loop of domains
 		int divergence_E(Mat, pEntity, const int&, int, dblarray&);
 		int divergence_G(Mat, pEntity, const int&, int, dblarray&);
 		int gradient_F_edges(Mat, pEntity, const int&, int, dblarray&);
-		int gradient_F_bdry(Mat, const int&);
-		int F_bdryFaces(Mat, const int&);
-		int F_bdryEdges(Mat, const int&);
+		int gradient_F_bdry(pMesh, Mat, const int&);
+		int F_bdryFaces(pMesh, Mat, const int&);
+		int F_bdryEdges(pMesh, Mat, const int&);
 
-		/*
-		 * Solves (EF + G)u = q as showed below:
-		 * 			G * u^k+1 = q - EF * u^k
-		 */
+		 // Solves (EF + G)u = q as showed below:
+		 // 			G * u^k+1 = q - EF * u^k		 
 		double solveIteratively();
 
-		/*
-		 *  associate to mesh nodes new pressure values computed
-		 */
+		// Associate to mesh nodes new pressure values computed
 		double updatePressure(pMesh theMesh);
-		/*
-		 *  compute pressure gradient and associate them to mesh nodes for all domains
-		 * Note: nodes between two or more domains can store a vector for each one
-		 */
-		double pressureGradient(pMesh theMesh);
+		
+		// Compute pressure gradient and associate them to mesh nodes for all domains. 
+		// Note: nodes between two or more domains can store a vector for each one
 		int pressureGradient(int, int);
 		int resetPressureGradient(pMesh theMesh, int, char*);
 		int updatePressureGradient(int, int);
 
-		/*
-		 *  PETSc matrix for matrix-free procedure
-		 */
+		// PETSc matrix for matrix-free procedure
 		Mat matrix;
 
-		/*
-		 *  Pointer to be used inside matrix-free procedure
-		 */
-
+		// Pointer to be used inside matrix-free procedure
 		Data_struct *matvec_struct;
 		double setMatrixFreeOperation(pMesh);
 
@@ -115,7 +94,7 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 			ierr = MatMult(mats->G,u,y); CHKERRQ(ierr);
 
 			// step 2:  y = y + (E*F*u)_dom1 + (E*F*u)_dom2 + ... + (E*F*u)_domN
-			//int m,n;
+			int m,n;
 			for (int i=0; i<mats->ndom; i++){
 				// z = [F]*u
 				ierr = VecZeroEntries(mats->z); CHKERRQ(ierr);

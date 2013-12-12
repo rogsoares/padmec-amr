@@ -24,8 +24,7 @@ void calculate_GeometricCoefficients(InterpolationDataStruct* pIData, int dim){
 			pEntity element = (pEntity)Octree_Search(xyz,pIData->theOctree);
 			if (!element){
 				cout << "Finding element containing coordenate: " << xyz[0] << "\t" << xyz[1] << "\t" << xyz[2] << endl;
-				cout << "Entity not found! Exiting...\n";
-				exit(1);
+				throw Exception(__LINE__,__FILE__,"calculate_GeometricCoefficients: Entity not found! Exiting...\n");
 			}
 
 			//get coordinates
@@ -66,7 +65,7 @@ void calculate_GeometricCoefficients(InterpolationDataStruct* pIData, int dim){
 //			int row = EN_id(vertex);
 //			// search entity in which the point above are
 //
-//			pEntity element = (pEntity)Octree_Search(xyz,theOctree);
+//			pEntity element = (pEntity)Octree_Search(xyz,pIData->theOctree);
 //			if (!element){
 //				cout << "Entity not found! Exiting...\n";
 //				exit(1);
@@ -116,38 +115,39 @@ void calculate_LinearInterpolation(InterpolationDataStruct* pIData, int dim){
 		// Interpolate all fields assigned to mesh node
 		double geo_coeff = .0;
 		for (int field=0; field<pIData->numFields; field++){
-			//cout << "Field: " << field << ":\t";
+//		cout << "Field: " << field << ":\t";
 			// get element's nodes data per field
+//			cout << "Scalar: ";
 			for(int i=0; i<size; i++){
 				v = (pEntity)element->get(0,i);
 				scalar = pIData->pGetDblFunctions[field]( v );
 				EN_getDataDbl(vertex, MD_lookupMeshDataId(geocoeffstr[i].c_str()), &geo_coeff);
 				val += (double)scalar*geo_coeff;
+				//cout << scalar << "\t";
 			}
-			#ifdef MACOSX
-				if (fabs(val)<1e-10){
-					val = .0;
-				}
-			#endif
+//			cout << "Interpolated val = " << val << "\n";
 			pIData->pSetDblFunctions[field](vertex,val);
 			val = .0;
 		}
 		//cout << endl;
 	}
+	//STOP();
 	VIter_delete(vit);
 }
 
-//double calculate_QuadraticInterpolation(pMesh theMesh, int dim){
+double calculate_QuadraticInterpolation(InterpolationDataStruct* pIData){
 //	double NodeValue, GeomCoeff, residual, coord[3], linear, quadratic;
 //	pEntity v;
 //	double xyz[3];
+//	int dim = pIData->m2->getDim();
+//
 //	//Loop over vertices (from the mesh to where the data is being transfered)
-//	VIter vit = M_vertexIter(theMesh);
+//	VIter vit = M_vertexIter(pIData->m2);
 //	while ( pEntity vertex = VIter_next(vit) ){
 //		V_coord(vertex,xyz);
 //		int row = EN_id(vertex);
 //		//search entity in which the node is
-//		pEntity element = (pEntity)Octree_Search(xyz,theOctree);
+//		pEntity element = (pEntity)Octree_Search(xyz,pIData->theOctree);
 //		if (!element){
 //			cout << "WARNING:  Entity not found!\n";
 //		}
@@ -158,30 +158,30 @@ void calculate_LinearInterpolation(InterpolationDataStruct* pIData, int dim){
 //			v = element->get(0,i);
 //			int id= EN_id(v);
 //			V_coord(v,coord);
-//			GeomCoeff= getGeomCoeff(row,i);
-//			double dx = getGrad(id,1);
-//			double dy = getGrad(id,2);
-//			double dx2 = getGrad(id,3);
-//			double dy2 = getGrad(id,4);
-//			double dxdy = getGrad(id,5);
+////			GeomCoeff= getGeomCoeff(row,i);
+////			double dx = getGrad(id,1);
+////			double dy = getGrad(id,2);
+////			double dx2 = getGrad(id,3);
+////			double dy2 = getGrad(id,4);
+////			double dxdy = getGrad(id,5);
 //
 //			double Res = (xyz[0]-coord[0])*dx + (xyz[1]-coord[1])*dy;
 //			Res += (xyz[0]-coord[0])*(xyz[0]-coord[0])*dx2/2;
 //			Res += (xyz[1]-coord[1])*(xyz[1]-coord[1])*dy2/2;
 //			Res += (xyz[0]-coord[0])*(xyz[1]-coord[1])*dxdy;
-//			residual += GeomCoeff*Res;
+////			residual += GeomCoeff*Res;
 //		}
 //
 //		//calculate quadratic interpolation
-//		linear = getInterpolatedValues(row);
+//		//linear = getInterpolatedValues(row);
 //		quadratic = linear + residual;
-//		setInterpolatedValues(row,quadratic);
+//		//setInterpolatedValues(row,quadratic);
 //	}
 //	VIter_delete(vit);
-//}
-//
-//
-//void calculate_DerivativesError(pMesh theMesh){
+}
+
+
+void calculate_DerivativesError(InterpolationDataStruct* pIData){
 //	double summ_dx = 0; double summ2_dx = 0; double MaxError_dx = 0;
 //	double summ_dy = 0; double summ2_dy = 0; double MaxError_dy = 0;
 //	double summ_dx2 = 0; double summ2_dx2 = 0; double MaxError_dx2 = 0;
@@ -189,7 +189,7 @@ void calculate_LinearInterpolation(InterpolationDataStruct* pIData, int dim){
 //	double summ_dxdy = 0; double summ2_dxdy = 0; double MaxError_dxdy = 0;
 //
 //	//loop on the mesh vertices
-//	VIter vit = M_vertexIter(theMesh);
+//	VIter vit = M_vertexIter(pIData->m2);
 //	while (pEntity vertex = VIter_next(vit)){
 //
 //		int id = EN_id(vertex);
@@ -243,4 +243,4 @@ void calculate_LinearInterpolation(InterpolationDataStruct* pIData, int dim){
 //		if ( error_dxdy > MaxError_dxdy ) MaxError_dxdy = error_dxdy;
 //
 //	}
-//}
+}

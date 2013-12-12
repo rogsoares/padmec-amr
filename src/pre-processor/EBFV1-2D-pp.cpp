@@ -12,7 +12,9 @@
 // calculates: Cij, Dij and nodal volume
 // ---------------------------------------------------------------------
 int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
-	cout << "calculateCoefficients2D_old\n";
+#ifdef TRACKING_PROGRAM_STEPS
+	cout << "TRACKING_PROGRAM_STEPS: EBFV1_preprocessor_2D\tIN\n";
+#endif
 
 	GeomData *pGCData = (GeomData*)pData;
 	pGCData->setMeshDim(theMesh->getDim());
@@ -26,7 +28,7 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 	double edgeCenter[3], I[3], J[3];
 
 	std::vector<double> Cij(3), Dij(3);
-	pEntity edge, face;
+	pEntity edge, face, node;
 
 	/// initialize coefficients
 	initializeCoefficients(theMesh,pGCData);
@@ -40,6 +42,8 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 		// look up only for leave elements (without children)
 		if ( !theMesh->getRefinementDepth(face) ){
 			dom = EN_getFlag(face);
+			char dom_string[256]; sprintf(dom_string,"dom_str_%d",dom);
+
 			if (!dom){
 				throw Exception(__LINE__,__FILE__,"dom = 0\n");
 			}
@@ -51,6 +55,10 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 			// loop over all three face's edges to calculate Cij and Dij
 			for (i=0; i<3; i++){
 				edge = F_edge(face, i);
+
+				// set edge belonging to domain 'dom'
+				EN_attachDataInt(edge,MD_lookupMeshDataId( dom_string ),1);
+
 				edgeCenter[0] = edgeCenter[1] = .0;
 				E_center(edge,edgeCenter);				// edge centroid
 				V_coord(edge->get(0,0),I);
@@ -97,7 +105,8 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 				//cout << "Cij = " << Cij[0] << "\t" << Cij[1] << "\t" << Cij[2] << "\n";
 #ifdef __ADAPTATION_DEBUG__
 		if (Cij[0]==.0 && Cij[1]==.0){
-			throw Exception(__LINE__,__FILE__,"Cij[0]==.0 && Cij[1]==.0\n");
+			char msg[256]; sprintf(msg,"Edge %d-%d has Cij coefficient NULL Cij[0]=Cij[1]=0.0",id0,id1);
+			throw Exception(__LINE__,__FILE__,msg);
 		}
 #endif
 			}
@@ -105,25 +114,31 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 			// calculate volume of control volume and associate it to elements nodes
 			const double porosity = .0;
 			double A = F_area(face)/3.0;	// element area
+			//cout << "area = " << A << endl;
 			for (j=0; j<3; j++){
-				double v1 = pGCData->getVolume(face->get(0,j),dom);
-				double v2 = pGCData->getWeightedVolume(face->get(0,j));
+				node = face->get(0,j);
+				EN_attachDataInt(node,MD_lookupMeshDataId( dom_string ),1);
+				double v1 = pGCData->getVolume(node,dom);
+				double v2 = pGCData->getWeightedVolume(node);
 				v1 += A;
 				v2 += A*porosity;
-				pGCData->setVolume(face->get(0,j),dom,v1);
-				pGCData->setWeightedVolume(face->get(0,j),v2);
+				pGCData->setVolume(node,dom,v1);
+				pGCData->setWeightedVolume(node,v2);
 			}
 		}
 	}
 	FIter_delete(fit);
 
+	int numBE = 0;
 	// Calculate Dij coefficient only for boundary edges.
 	EIter eit = M_edgeIter(theMesh);
 	while ( (edge = EIter_next(eit)) ){
 		if ( !theMesh->getRefinementDepth(edge) ){
-			flag = EN_getFlag(edge);
-			std::set<int>::iterator iter = setOfDomain.find( flag );
-			if ( iter == setOfDomain.end() ){
+ 			flag = EN_getFlag(edge);
+ 			std::set<int>::iterator iter = setOfDomain.find( flag );
+//			if ( E_numFaces(edge)==1 ){				// this line works for homogeneous adaptation
+ 			if (iter == setOfDomain.end()){		// this line is for general (homo/hetero) adaptation
+				numBE++;
 				double I[3] = {.0,.0,.0}, J[3] = {.0,.0,.0};
 				V_coord(edge->get(0,0),I);
 				V_coord(edge->get(0,1),J);
@@ -139,8 +154,7 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 					if (!face){
 						throw Exception(__LINE__,__FILE__,"Null face!\n");
 					}
-					// TODO: change this for heterogeneous media!!!!
-					domains[i] = 3300; //EN_getFlag(face);
+					domains[i] = EN_getFlag(face);
 				}
 				// that the reference face to make Dij points to outside
 				face = E_face(edge, 0);
@@ -175,12 +189,12 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 					Dij[j] *= H;
 				}
 				pGCData->setDij(edge,domains[0],domains[1],Dij);
-	//			cout << "Dij = " << Dij[0] << "\t" << Dij[1] << "\t" << Dij[2] << "\n";
+				//cout << "Dij = " << Dij[0] << "\t" << Dij[1] << "\t" << Dij[2] << "\n";
 			}
 		}
 	}
 	EIter_delete(eit);
-
+	cout << "preprocessor: Number of Boundary edges = " << numBE << endl;
 	/*
 	 * Parallel step:
 	 *
@@ -212,7 +226,6 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 	/*
 	 * For 2-D domains, multiply volume by reservoir height (H) for 2D/3D simulations (physics occurs only on 2-D but
 	 * reservoir volume is considered)
-	 * =======================================================================================
 	 */
 	double vt = .0;
 	double vol,wvol;
@@ -225,13 +238,22 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 			vt += vol;
 			wvol = H*0.2*vol;
 			if (vol == .0){
-				//throw Exception(__LINE__,__FILE__,"Volume is NULL!\n");//GUILHERMEPADMEC
+				char msg[256]; sprintf(msg,"Volume in Vertex (ID = %d) is 0!",EN_id(node));
+				//throw Exception(__LINE__,__FILE__,msg);
 			}
 			pGCData->setWeightedVolume(node,wvol);
 		}
 		VIter_delete(vit);
 	}
 	pGCData->setTotalReservoirVolume(vt);
+	cout << "Number of domains: " << setOfDomain.size() << ". They are: ";
+	for( iter = setOfDomain.begin(); iter!=setOfDomain.end(); iter++){
+		cout << *iter << "  ";
+	}
+	cout << endl;
+#ifdef TRACKING_PROGRAM_STEPS
+	cout << "TRACKING_PROGRAM_STEPS: EBFV1_preprocessor_2D\tOUT\n";
+#endif
 	return 0;
 }
 
@@ -241,6 +263,7 @@ void initializeCoefficients(pMesh theMesh, GeomData *pGCData){
 	while (pEntity v = VIter_next(vit)){
 		pGCData->setWeightedVolume(v,0.0);
 		pGCData->setVolume(v,3300,.0);
+		pGCData->setVolume(v,3301,.0);
 	}
 	VIter_delete(vit);
 
@@ -248,6 +271,7 @@ void initializeCoefficients(pMesh theMesh, GeomData *pGCData){
 	EIter eit = M_edgeIter(theMesh);
 	while ( pEdge edge = EIter_next(eit) ){
 		pGCData->setCij(edge,3300,vec);
+		//pGCData->setCij(edge,3300,vec);
 		if (EN_getFlag(edge)==2000){
 			pGCData->setDij(edge,2000,0,vec);
 		}
