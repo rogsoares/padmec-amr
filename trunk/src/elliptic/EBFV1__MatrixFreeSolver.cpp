@@ -61,11 +61,11 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 	//printVectorToFile(output,"SOLUTION.txt");
 	//VecView(matvec_struct->RHS,PETSC_VIEWER_STDOUT_WORLD); //STOP();
 	//MatView(matvec_struct->G,PETSC_VIEWER_STDOUT_WORLD); //STOP();
-	//VecView(output,PETSC_VIEWER_STDOUT_WORLD);
-	//			PetscReal val;
-	//			VecNorm(output,NORM_2,&val);
-	//			PetscPrintf(PETSC_COMM_WORLD,"norm: %f",val);
-	//			STOP();
+//	VecView(output,PETSC_VIEWER_STDOUT_WORLD);
+//				PetscReal val;
+//				VecNorm(output,NORM_2,&val);
+//				PetscPrintf(PETSC_COMM_WORLD,"norm: %f",val);
+//				STOP();
 
 	PetscLogDouble flops2;
 	PetscGetFlops(&flops2);

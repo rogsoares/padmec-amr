@@ -363,9 +363,9 @@ void ErrorAnalysis::monitoring(pMesh theMesh, double tol1, double tol2){
 	if (!adapt){
 		i = 0;
 	}
-	if (i>5){
-		throw Exception(__LINE__,__FILE__,"Mesh has been adapted more than 5 times and error is still greater than tolerance!");
-	}
+//	if (i>5){
+//		throw Exception(__LINE__,__FILE__,"Mesh has been adapted more than 5 times and error is still greater than tolerance!");
+//	}
 	static bool openfile = true;
 	if (openfile){
 		fid.open("Error_Analysis_Monitor.txt");
