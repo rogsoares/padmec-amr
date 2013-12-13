@@ -95,19 +95,20 @@ double EBFV1_hyperbolic::calculateIntegralAdvectiveTerm(pMesh theMesh, int dom){
 	EIter_delete(eit);
 	#ifdef _SEEKFORBUGS_
 	   if (!check_IAT){
-		   char msg[256]; sprintf(msg,"For domain %d, non_visc_fv and non_visc_ad are always null!\n",dom);
-		   throw Exception(__LINE__,__FILE__,msg);
+		   //char msg[256]; sprintf(msg,"For domain %d, non_visc_fv and non_visc_ad are always null!\n",dom);
+		   //throw Exception(__LINE__,__FILE__,msg);
 	   }
 	#endif //_SEEKFORBUGS_
 
-	alpha_max = P_getMaxDbl(alpha_max);
+	//alpha_max = P_getMaxDbl(alpha_max);
 	courant = pStruct->pSimPar->CFL();
 	phi = pStruct->pSimPar->getPorosity(dom);
 	length = pGCData->getSmallestEdgeLength();
 	
 	#ifdef _SEEKFORBUGS_
 	if ( fabs(alpha_max) < 1e-8){
-		throw Exception(__LINE__,__FILE__,"alpha_max NULL\n");
+		//char msg[256]; sprintf(msg,"alpha_max NULL in domain %d\n",dom);
+		//throw Exception(__LINE__,__FILE__,msg);
 	}
 	#endif //_SEEKFORBUGS_
 	

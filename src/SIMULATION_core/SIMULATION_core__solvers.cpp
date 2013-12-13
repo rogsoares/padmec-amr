@@ -102,7 +102,7 @@ namespace PRS{
 
 		while ( !pSimPar->finishSimulation() ){
 			pElliptic_eq->solver(theMesh);
-			//pSimPar->printOutVTK(pIData->m1,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
+			pSimPar->printOutVTK(pIData->m1,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
 			pHyperbolic_eq->solver(theMesh,timeStep);
 			pSimPar->printOutVTK(pIData->m1,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
 			if ( pSimPar->userRequiresAdaptation() ){

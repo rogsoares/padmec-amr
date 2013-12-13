@@ -75,11 +75,6 @@ int EBFV1_elliptic::F_bdryEdges(pMesh mesh, Mat F, const int &dom){
 		}
 	}
 	EIter_delete(eit);
-
-	cout << setprecision(18) << "Sum: " << sumx << "\t" << sumy << endl;
-
-	cout << "Number of BDRY edges counted: " << numBE1 << endl;
-	cout << "Number of BDRY edges counted via FMDB: " << numBE1 << endl;
 	return 0;
 }
 
