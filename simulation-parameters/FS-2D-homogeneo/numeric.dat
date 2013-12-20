@@ -39,10 +39,8 @@ You MUST provide only filename, i.e, filename = (filename-i-of-N.dat) - (-i-of-N
 mesh filename:
 /home/rogerio/projetos/GOOGLE_CODES/padmec-amr/trunk/simulation-parameters/FS-2D-homogeneo/pp-data-files/start-mesh-2.msh
 
-
 export filename (to VTK format without extension .vtk):
 /home/rogerio/projetos/GOOGLE_CODES/padmec-amr/trunk/simulation-parameters/FS-2D-homogeneo/results/start-mesh-2
-
 
 Start simulation from <restart> file?
 () yes. Type file:/home/rogerio/Dropbox/medwards/case1-transv/transv_1stO__converted_0-of-1__step-9.vtk

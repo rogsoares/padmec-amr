@@ -8,9 +8,7 @@ namespace PRS{
 
 	PhysicPropData::PhysicPropData(){
 		setMeshDataId("PP_Data");
-
 		steady_state = false;
-
 		pGetGradArray = new GetPFuncGrad[2];
 		pGetGradArray[0] = get_pw_Grad;
 		pGetGradArray[1] = get_Sw_Grad;
@@ -61,8 +59,8 @@ namespace PRS{
 			pGrad_matrix[k].initialize(.0);
 			//pGrad_matrix[k].printNumRowsCols();
 		}
-		SwGrad_matrix.allocateMemory(numNodes,3);
-		SwGrad_matrix.initialize(.0);
+//		SwGrad_matrix.allocateMemory(numNodes,3);
+//		SwGrad_matrix.initialize(.0);
 	}
 
 	void PhysicPropData::deallocateData(SimulatorParameters *pSimPar){
@@ -71,7 +69,7 @@ namespace PRS{
 			pGrad_matrix[k].freeMemory();
 		}
 		delete[] pGrad_matrix; pGrad_matrix = 0;
-		SwGrad_matrix.freeMemory();
+		//SwGrad_matrix.freeMemory();
 	}
 
 	void PhysicPropData::setInitialVelocity(pMesh theMesh, SimulatorParameters *pSimPar){

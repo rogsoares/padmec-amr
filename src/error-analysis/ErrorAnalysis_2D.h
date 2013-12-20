@@ -26,19 +26,19 @@ private:
 	 * \param theMesh FMDB mesh object
 	 * \param GetPFuncGrad function pointer to get nodal gradient
 	 */
-	void calculate_ElementsError(pMesh theMesh, SimulatorParameters* pSimPar, GetPFuncGrad);
+	void calculate_ElementsError(pMesh theMesh, SimulatorParameters* pSimPar, GetPFuncGrad,FIELD);
 
 	/*! \brief: Realize the data transfer from the fine to the coarse mesh.
 	 * \param fine fine mesh
 	 * \param coarse coarse mesh.
 	 */
-	void calculate_SmoothedGradientNorm(pMesh, SimulatorParameters *pSimPar, GetPFuncGrad);
+	void calculate_SmoothedGradientNorm(pMesh, SimulatorParameters *pSimPar, GetPFuncGrad,FIELD);
 
 	/*! \brief: Realize the data transfer from the fine to the coarse mesh.
 	 * \param fine fine mesh
 	 * \param coarse coarse mesh.
 	 */
-	void calculate_SmoothedGradientNorm_Singularity(pMesh, SimulatorParameters*, GetPFuncGrad);
+	void calculate_SmoothedGradientNorm_Singularity(pMesh, SimulatorParameters*, GetPFuncGrad,FIELD);
 
 	/*! \brief: Realize the data transfer from the fine to the coarse mesh.
 	 * \param fine fine mesh

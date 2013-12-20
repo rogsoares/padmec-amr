@@ -52,8 +52,8 @@ double EBFV1_elliptic::pressureGradient(pMesh theMesh){
 				pGCData->getCij(edge,dom,Cij);
 
 				// get nodal pressure gradient
-				pPPData->get_pw_Grad(dom_counter,row_I,pw_grad_I);
-				pPPData->get_pw_Grad(dom_counter,row_J,pw_grad_J);
+				pPPData->get_pw_Grad(I,dom_counter,row_I,pw_grad_I);
+				pPPData->get_pw_Grad(J,dom_counter,row_J,pw_grad_J);
 
 				// get nodal pressure
 				pressure_I = pPPData->getPressure(I);
@@ -73,8 +73,8 @@ double EBFV1_elliptic::pressureGradient(pMesh theMesh){
 				}
 
 				// update nodal pressure gradient
-				pPPData->set_pw_Grad(dom_counter,row_I,pw_grad_I);
-				pPPData->set_pw_Grad(dom_counter,row_J,pw_grad_J);
+				pPPData->set_pw_Grad(I,dom_counter,row_I,pw_grad_I);
+				pPPData->set_pw_Grad(J,dom_counter,row_J,pw_grad_J);
 			}
 		}
 		EIter_delete(eit);
@@ -110,15 +110,15 @@ double EBFV1_elliptic::pressureGradient(pMesh theMesh){
 						pSimPar->getLocalNodeIDNumbering(I,tag,row_I);
 						pSimPar->getLocalNodeIDNumbering(J,tag,row_J);
 						// get nodal pressure gradient
-						pPPData->get_pw_Grad(dom_counter,row_I,pw_grad_I);
-						pPPData->get_pw_Grad(dom_counter,row_J,pw_grad_J);
+						pPPData->get_pw_Grad(I,dom_counter,row_I,pw_grad_I);
+						pPPData->get_pw_Grad(J,dom_counter,row_J,pw_grad_J);
 						for (i=0; i<dim; i++){
 							pw_grad_I[i] += ((5.*pressure_I + pressure_J)/6.0)*Dij[i];
 							pw_grad_J[i] += ((pressure_I + 5.*pressure_J)/6.0)*Dij[i];
 						}
 						// update nodal pressure gradient
-						pPPData->set_pw_Grad(dom_counter,row_I,pw_grad_I);
-						pPPData->set_pw_Grad(dom_counter,row_J,pw_grad_J);
+						pPPData->set_pw_Grad(I,dom_counter,row_I,pw_grad_I);
+						pPPData->set_pw_Grad(J,dom_counter,row_J,pw_grad_J);
 					}
 				}
 			}
@@ -138,7 +138,7 @@ double EBFV1_elliptic::pressureGradient(pMesh theMesh){
 				//cout << "Vertex: " << EN_id(node) << " in domain " << dom << "\tp_grad: ";
 				vol = pGCData->getVolume(node,dom);
 				pSimPar->getLocalNodeIDNumbering(node,tag,row_I);
-				pPPData->get_pw_Grad(dom_counter,row_I,pw_grad_I);
+				pPPData->get_pw_Grad(node,dom_counter,row_I,pw_grad_I);
 				for (i=0; i<dim; i++) {
 					pw_grad_I[i] /= vol;
 					//cout << pw_grad_I[i] << "\t";
@@ -152,7 +152,7 @@ double EBFV1_elliptic::pressureGradient(pMesh theMesh){
 					#endif
 				}
 				//cout << endl;
-				pPPData->set_pw_Grad(dom_counter,row_I,pw_grad_I);
+				pPPData->set_pw_Grad(node,dom_counter,row_I,pw_grad_I);
 			}
 		}
 		VIter_delete(vit);
@@ -184,50 +184,50 @@ int EBFV1_elliptic::resetPressureGradient(pMesh theMesh, int dom, char *tag){
 	for(;iter!=setNodes.end();iter++){
 		node = theMesh->getVertex(*iter);
 		pSimPar->getLocalNodeIDNumbering(node,tag,row_I);
-		pPPData->set_pw_Grad(dom,row_I,pw_grad_I);
+		pPPData->set_pw_Grad(node,dom,row_I,pw_grad_I);
 	}
 	return 0;
 }
 
 void calculateGradient__bdryFaces(pMesh theMesh, SimulatorParameters *pSimPar, PhysicPropData* pPPData, GeomData *pGCData, int dom, int dom_counter, char* tag){
-	int row_I, row_J, row_K;
-	double pw_grad_I[3], pw_grad_J[3],  pw_grad_K[3], Dij[3];
-	pEntity face;
-	FIter fit = M_faceIter(theMesh);
-	while ( (face = FIter_next(fit)) ){
-		if ( !theMesh->getRefinementDepth(face) && pGCData->getDij(face,dom,Dij) ){
-
-			// get nodes I, J and K
-			pEntity I = (pVertex)face->get(0,0);
-			pEntity J = (pVertex)face->get(0,1);
-			pEntity K = (pVertex)face->get(0,2);
-
-			pSimPar->getLocalNodeIDNumbering(I,tag,row_I);
-			pSimPar->getLocalNodeIDNumbering(J,tag,row_J);
-			pSimPar->getLocalNodeIDNumbering(K,tag,row_K);
-
-			// get nodal pressure
-			double pressure_I = pPPData->getPressure(I);
-			double pressure_J = pPPData->getPressure(J);
-			double pressure_K = pPPData->getPressure(K);
-
-#ifdef _SEEKFORBUGS_
-			//if ( fabs(pressure_I) > 0.0 || fabs(pressure_J) > 0.0 || fabs(pressure_K) > 0.0 ) check1=true;
-#endif
-
-			pPPData->get_pw_Grad(dom_counter,row_I,pw_grad_I);
-			pPPData->get_pw_Grad(dom_counter,row_J,pw_grad_J);
-			pPPData->get_pw_Grad(dom_counter,row_K,pw_grad_K);
-			for (int i=0; i<3; i++){
-				pw_grad_I[i] += ((6.*pressure_I + pressure_J + pressure_K)/8.0)*Dij[i];
-				pw_grad_J[i] += ((pressure_I + 6.*pressure_J + pressure_K)/8.0)*Dij[i];
-				pw_grad_K[i] += ((pressure_I + pressure_J + 6.*pressure_K)/8.0)*Dij[i];
-			}
-			pPPData->set_pw_Grad(dom_counter,row_I,pw_grad_I);
-			pPPData->set_pw_Grad(dom_counter,row_J,pw_grad_J);
-			pPPData->set_pw_Grad(dom_counter,row_K,pw_grad_K);
-		}
-	}
-	FIter_delete(fit);
+//	int row_I, row_J, row_K;
+//	double pw_grad_I[3], pw_grad_J[3],  pw_grad_K[3], Dij[3];
+//	pEntity face;
+//	FIter fit = M_faceIter(theMesh);
+//	while ( (face = FIter_next(fit)) ){
+//		if ( !theMesh->getRefinementDepth(face) && pGCData->getDij(face,dom,Dij) ){
+//
+//			// get nodes I, J and K
+//			pEntity I = (pVertex)face->get(0,0);
+//			pEntity J = (pVertex)face->get(0,1);
+//			pEntity K = (pVertex)face->get(0,2);
+//
+//			pSimPar->getLocalNodeIDNumbering(I,tag,row_I);
+//			pSimPar->getLocalNodeIDNumbering(J,tag,row_J);
+//			pSimPar->getLocalNodeIDNumbering(K,tag,row_K);
+//
+//			// get nodal pressure
+//			double pressure_I = pPPData->getPressure(I);
+//			double pressure_J = pPPData->getPressure(J);
+//			double pressure_K = pPPData->getPressure(K);
+//
+//#ifdef _SEEKFORBUGS_
+//			//if ( fabs(pressure_I) > 0.0 || fabs(pressure_J) > 0.0 || fabs(pressure_K) > 0.0 ) check1=true;
+//#endif
+//
+//			pPPData->get_pw_Grad(dom_counter,row_I,pw_grad_I);
+//			pPPData->get_pw_Grad(dom_counter,row_J,pw_grad_J);
+//			pPPData->get_pw_Grad(dom_counter,row_K,pw_grad_K);
+//			for (int i=0; i<3; i++){
+//				pw_grad_I[i] += ((6.*pressure_I + pressure_J + pressure_K)/8.0)*Dij[i];
+//				pw_grad_J[i] += ((pressure_I + 6.*pressure_J + pressure_K)/8.0)*Dij[i];
+//				pw_grad_K[i] += ((pressure_I + pressure_J + 6.*pressure_K)/8.0)*Dij[i];
+//			}
+//			pPPData->set_pw_Grad(dom_counter,row_I,pw_grad_I);
+//			pPPData->set_pw_Grad(dom_counter,row_J,pw_grad_J);
+//			pPPData->set_pw_Grad(dom_counter,row_K,pw_grad_K);
+//		}
+//	}
+//	FIter_delete(fit);
 }
 }

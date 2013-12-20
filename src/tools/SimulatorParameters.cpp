@@ -355,8 +355,8 @@ namespace PRS{
 		// 		allowPrintingVTK = true;
 		// 	#endif
 		
-		allowPrintingVTK=true;
-		allowPrintingVTK = true;
+//		allowPrintingVTK=true;
+//		allowPrintingVTK = true;
 		if (allowPrintingVTK){
 			static int theStep = getStepOutputFile();
 			char fname[256];

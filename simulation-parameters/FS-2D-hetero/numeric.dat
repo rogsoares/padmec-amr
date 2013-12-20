@@ -37,10 +37,10 @@ where i = processor-rank-number and N = number-of-processors
 You MUST provide only filename, i.e, filename = (filename-i-of-N.dat) - (-i-of-N.dat)
 
 mesh filename:
-/home/rogerio/projetos/TwoPhase_Adaptation/simulation-parameters/FS-2D-hetero/pp-data-files/Helming-2D-769Nodes.msh
+/home/rogerio/projetos/GOOGLE_CODES/padmec-amr/trunk/simulation-parameters/FS-2D-hetero/pp-data-files/Helming-2D.msh
 
 export filename (to VTK format without extension .vtk):
-/home/rogerio/projetos/TwoPhase_Adaptation/simulation-parameters/FS-2D-hetero/results/Helming-2D-769Nodes
+/home/rogerio/projetos/GOOGLE_CODES/padmec-amr/trunk/simulation-parameters/FS-2D-hetero/results/Helming-2D
 
 Start simulation from <restart> file?
 () yes. Type file:/home/rogerio/Dropbox/medwards/case1-transv/transv_1stO__converted_0-of-1__step-9.vtk
@@ -80,7 +80,7 @@ Ex.: Q = 1e-2, Vt = 0.05, Vp = 0.01, PVI = 1.0, t = PVI*(Vt*phi)/Q = 1
 
 Provide PVI number to specify simulation time duration
 simulation-time:
-.2
+.1
 
 
 Specify velocity variation tolerance for time adaptative IMPES simulation

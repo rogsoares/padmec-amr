@@ -15,14 +15,13 @@ struct PADMEC_mesh{
 	double *field2;
 };
 
-
+enum FIELD {PRESSURE, SATURATION};
 
 const double pi = 3.14159265359;
 
 double F_area(const double *ptn1, const double *ptn2, const double *ptn3);
 
 double norm(const double *n);
-
 
 void setBarrier();
 
@@ -137,8 +136,8 @@ typedef SetPFunction* SetFunctionArray;
  */
 typedef double (*GetPFuncScalar)(pEntity);
 typedef void (*SetPFuncScalar)(pEntity,double);
-typedef void (*GetPFuncGrad)(int,int,double*);
-typedef void (*SetPFuncGrad)(int,int,double*);
+typedef void (*GetPFuncGrad)(pVertex,int,int,double*);
+typedef void (*SetPFuncGrad)(pVertex,int,int,double*);
 
 typedef GetPFuncScalar* GetFuncScalarArray;
 typedef SetPFuncScalar* SetFuncScalarArray;
@@ -199,4 +198,7 @@ void PADMEC_GAMBIARRA(pMesh m);
 void checkNumEdges(pMesh, int, char*);
 void checkMesh(pMesh m);
 void calculateNumFacesAroundVertices(pMesh m, std::map<int,int> &facesAroundVertices);
+void readmesh(pMesh m,char* filename);
+void getdomains(pMesh m, int &n, int* domlist);
+
 #endif /*AUXILIAR_H_*/

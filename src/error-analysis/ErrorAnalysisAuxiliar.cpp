@@ -133,8 +133,8 @@ void ErrorAnalysis::store_h_new(pMesh theMesh){
 		i++;
 	}
 	VIter_delete(vit);
-	cout << "M_numVertices(theMesh): " << M_numVertices(theMesh) << endl;
-	cout << "store_h_new: num. nodes not singular: " << c << endl;
+//	cout << "M_numVertices(theMesh): " << M_numVertices(theMesh) << endl;
+//	cout << "store_h_new: num. nodes not singular: " << c << endl;
 }
 
 void ErrorAnalysis::update_h_new(pMesh theMesh){
@@ -164,6 +164,12 @@ void ErrorAnalysis::initializeParameters(pMesh theMesh){
 	resetNumFacesAroundNode(theMesh);
 	countNumFaceAroundNode(theMesh,false);
 	calculate_CharacteristicDimensionLength(theMesh);
+	this->SGN = .0;
+	this->SGN_sing = .0;
+	this->averageError = .0;
+	this->averageError_Singularity = .0;
+	this->globalError = .0;
+	this->globalError_Singularity = .0;
 
 	static bool EA_key = true;												// Use elements heigths to define a minimum allowed element heigh for remesh.
 	if (EA_key){															// This must be done for the very first time only.
@@ -259,7 +265,6 @@ double ErrorAnalysis::calculate_ErrorSum(pMesh theMesh, bool excludingSingularit
 		FIter_delete(fit);
 		}
 		else{
-		//if (excludingSingularities){
 			FIter fit = M_faceIter (theMesh);
 			while ( (face = FIter_next(fit)) ){
 				if(!theMesh->getRefinementDepth(face) && !this->isSingular(face)){
@@ -358,51 +363,40 @@ void ErrorAnalysis::calculate_MaxMinErrorData(pMesh theMesh){
 	this->setMinRefinementFlag(minRefLevel);
 }
 
-void ErrorAnalysis::monitoring(pMesh theMesh, double tol1, double tol2){
+void ErrorAnalysis::monitoring(FIELD field,pMesh theMesh, double tol1, double tol2){
 	static int i = 0;
-	if (!adapt){
-		i = 0;
-	}
-//	if (i>5){
-//		throw Exception(__LINE__,__FILE__,"Mesh has been adapted more than 5 times and error is still greater than tolerance!");
-//	}
 	static bool openfile = true;
 	if (openfile){
-		fid.open("Error_Analysis_Monitor.txt");
-		
-		fid << "                            ERROR ANALISYS MONITOR\n"
-		"================================================================================\n"
-		"Legend:\n"
-		"i              Number of steps until adaptation is not necessary anymore\n"
-		"tol1           Tolerance for all elements\n"
-		"tol2           Tolerance for all elements not flagged as singular\n"
-		"GE             GlobalError\n"
-		"SGN            Smoothe Gradient Norm\n"
-		"GE_S           GlobalError Excluding Singularities\n"
-		"SGN_S          Smoothe Gradient Norm Excluding Singularity\n"
-		"ME             Mean Error\n"
-		"ME_S           Mean Error Excluding Singulariry\n"
-		"Adapt          0 - adaptation unecessary; 1 - adaptation necessary"
-		"#Elm           Number of Elements\n"
-		"================================================================================\n\n"
-		"--------------------------------------------------------------------------------------------------------------------------------------------------------------\n"
-		"i   tol1              tol2              GE              SGN             GE_S             SGN_S            ME              ME_S            Adapt            #Elm\n"
-		"--------------------------------------------------------------------------------------------------------------------------------------------------------------\n";
-		//		fid << "GlobalError   SmootheGradNorm     SmootheGradNorm_singularity    MeanError  MeanError_singulariry  numElements\n\n";
+		fid.open("Error_Analysis_Monitor.csv");
+		fid << "---------------------------------------------------------------------------------------------------------------------------------------------------------\n"
+			   "  Property    tol1       tol2      GError       SGradNorm     GError_sing    SGradNorm_sing      MError        MError_sing        Adapt      MeshElements\n"
+			   "---------------------------------------------------------------------------------------------------------------------------------------------------------\n";
 		openfile = false;
 	}
-	fid << setprecision(5) << scientific;
-	fid << ++i << "   " 
+
+	string str;
+	switch (field){
+	case PRESSURE:
+		str = "     P";
+		break;
+	case SATURATION:
+		str = "    Sw";
+		break;
+	}
+	string	str1 = (adapt)?"Y":"N";
+	fid << setprecision(2) << scientific;
+	fid << str << "      "
 	<< tol1 << "   " 
-	<< tol2 << "   " 
-	<< getGlobalError() << "     " 
+	<< tol2 << "  "
+	<< setprecision(5)
+	<< getGlobalError() << "   "
 	<< getSmoothedGradNorm() << "     "
 	<< getGlobalError_Singularity() << "     " 
-	<<  getSmoothedGradNorm_Singularity() << "     " 
+	<< getSmoothedGradNorm_Singularity() << "     "
 	<< getAverageError() << "     "
-	<<  getAverageError_Singularity() << "     " 
-	<<  adapt << "     "
-	<< getNumElements() << endl;
+	<< getAverageError_Singularity() << "          "
+	<< str1 << "           "
+	<< M_numFaces(theMesh) << endl;
 }
 
 void getMaxMinData(pMesh theMesh, pEntity elem, ErrorAnalysis* pEA, int &maxDepth, int &maxRefLevel, int &minRefLevel){
@@ -451,7 +445,7 @@ void ErrorAnalysis::getRefUnrefElementsList(pMesh theMesh, std::list<pEntity> &e
 	double param1 = _pSimPar->Remeshing_param1();
 	double param2 = _pSimPar->Remeshing_param2();
 	printf("param1: %.5f\tparam2: %.5f\n",param1,param2);
-	double avgError, h_old, h_new, error;
+	double h_old, h_new;
 	if (!theMesh){
 		throw Exception(__LINE__,__FILE__,"NULL Mesh!");
 	}

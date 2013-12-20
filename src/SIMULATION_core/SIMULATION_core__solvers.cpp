@@ -8,9 +8,6 @@
 #include "SIMULATION_core.h"
 #include <sstream>
 
-void readmesh(pMesh m,char* filename);
-void setMeshFile();
-
 namespace PRS{
 
 	int SIMULATION_core::solver(){
@@ -107,7 +104,9 @@ namespace PRS{
 			pSimPar->printOutVTK(pIData->m1,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
 			if ( pSimPar->userRequiresAdaptation() ){
 				adapt = calculate_ErrorAnalysis(pErrorAnalysis,theMesh,pSimPar,tol1,tol2,pPPData->get_getPFuncArray(),numFields);
+				//STOP();
 				//pSimPar->printOutVTK(pIData->m1,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
+				//adapt=false;
 				if (adapt){
 					makeMeshCopy2(pIData->m1,pm,pPPData->getPressure,pPPData->getSaturation_Old);
 					pMeshAdapt->rodar(pErrorAnalysis,pIData->m1);
@@ -142,119 +141,3 @@ namespace PRS{
 		return 0;
 	}
 }
-
-void setMeshFile(){
-
-	pMesh m;
-	m = MS_newMesh(0);
-
-	readmesh(m,"Final_01.msh");
-	PADMEC_GAMBIARRA(m);
-
-	double coords[3];
-	ofstream fid;
-	fid.open("AdaptedMesh.msh");
-	fid << "$NOD\n";
-	fid << M_numVertices(m) << endl;
-	VIter vit = M_vertexIter(m);
-	pEntity node;
-	while( (node = VIter_next(vit)) ){
-		V_coord(node,coords);
-		fid << EN_id(node) << " " << coords[0] << " " << coords[1]<< " " << coords[2] << endl;
-	}
-	VIter_delete(vit);
-	fid << "$ENDNOD\n$ELM\n";
-
-	// count elements flagged
-	std::list<pEntity> flaggedVertices;
-	vit = M_vertexIter(m);
-	while( (node = VIter_next(vit)) ){
-		if ( node->getClassification() ){
-			int flag = GEN_tag(node->getClassification());
-			cout << flag << endl;
-			if ( flag==51 || flag==10 || flag==1100 ){
-				flaggedVertices.push_back(node);
-			}
-		}
-	}
-	VIter_delete(vit);
-	std::list<pEntity> flaggedEdges;
-	pEntity edge;
-	EIter eit = M_edgeIter(m);
-	while( (edge = EIter_next(eit)) ){
-		if ( edge->getClassification() ){
-			int flag = GEN_tag(edge->getClassification());
-			if ( flag==2000 ){
-				flaggedEdges.push_back(edge);
-			}
-		}
-	}
-	EIter_delete(eit);
-
-	fid << (int)flaggedVertices.size() + (int)flaggedEdges.size() + M_numFaces(m) << endl;
-	int k = 0;
-	std::list<pEntity>::iterator iter;
-	for(iter=flaggedVertices.begin(); iter != flaggedVertices.end(); iter++){
-		fid << ++k << " 15 " << GEN_tag((*iter)->getClassification()) << " 1 1 " << EN_id(*iter) << endl;
-	}
-	for(iter=flaggedEdges.begin(); iter != flaggedEdges.end(); iter++){
-		fid << ++k << " 1 2000 1 2 " << EN_id((*iter)->get(0,0)) << " " << EN_id((*iter)->get(0,1)) << endl;
-	}
-	pEntity face;
-	FIter fit = M_faceIter(m);
-	while( (face = FIter_next(fit)) ){
-		fid << ++k << " 2 3300 1 3 " << EN_id(face->get(0,0)) << " " << EN_id(face->get(0,1)) << " " << EN_id(face->get(0,2)) << endl;
-	}
-	FIter_delete(fit);
-	fid << "$ENDELM\n";
-	fid.close();
-}
-
-void readmesh(pMesh m,char* filename){
-	cout << "Lendo malha... ";
-	ifstream fid;
-	fid.open(filename);
-	int NbNod;
-	int iNod;
-	double x,y,z;
-	char line[256];
-	fid.getline (line,256);
-	fid >> NbNod;
-	cout << "\nNodes: " << NbNod << endl;
-	for(int i=0;i<NbNod;i++){
-		fid >> iNod >> x >> y >> z;
-		m->createVertex(iNod,x,y,z,0);
-	}
-	fid.getline (line,256);
-	fid.getline (line,256);
-	fid.getline (line,256);
-	fid >> NbNod;
-	cout << "\nElements: " << NbNod << endl;
-	int face_id = 0;
-	for (int i=0; i<NbNod; i++){
-		int iNbNod,iTyp,iGrp,iElm,iNbSub,id;
-		mVertex *nod[100];
-		fid >> iElm >> iTyp >> iGrp >> iNbSub >> iNbNod;
-		for(int i=0;i<iNbNod;i++){
-			fid >> id;
-			nod[i] = m->getVertex(id);
-		}
-
-		mEntity *theEntity = 0;
-		switch(iTyp){
-		case 2 :
-			theEntity = m->createFaceWithVertices(nod[0],nod[1],nod[2],m->getGEntity(iGrp,2));
-			EN_setID((pEntity)theEntity,++face_id);
-			break;
-		case 1 :
-			theEntity = m->createEdge(nod[0],nod[1],m->getGEntity(iGrp,1));
-			break;
-		case 15 :
-			mVertex *v = nod[0];{
-				v->classify(m->getGEntity(iGrp,0));
-			}
-		}
-	}
-	cout << "OK!\n";
-}
-

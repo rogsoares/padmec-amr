@@ -30,7 +30,7 @@ namespace PRS{
 	VIter vit = M_vertexIter(theMesh);
 	while ( (node = VIter_next(vit)) ){
 		pStruct->pSimPar->getLocalNodeIDNumbering(node,tag,row_I);
-		pStruct->pPPData->get_pw_Grad(dom_counter,row_I,pw_grad_I);
+		pStruct->pPPData->get_pw_Grad(node,dom_counter,row_I,pw_grad_I);
 		if ( fabs(pw_grad_I[0])<1e-8 && fabs(pw_grad_I[1])<1e-8 ){
 			char msg[256]; sprintf(msg,"Gradient has all its componets null for node %d\n",EN_id(node));
 			throw Exception(__LINE__,__FILE__,msg);
@@ -60,8 +60,8 @@ namespace PRS{
 
 			pStruct->pSimPar->getLocalNodeIDNumbering(I,tag,row_I);
 			pStruct->pSimPar->getLocalNodeIDNumbering(J,tag,row_J);
-			pStruct->pPPData->get_pw_Grad(dom_counter,row_I,pw_grad_I);
-			pStruct->pPPData->get_pw_Grad(dom_counter,row_J,pw_grad_J);
+			pStruct->pPPData->get_pw_Grad(I,dom_counter,row_I,pw_grad_I);
+			pStruct->pPPData->get_pw_Grad(J,dom_counter,row_J,pw_grad_J);
 			for (i=0; i<dim; i++){
 				pw_grad_IJ[i] = .5*(pw_grad_I[i] + pw_grad_J[i]);
 			}
