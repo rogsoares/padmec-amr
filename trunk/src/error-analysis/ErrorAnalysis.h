@@ -63,9 +63,9 @@ public:
 	}
 
 	//calculate functions
-	virtual void calculate_ElementsError(pMesh theMesh, SimulatorParameters *pSimPar, GetPFuncGrad) = 0;
-	virtual void calculate_SmoothedGradientNorm(pMesh, SimulatorParameters *pSimPar, GetPFuncGrad) = 0;
-	virtual void calculate_SmoothedGradientNorm_Singularity(pMesh, SimulatorParameters *pSimPar, GetPFuncGrad) = 0;
+	virtual void calculate_ElementsError(pMesh theMesh, SimulatorParameters *pSimPar, GetPFuncGrad,FIELD) = 0;
+	virtual void calculate_SmoothedGradientNorm(pMesh, SimulatorParameters *pSimPar, GetPFuncGrad,FIELD) = 0;
+	virtual void calculate_SmoothedGradientNorm_Singularity(pMesh, SimulatorParameters *pSimPar, GetPFuncGrad,FIELD) = 0;
 	virtual void calculate_CharacteristicDimensionLength(pMesh) = 0;
 	virtual void calculate_DegreeOfRefinement(pMesh, SimulatorParameters *, int, int, bool) = 0;
 
@@ -89,7 +89,7 @@ public:
 	int getMinRefinementFlag() const { return minRefFlag; }
 
 	//!brief write on file error analysis data
-	void monitoring(pMesh theMesh,double,double);
+	void monitoring(FIELD, pMesh theMesh,double,double);
 	
 	
 	// Remeshing: store h_new weighted per node (for multi-field problems: pressure, saturation, etc, it stores only the smallest)

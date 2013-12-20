@@ -277,7 +277,7 @@ void print_pw_GradientNorm(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAn
 			double norm_1 = .0;
 			for (int i=0;i<3;i++){
 				pSimPar->getLocalNodeIDNumbering(face->get(0,i),tag,row);
-				pPPData->get_pw_Grad(dom_counter,row,grad);
+				//pPPData->get_pw_Grad(dom_counter,row,grad);
 				double norm_0 = .0;
 				for (int j=0;j<dim;j++){
 					norm_0 += grad[j]*grad[j];
@@ -305,7 +305,7 @@ void print_Sw_GradientNorm2(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorA
 	VIter vit = M_vertexIter(theMesh);
 	while( (node = VIter_next(vit)) ){
 		pSimPar->getLocalNodeIDNumbering(node,tag,row);
-		pPPData->get_Sw_Grad(dom_counter,row,grad);
+		//pPPData->get_Sw_Grad(dom_counter,row,grad);
 		double norm_0 = .0;
 		for (int j=0;j<2;j++){
 			norm_0 += grad[j]*grad[j];
@@ -330,7 +330,7 @@ void print_Sw_GradientNorm(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAn
 			double norm_1 = .0;
 			for (int i=0;i<3;i++){
 				pSimPar->getLocalNodeIDNumbering(face->get(0,i),tag,row);
-				pPPData->get_Sw_Grad(dom_counter,row,grad);
+				//pPPData->get_Sw_Grad(dom_counter,row,grad);
 				double norm_0 = .0;
 				for (int j=0;j<dim;j++){
 					norm_0 += grad[j]*grad[j];
@@ -344,23 +344,23 @@ void print_Sw_GradientNorm(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAn
 	FIter_delete(fit);
 }
 
-void print_Swgrad(ofstream &fid, pMesh theMesh, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData){
-	fid << "VECTORS Sw_grad float\n";
-	pEntity node;
-	double grad[3];
-	int dom_counter = 0; // one domain for while (soon multiple domains)
-	int row;
-	//int dim = theMesh->getDim();
-	char tag[4]; sprintf(tag,"%d",dom_counter);
-
-	VIter vit = M_vertexIter(theMesh);
-	while( (node = VIter_next(vit)) ){
-		pSimPar->getLocalNodeIDNumbering(node,tag,row);
-		pPPData->get_Sw_Grad(dom_counter,row,grad);
-		fid << grad[0] << " " << grad[1] << " .0\n";
-	}
-	VIter_delete(vit);
-}
+//void print_Swgrad(ofstream &fid, pMesh theMesh, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData){
+//	fid << "VECTORS Sw_grad float\n";
+//	pEntity node;
+//	double grad[3];
+//	int dom_counter = 0; // one domain for while (soon multiple domains)
+//	int row;
+//	//int dim = theMesh->getDim();
+//	char tag[4]; sprintf(tag,"%d",dom_counter);
+//
+//	VIter vit = M_vertexIter(theMesh);
+//	while( (node = VIter_next(vit)) ){
+//		pSimPar->getLocalNodeIDNumbering(node,tag,row);
+//		pPPData->get_Sw_Grad(dom_counter,row,grad);
+//		fid << grad[0] << " " << grad[1] << " .0\n";
+//	}
+//	VIter_delete(vit);
+//}
 
 void print_pwgrad(ofstream &fid, pMesh theMesh, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData){
 	fid << "VECTORS p_grad float\n";
@@ -374,7 +374,7 @@ void print_pwgrad(ofstream &fid, pMesh theMesh, PRS::SimulatorParameters *pSimPa
 	VIter vit = M_vertexIter(theMesh);
 	while( (node = VIter_next(vit)) ){
 		pSimPar->getLocalNodeIDNumbering(node,tag,row);
-		pPPData->get_pw_Grad(dom_counter,row,grad);
+		//pPPData->get_pw_Grad(dom_counter,row,grad);
 		fid << grad[0] << " " << grad[1] << " .0\n";
 	}
 	VIter_delete(vit);
