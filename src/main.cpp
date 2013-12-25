@@ -16,15 +16,19 @@ int main(int argc, char **argv){
 	PRS::SIMULATION_core sim;
 	try{
 		sim.initialize(argc,argv);
+		double t1 = MPI_Wtime();
 		sim.solver();
+		double t2 = MPI_Wtime();
+
+		double h,m,s;
+		convertSecToTime(t2-t1,&h,&m,&s);
+		cout << setprecision(0) << fixed << "\n\nCPU time elapsed: " << h << "h " << m << "m " << s << "s\n\n";
 	}
 	catch (Exception excp) {
 		excp.showExceptionMessage();
 	}
 
-	/*
-	 * If an exception is thrown, finalize all necessary things before terminate running.
-	 */
+	// If an exception is thrown, finalize all necessary things before terminate running.
 	sim.finalize();
 	return 0;
 }
