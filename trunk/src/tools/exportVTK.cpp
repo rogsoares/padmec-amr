@@ -26,8 +26,9 @@ void exportSolutionToVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3
 	fid << "POINTS " << M_numVertices(theMesh) << " float\n";
 
 	int dim = theMesh->getDim();
-	pErrorAnalysis->countElements(theMesh,false);
-	int numElements = pErrorAnalysis->getNumElements();
+	//pErrorAnalysis->countElements(theMesh,false);
+	//int numElements = pErrorAnalysis->getNumElements();
+	int numElements = M_numFaces(theMesh);
 	
 	if (!numElements){
 	  throw Exception(__LINE__,__FILE__,"Number of elements NULL!");
@@ -41,9 +42,9 @@ void exportSolutionToVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3
 	fid << "\nPOINT_DATA "<< M_numVertices(theMesh) << endl;
 	printPressure(fid,theMesh,pPPData);
 	printSaturation(fid,theMesh,pPPData);
-	printNonVisc(fid,theMesh,pPPData);
+//	printNonVisc(fid,theMesh,pPPData);
 	
-
+#ifndef NOADAPTATION
 	if ( pSimPar->userRequiresAdaptation() ){
 		///	nodal field
 		print_Sw_GradientNorm2(fid,theMesh,pErrorAnalysis,pSimPar,pPPData);
@@ -64,6 +65,7 @@ void exportSolutionToVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3
 	//	print_pw_GradientNorm(fid,theMesh,pErrorAnalysis,pSimPar,pPPData);
 	//	print_Sw_GradientNorm(fid,theMesh,pErrorAnalysis,pSimPar,pPPData);
 	}
+#endif
 
 	fid.close();
 }

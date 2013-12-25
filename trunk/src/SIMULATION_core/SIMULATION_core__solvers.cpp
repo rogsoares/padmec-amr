@@ -34,18 +34,21 @@ namespace PRS{
 	 */
 	int SIMULATION_core::steadyState(){
 		PetscPrintf(PETSC_COMM_WORLD,"\n\nStart simulation:\n-----------------------------------------------\n");
-		bool adapt;
+#ifndef NOADAPTATION
 		double tol1 = pSimPar->getToleranceForAllElements();
 		double tol2 = pSimPar->getToleranceForAllElements_excludingSingularities();
 		int numFields = 1;
-	
-		pPPData->setSimulationState(false);
 		pIData->m1 = theMesh;
 		PADMEC_mesh *pm = new PADMEC_mesh;
+#endif
+		bool adapt = false;
+		pPPData->setSimulationState(false);
 		int count = 0;
 
 		do{
 			pElliptic_eq->solver(theMesh);
+			pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
+#ifndef NOADAPTATION
 			adapt = calculate_ErrorAnalysis(pErrorAnalysis,theMesh,pSimPar,tol1,tol2,pPPData->get_getPFuncArray(),numFields);
 			pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
 			if ( adapt ){
@@ -61,7 +64,6 @@ namespace PRS{
 				cout<< "Interpolador"<<endl;
 				interpolation(pIData,pSimPar->getInterpolationMethod());
 				pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
-				//STOP();
 				EBFV1_preprocessor(pIData->m1,pGCData);
 	#ifdef __ADAPTATION_DEBUG__
 				validate_EBFV1(pGCData,pIData->m1,pSimPar->setOfDomains);
@@ -76,8 +78,8 @@ namespace PRS{
 				pIData->m2 = MS_newMesh(0);
 			}
 			count++;
+#endif
 		}while (adapt);
-
 		PetscPrintf(PETSC_COMM_WORLD,"\n\nEnd of simulation:\n-----------------------------------------------\n");
 		cout<< "Loops :"<< count <<endl;
 		return 0;
@@ -85,10 +87,7 @@ namespace PRS{
 	
 	int SIMULATION_core::transient(){
 		PetscPrintf(PETSC_COMM_WORLD,"\n\nStart simulation:\n-----------------------------------------------\n");
-		LogFiles(OPENLG,0,0,0,0,pSimPar->getOutputPathName(),pSimPar->useRestart(),pSimPar->getTStepNumber(),pSimPar->getCPU_time());
-
-		double timeStep;
-		double time_step_summation = .0;
+#ifndef NOADAPTATION
 		double adaptStep = 0;				// performs mesh adaptation every 20 timeSteps
 		bool adapt;
 		double tol1 = pSimPar->getToleranceForAllElements();
@@ -96,17 +95,17 @@ namespace PRS{
 		int numFields = 2;
 		pIData->m1 = theMesh;
 		PADMEC_mesh *pm = new PADMEC_mesh;
-
+#endif
+		LogFiles(OPENLG,0,0,0,0,pSimPar->getOutputPathName(),pSimPar->useRestart(),pSimPar->getTStepNumber(),pSimPar->getCPU_time());
+				double timeStep;
+				double time_step_summation = .0;
 		while ( !pSimPar->finishSimulation() ){
 			pElliptic_eq->solver(theMesh);
-			pSimPar->printOutVTK(pIData->m1,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
 			pHyperbolic_eq->solver(theMesh,timeStep);
-			pSimPar->printOutVTK(pIData->m1,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
+			pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
+#ifndef NOADAPTATION
 			if ( pSimPar->userRequiresAdaptation() ){
 				adapt = calculate_ErrorAnalysis(pErrorAnalysis,theMesh,pSimPar,tol1,tol2,pPPData->get_getPFuncArray(),numFields);
-				//STOP();
-				//pSimPar->printOutVTK(pIData->m1,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
-				//adapt=false;
 				if (adapt){
 					makeMeshCopy2(pIData->m1,pm,pPPData->getPressure,pPPData->getSaturation_Old);
 					pMeshAdapt->rodar(pErrorAnalysis,pIData->m1);
@@ -119,7 +118,6 @@ namespace PRS{
 					PADMEC_GAMBIARRA(pIData->m1);
 					cout<< "Interpolador"<<endl;
 					interpolation(pIData,pSimPar->getInterpolationMethod());
-					//pInterpolateData(pIData);
 					EBFV1_preprocessor(pIData->m1,pGCData);
 
 					#ifdef __ADAPTATION_DEBUG__
@@ -135,9 +133,8 @@ namespace PRS{
 					pIData->m2 = MS_newMesh(0);
 				}
 			}
+#endif
 		}
-
-		PetscPrintf(PETSC_COMM_WORLD,"\n\nEnd of simulation:\n-----------------------------------------------\n");
 		return 0;
 	}
 }

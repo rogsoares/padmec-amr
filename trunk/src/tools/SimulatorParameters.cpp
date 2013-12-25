@@ -85,12 +85,13 @@ namespace PRS{
 	}
 	
 	bool SimulatorParameters::finishSimulation(){
+		std:: cout << setprecision(2) << fixed;
 		if (!stop_simulation || (getAccumulatedSimulationTime() >= getSimTime()) ){
 			if (!P_pid()){
 				std::cout << "#################################\n";
 				std::cout << "Simulation " << (double)100.0*getAccumulatedSimulationTime()/getSimTime() << "% concluded.\n";
 				std::cout << "End of Simulation\n";
-				std::cout << "#################################\n\n\n";
+				std::cout << "#################################\n";
 			}
 			return 1;
 		}

@@ -22,8 +22,7 @@ namespace PRS{
 		while ( (node = VIter_next(vit)) ){
 			int id = EN_id(node);
 			int well_flag = GEN_tag(node->getClassification());
-			
-			if ( Sw != 1.0 ){
+			//if ( Sw != 1.0 ){
 				if ( !pStruct->pSimPar->isInjectionWell(well_flag) && !pStruct->pSimPar->isProductionWell(well_flag) ){
 					Sw_old = pStruct->pPPData->getSaturation(node);
 					nonvisc = pStruct->pPPData->getNonViscTerm(node);
@@ -36,11 +35,6 @@ namespace PRS{
 					// calculate new saturation value
 					Sw = Sw_old - (delta_T/wp)*nonvisc;
 					if ( Sw<1.0e-6 ) Sw = .0;
-					
-// 					if (id == 22){
-// 						printf("delta_T: %f\twv: %f\tnonvisc: %f\n",delta_T,wp,nonvisc);
-// 					}
-					
 					pStruct->pPPData->setSaturation(node,Sw);
 					
 					if (Sw > 1.01 || Sw < .0){
@@ -48,15 +42,13 @@ namespace PRS{
 						throw Exception(__LINE__,__FILE__,msg);
 					}
 				}
-			}
+			//}
 		}
 		VIter_delete(vit);
 		return 0;
 	}
 	
-	
 	// Advance time for nodes in production well
-	// =========================================================================
 	void EBFV1_hyperbolic::nodeWith_Wells(pMesh theMesh, double delta_T){
 		cout << "nodeWith_Wells\n";
 		const int N = pStruct->pSimPar->getWellTimeDiscretion(); ///  1000;								// magic number :)
@@ -67,7 +59,6 @@ namespace PRS{
 		pVertex node;
 		
 		if ( pStruct->pSimPar->rankHasProductionWell() ){
-			
 			// FOR EACH PRODUCTION WELL
 			map<int,set<int> >::iterator miter;
 			for ( miter=pStruct->pSimPar->mapNodesOnWell.begin(); miter!=pStruct->pSimPar->mapNodesOnWell.end(); miter++){
@@ -80,7 +71,6 @@ namespace PRS{
 					Vt = pStruct->pSimPar->getWellVolume(well_flag);
 					
 					// FOR EACH NODE ON PRODUCTION WELL
-					//int II = 0;
 					for (SIter siter = miter->second.begin(); siter!=miter->second.end();siter++){
 						node_ID = *siter;
 						node = (mEntity*)theMesh->getVertex( node_ID );
@@ -94,20 +84,18 @@ namespace PRS{
 						for (SIter_const dom=pStruct->pSimPar->setDomain_begin(); dom!=pStruct->pSimPar->setDomain_end(); dom++){
 							pVertex node = (mEntity*)theMesh->getVertex( node_ID );
 							volume = pGCData->getVolume(node,*dom);
-							nrc = 1.0;//pGCData->getNumRemoteCopies(node) + 1.0;
-							Vi += volume/nrc;
+//							nrc = 1.0;//pGCData->getNumRemoteCopies(node) + 1.0;
+							Vi += volume;///nrc;
 						}
 						
 						#ifdef _SEEKFORBUGS_
 						if ( fabs(wp)==0.0 || fabs(Vi)==0.0 || fabs(Vt)==0.0 || fabs(Qt)==0.0 )
-							//throw Exception(__LINE__,__FILE__,"Volume cannot be null.\n");
+							throw Exception(__LINE__,__FILE__,"Volume cannot be null.\n");
 							#endif
 							
-							// Fluid (water+oil) flow rate through node i
-							Qi = Qt*(Vi/Vt);
+							Qi = Qt*(Vi/Vt);	// Fluid (water+oil) flow rate through node i
 						
 						// FOR 'N' WELL TIME-STEPS
-						// =========================================================================
 						for (i=0; i<N; i++){
 							Sw0 = Sw_old - (dt_well/wp)*(nonvisc);
 							fw = pStruct->pPPData->getFractionalFlux(Sw0);

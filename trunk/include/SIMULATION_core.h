@@ -2,12 +2,15 @@
 #define _IMPES_FORMULATION_H_
 
 #include "solverEquation_methods.h"
+#include "EBFV1__pre-processors.h"
+
+//#ifndef NOADAPTATION
 #include "RH_Refinement.h"
 #include "H_Refinement_2D.h"
 #include "AdaptiveRemeshing.h"
 #include "ErrorAnalysis_2D.h"
 #include "interpolation.h"
-#include "EBFV1__pre-processors.h"
+//#endif
 
 //!PRS: Petroleum Reservoir Simulator
 namespace PRS

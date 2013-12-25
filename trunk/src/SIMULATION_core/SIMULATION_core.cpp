@@ -6,7 +6,6 @@ SIMULATION_core::SIMULATION_core(){
 	pElliptic_eq = 0;
 	pHyperbolic_eq = 0;
 	theMesh = MS_newMesh(0);
-	//pMeshAdapt = NULL;
 }
 
 SIMULATION_core::~SIMULATION_core(){
@@ -57,10 +56,9 @@ int SIMULATION_core::initialize(int argc, char **argv){
 		}
 
 		// 2- Error Analysis Pointer
-		// ----------------------------------------------------------------------------------
+#ifndef NOADAPTATION
 		pErrorAnalysis = new ErrorAnalysis_2D;
 		pIData = new InterpolationDataStruct;
-
 		pIData->getLevelOfRefinement = ErrorAnalysis::getLevelOfRefinement;
 		pIData->numFields = 2;
 		pIData->pGetDblFunctions = new GetDblFunction[2];
@@ -71,7 +69,6 @@ int SIMULATION_core::initialize(int argc, char **argv){
 		pIData->pSetDblFunctions[1] = pPPData->setSaturation;
 		pIData->m2 = MS_newMesh(0);
 
-		//switch( pSimPar->getRefStrategy() ){
 		switch( pSimPar->getRefStrategy() ){
 		case H_REFINEMENT:
 			pMeshAdapt = new H_Refinement_2D;
@@ -86,39 +83,7 @@ int SIMULATION_core::initialize(int argc, char **argv){
 		default:
 			throw Exception(__LINE__,__FILE__,"Unknown adaptation strategy.");
 		}
-
-//		// 3- Interpolation Function
-//		// ----------------------------------------------------------------------------------
-//				switch ( pSimPar->getInterpolationMethod() ){
-//				case h_REFINEMENT:
-//					pInterpolateData = hRefinement;
-//					break;
-//				case LINEAR:
-//					pInterpolateData = Linear;
-//					break;
-//				case QUADRATIC:
-//					pInterpolateData = Quadratic;
-//					break;
-//		//		case ADAPTATIVE:
-//		//			pInterpolateData = Adaptative;
-//		//			break;
-//		//		case CONSERVATIVE:
-//		//			pInterpolateData = Conservative;
-//		//			break;
-//		//		case PURE_INJECTION:
-//		//			pInterpolateData = PureInjection;
-//		//			break;
-//		//		case HALF_WEIGHTING:
-//		//			pInterpolateData = HalfWeighting;
-//		//			break;
-//		//		case FULL_WEIGHTING:
-//		//			pInterpolateData = FullWighting;
-//		//			break;
-//				default:
-//					throw Exception(__LINE__,__FILE__,"Interpolation method unknown. Exiting....");
-//				}
-	//}
-
+#endif
 
 	/*
 	 *  Initialization procedure based on previous loaded data from file:
@@ -130,12 +95,9 @@ int SIMULATION_core::initialize(int argc, char **argv){
 	pPPData->initialize(pMData,pSimPar,theMesh,false);
 	pMData->initialize(theMesh,pGCData);
 
-	if (!P_pid()) printf("Number of processes required: %d\n",P_size());
-
-	// If restart required, physical properties come from a specified vtk file provided by user.
-// 	if (pSimPar->useRestart()){
-// 		restartSimulation(pSimPar,pPPData,theMesh);
-// 	} 
+	if (!P_pid()){
+		printf("Number of processes required: %d\n",P_size());
+	}
 
 	/*
 	 * Oil production output
