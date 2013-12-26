@@ -1,0 +1,16 @@
+How to begin installation:
+
+1) Change script1 and script2 file permission typing:
+    chmod u=+rwx script1 script2
+
+2) Run script1 typing:
+    ./script1
+
+3) Update .bashrc typing:
+    source $HOME/.bashrc
+
+4) Run script2 typing:
+    ./script2
+
+WARNNING: These scripts drives an OPTIMIZED installation of all packages. If you are looking for a DEBUGGING installation, be my guest to change the settings.
+

@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# change permission of all .gz files and copy all them to INSTALL_APP_DIR
+chmod 644 *.gz
+cp *.gz $INSTALL_APP_DIR
+
+# go to installation directory
+cd $INSTALL_APP_DIR
+
+# unzip all archives
+for z in *.gz; 
+	do gunzip -c $z | tar -xof -;
+done
+
+# clean directory
+rm -f *.gz
+
+# begin installation
+# --------------------------------------------
+
+#  MPICH-2
+echo 'Installing MPICH2 - A high-performance and widely portable implementation of the Message Passing Interface (MPI) standard (both MPI-1 and MPI-2).'
+cd $INSTALL_APP_DIR/mpich2-1.4
+mkdir dir-install
+./configure --prefix=$INSTALL_APP_DIR/mpich2-1.4/dir-install --enable-fast=all 2>&1 | tee c.txt
+make 2>&1 | tee m.txt
+make install 2>&1 | tee mi.txt
+
+# PARMETIS
+clear
+echo 'Installing ParMETIS - Parallel Graph Partitioning and Fill-reducing Matrix Ordering'
+cd $INSTALL_APP_DIR/ParMetis-3.1
+make
+mkdir include
+mkdir lib
+cp *.a lib
+cp *.h include
+cp ParMETISLib/*.h include
+cp METISLib/*.h include
+echo 'ParMETIS installation finished'
+
+# AUTOPACK
+clear
+echo 'Installing Autopack - Message packing for MPI made easy'
+cd $INSTALL_APP_DIR
+export HOSTTYPE=i386-linux
+mkdir $INSTALL_APP_DIR/autopack/1.3.2/lib/i386-linux
+mkdir $INSTALL_APP_DIR/autopack/lib
+cd $INSTALL_APP_DIR/autopack/1.3.2/src/
+make
+cp $INSTALL_APP_DIR/autopack/1.3.2/lib/i386-linux/*.a $INSTALL_APP_DIR/autopack/lib
+mv $INSTALL_APP_DIR/autopack/1.3.2/include $INSTALL_APP_DIR/autopack/include
+cd $INSTALL_APP_DIR/autopack
+rm -rf 1.3.2
+cd $INSTALL_APP_DIR/autopack/lib
+mv libautopack-ethernet-O.a libautopack-O.a
+echo 'Autopack install finished'
+
+
+# FMDB
+clear
+echo 'Installing FMDB - Flexible distributed Mesh DataBase'
+cd $INSTALL_APP_DIR/FMDB-2011
+make
+
+# GSL
+#clear
+#echo 'Inslling GSL: The GNU Scientific Library (GSL) is a numerical library for C and C++ programmers.'
+#cd $INSTALL_APP_DIR/gsl-1.9
+#mkdir dir-install
+#./configure --prefix=$INSTALL_APP_DIR/gsl-1.9/dir-install --enable-shared CPPFLAGS=-O3 CFLAGS=-O3
+#make
+#make install
+ 
+# PETSC
+clear
+echo 'Installing PETSc: Portable, Extensible Toolkit for Scientific Computation- OPTIMIZED COMPILATION'
+cd $INSTALL_APP_DIR
+mv petsc-2.3.3-p15 petsc-2.3.3-p15-opt
+cd $INSTALL_APP_DIR/petsc-2.3.3-p15-opt
+./config/configure.py --download-f-blas-lapack=fblaslapack.tar.gz --with-mpi-dir=$INSTALL_APP_DIR/mpich2-1.4/dir-install --with-debugging=0 COPTFLAGS=-O3 FOPTFLAGS=-O3
+make all test
