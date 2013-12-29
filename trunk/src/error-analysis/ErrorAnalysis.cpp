@@ -50,7 +50,6 @@ bool calculate_ErrorAnalysis(ErrorAnalysis *pEA, pMesh theMesh, SimulatorParamet
 
 	FIELD field = PRESSURE;
 	for (int i=0; i<2; i++){
-		//int i = 1;
 		if (i==1){
 			field = SATURATION;
 		}

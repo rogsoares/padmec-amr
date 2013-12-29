@@ -343,7 +343,6 @@ namespace PRS{
 	}
 	
 	void SimulatorParameters::printOutVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3, pFunc_PrintVTK printVTK){
-		
 		// 	#ifdef _SEEKFORBUGS_
 		// 		allowPrintingVTK = true;
 		// 	#endif
@@ -356,8 +355,7 @@ namespace PRS{
 		// 		allowPrintingVTK = true;
 		// 	#endif
 		
-//		allowPrintingVTK=true;
-//		allowPrintingVTK = true;
+		//allowPrintingVTK = true;
 		if (allowPrintingVTK){
 			static int theStep = getStepOutputFile();
 			char fname[256];

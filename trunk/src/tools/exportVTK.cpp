@@ -42,14 +42,14 @@ void exportSolutionToVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3
 	fid << "\nPOINT_DATA "<< M_numVertices(theMesh) << endl;
 	printPressure(fid,theMesh,pPPData);
 	printSaturation(fid,theMesh,pPPData);
-//	printNonVisc(fid,theMesh,pPPData);
+	print_Swgrad(fid,theMesh,pSimPar,pPPData);
 	
 #ifndef NOADAPTATION
 	if ( pSimPar->userRequiresAdaptation() ){
 		///	nodal field
 		print_Sw_GradientNorm2(fid,theMesh,pErrorAnalysis,pSimPar,pPPData);
-	//	print_Swgrad(fid,theMesh,pSimPar,pPPData);
-	//	print_pwgrad(fid,theMesh,pSimPar,pPPData);
+
+		print_pwgrad(fid,theMesh,pSimPar,pPPData);
 	//	printCharacteristicLentgh(fid,theMesh);
 		print_hNew(fid,theMesh,pErrorAnalysis);
 		
@@ -346,23 +346,22 @@ void print_Sw_GradientNorm(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAn
 	FIter_delete(fit);
 }
 
-//void print_Swgrad(ofstream &fid, pMesh theMesh, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData){
-//	fid << "VECTORS Sw_grad float\n";
-//	pEntity node;
-//	double grad[3];
-//	int dom_counter = 0; // one domain for while (soon multiple domains)
-//	int row;
-//	//int dim = theMesh->getDim();
-//	char tag[4]; sprintf(tag,"%d",dom_counter);
-//
-//	VIter vit = M_vertexIter(theMesh);
-//	while( (node = VIter_next(vit)) ){
-//		pSimPar->getLocalNodeIDNumbering(node,tag,row);
-//		pPPData->get_Sw_Grad(dom_counter,row,grad);
-//		fid << grad[0] << " " << grad[1] << " .0\n";
-//	}
-//	VIter_delete(vit);
-//}
+void print_Swgrad(ofstream &fid, pMesh theMesh, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData){
+	fid << "VECTORS Sw_grad float\n";
+	pEntity node;
+	double grad[3];
+	int dom_counter = 0; // one domain for while (soon multiple domains)
+	int row;
+	char tag[4]; sprintf(tag,"%d",dom_counter);
+
+	VIter vit = M_vertexIter(theMesh);
+	while( (node = VIter_next(vit)) ){
+		pSimPar->getLocalNodeIDNumbering(node,tag,row);
+		pPPData->get_Sw_Grad(node,dom_counter,row,grad);
+		fid << grad[0] << " " << grad[1] << " .0\n";
+	}
+	VIter_delete(vit);
+}
 
 void print_pwgrad(ofstream &fid, pMesh theMesh, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData){
 	fid << "VECTORS p_grad float\n";

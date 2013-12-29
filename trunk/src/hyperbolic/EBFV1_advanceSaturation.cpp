@@ -53,7 +53,7 @@ namespace PRS{
 		cout << "nodeWith_Wells\n";
 		const int N = pStruct->pSimPar->getWellTimeDiscretion(); ///  1000;								// magic number :)
 		int node_ID,well_flag,i;
-		double Sw,Sw0,Sw_old,Vt,Vi,Qi,Qwi,Qt,fw,nonvisc,wp;
+		double Sw,Sw0,Sw_old,Vt,Qi,Vi,Qwi,Qt,fw,nonvisc,wp,volume, nrc, porosity;
 		double dt_well = (double)delta_T/N;			// time step for well nodes saturation
 		double oilFlow = .0;
 		pVertex node;
@@ -76,18 +76,20 @@ namespace PRS{
 						node = (mEntity*)theMesh->getVertex( node_ID );
 						Sw_old = pStruct->pPPData->getSaturation(node);
 						nonvisc = pStruct->pPPData->getNonViscTerm(node);
-						int geomFlag = pGCData->getDomainFlag(node);
-						wp = pGCData->getVolume(node,geomFlag)*pStruct->pSimPar->getPorosity(geomFlag);
-						
+//						int geomFlag = pGCData->getDomainFlag(node);
+//						wp = pGCData->getVolume(node,geomFlag)*pStruct->pSimPar->getPorosity(geomFlag);
+
 						Vi = .0;
-						double Vi = .0, volume, nrc;
+						wp = .0;
 						for (SIter_const dom=pStruct->pSimPar->setDomain_begin(); dom!=pStruct->pSimPar->setDomain_end(); dom++){
 							pVertex node = (mEntity*)theMesh->getVertex( node_ID );
 							volume = pGCData->getVolume(node,*dom);
+							porosity = pStruct->pSimPar->getPorosity(*dom);
+							wp += volume*porosity;
 //							nrc = 1.0;//pGCData->getNumRemoteCopies(node) + 1.0;
 							Vi += volume;///nrc;
 						}
-						
+
 						#ifdef _SEEKFORBUGS_
 						if ( fabs(wp)==0.0 || fabs(Vi)==0.0 || fabs(Vt)==0.0 || fabs(Qt)==0.0 )
 							throw Exception(__LINE__,__FILE__,"Volume cannot be null.\n");
@@ -108,7 +110,7 @@ namespace PRS{
 						if (Sw > 1.01 || Sw < .0){
 							char msg[256]; sprintf(msg,"Water saturation is out-of-bound [0 1]. Sw = %.10E on node %d.  Sw_old = %f\n",Sw,node_ID,Sw_old);
 						}
-						
+
 						pStruct->pPPData->setSaturation(node,Sw);
 						
 						// Oil production
