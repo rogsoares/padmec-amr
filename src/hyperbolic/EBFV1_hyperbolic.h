@@ -116,8 +116,10 @@ namespace PRS
 		void calc_Sw_grad_2(pMesh, int, int);
 		
 		/// Averaging by Total Volume in 3-D (area in 2-D problems)
-		void calc_Sw_grad_3(pMesh, int);
+		void calc_Sw_grad_3(pMesh, int, int);
 		
+		void calc_Sw_grad_31(pMesh);
+
 		/// Imposition of Homogeneus Neumman Boundary Conditions
 		void calc_Sw_grad_4(pMesh, int);
 		

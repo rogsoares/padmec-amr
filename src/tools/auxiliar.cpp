@@ -225,6 +225,14 @@ double inner_product(const dblarray &a1, const dblarray &a2){
 	return std::inner_product(a1.begin(),a1.end(),a2.begin(),.0);
 }
 
+double inner_product(const double* ptr1, const double* ptr2, int n){
+	double IP = .0;
+	for(int i=0;i<n;i++){
+		IP += ptr1[i]*ptr2[i];
+	}
+	return IP;
+}
+
 double ratio(double a, double b){
 	return (double)(a/b);
 }

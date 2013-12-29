@@ -94,6 +94,8 @@ typedef std::vector<double> dblarray;
 // calculating dot product and euclidian norm
 double inner_product(const dblarray &a1, const dblarray &a2);
 
+double inner_product(const double*, const double*, int);
+
 void unitary_vector(const dblarray &a1, dblarray &a2);
 
 void unitary_vector(dblarray &a1);

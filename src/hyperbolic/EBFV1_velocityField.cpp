@@ -10,9 +10,9 @@
 namespace PRS{
 
 // computes total velocity on edges for domain dom
-	double EBFV1_hyperbolic::calculateVelocityField(pMesh theMesh, int dom, int dom_counter){
+double EBFV1_hyperbolic::calculateVelocityField(pMesh theMesh, int dom, int dom_counter){
 	cout << "calculateVelocityField\n";
-	
+
 	double startt = MPI_Wtime();
 	int i,j;
 	int dim = pGCData->getMeshDim();			// mesh dimension
@@ -22,10 +22,10 @@ namespace PRS{
 	double sign = 1.0;
 	int row_I, row_J;
 	char tag[4]; sprintf(tag,"%d",dom_counter);
-	
-	
+
+
 	// check if pressure gradient exist for all mesh nodes
-	#ifdef _SEEKFORBUGS_
+#ifdef _SEEKFORBUGS_
 	pEntity node;
 	VIter vit = M_vertexIter(theMesh);
 	while ( (node = VIter_next(vit)) ){
@@ -37,8 +37,8 @@ namespace PRS{
 		}
 	}
 	VIter_delete(vit);
-	#endif	
-	
+#endif
+
 	// loop over all edges from domain 'dom'
 	EIter eit = M_edgeIter(theMesh);
 	while ( (edge = EIter_next(eit)) ){
@@ -55,8 +55,12 @@ namespace PRS{
 			}
 
 			pGCData->getEdgeVec_Unitary(edge,edIJ);
-			for (i=0; i<dim; i++) edIJ[i] *= sign;
-			for (i=0; i<dim; i++) edIJ[i] = -edIJ[i];
+			for (i=0; i<dim; i++){
+				edIJ[i] *= sign;
+			}
+			for (i=0; i<dim; i++){
+				edIJ[i] = -edIJ[i];
+			}
 
 			pStruct->pSimPar->getLocalNodeIDNumbering(I,tag,row_I);
 			pStruct->pSimPar->getLocalNodeIDNumbering(J,tag,row_J);
@@ -75,8 +79,12 @@ namespace PRS{
 			// velocity normal component
 			double VIJN[3] = {.0,.0,.0};
 			double a = .0;
-			for (i=0; i<dim; i++) a += edIJ[i]*pw_grad_IJ[i];
-			for (i=0; i<dim; i++) VIJN[i] = pw_grad_IJ[i] - a*edIJ[i];
+			for (i=0; i<dim; i++){
+				a += edIJ[i]*pw_grad_IJ[i];
+			}
+			for (i=0; i<dim; i++){
+				VIJN[i] = pw_grad_IJ[i] - a*edIJ[i];
+			}
 
 			// velocity parallel component - finite difference approximation
 			a = (pStruct->pPPData->getPressure(J) - pStruct->pPPData->getPressure(I))/pGCData->getEdgeLength(edge);
@@ -102,23 +110,19 @@ namespace PRS{
 			const double MobIJ = .5*(MobI + MobJ);
 
 			int pos = 0;
-			if ( pStruct->pSimPar->is_K_Isotropic() ){
-				for (i=0; i<dim; i++){
-					vel[i] = K[pos]*aux[i];
-					pos += dim+1;
+
+			for (i=0; i<dim; i++){
+				for (j=0; j<dim; j++){
+					vel[i] += K[dim*i+j]*aux[j];
 				}
 			}
-			else{
-				for (i=0; i<dim; i++)
-					for (j=0; j<dim; j++) vel[i] += K[dim*i+j]*aux[j];
+
+			for (i=0; i<dim; i++){
+				vel[i] *= -MobIJ;
 			}
-			for (i=0; i<dim; i++) vel[i] *= -MobIJ;
 
 			// total velocity: VTIJ = VIJFD + VIJN
 			pStruct->pPPData->setVelocity_new(edge,dom,vel);
-			//char text[256];
-//			printf("vel[%d - %d]: %.8E\t%.8E\tgrad_mean: %.8E\t%.8E\t",EN_id(I),EN_id(J),vel[0],vel[1],pw_grad_IJ[0],pw_grad_IJ[1]);
-//			printf("vel[%d - %d]: VIJFD: %.8E %.8E  edIJ: %.5f %.5f\n",EN_id(I),EN_id(J),VIJFD[0],VIJFD[1],edIJ[0],edIJ[1]);
 		}
 	}
 	EIter_delete(eit);

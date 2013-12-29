@@ -84,7 +84,7 @@ namespace PRS{
 		setNumElementDomain(theMesh);  //cout << __LINE__ << endl;
 		setLocalNodeIDNumbering(theMesh); // cout << __LINE__ << endl;
 		#ifdef TRACKING_PROGRAM_STEPS
-	cout << "TRACKING_PROGRAM_STEPS: SimulatorParameters::initialize\tIN\n";
+	cout << "TRACKING_PROGRAM_STEPS: SimulatorParameters::initialize\tOUT\n";
 #endif
 	}
 

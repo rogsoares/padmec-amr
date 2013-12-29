@@ -1,7 +1,7 @@
 #include "PhysicPropData.h"
 
 Matrix<double> *pGrad_matrix;
-Matrix<double> SwGrad_matrix;
+Matrix<double> *SwGrad_matrix;
 Matrix<double> nonvisc_matrix;
 
 namespace PRS{
@@ -53,23 +53,27 @@ namespace PRS{
 #endif
 
 		pGrad_matrix = new Matrix<double>[ndom];
+//		SwGrad_matrix = new Matrix<double>[ndom+1];
 		for (int k=0; k<ndom; k++){
 			int nrows = pNumNodesDom[k];
 			pGrad_matrix[k].allocateMemory(nrows,3);
 			pGrad_matrix[k].initialize(.0);
-			//pGrad_matrix[k].printNumRowsCols();
+//			SwGrad_matrix[k].allocateMemory(nrows,3);
+//			SwGrad_matrix[k].initialize(.0);
 		}
-//		SwGrad_matrix.allocateMemory(numNodes,3);
-//		SwGrad_matrix.initialize(.0);
+//		SwGrad_matrix[ndom].allocateMemory(nrows,3);
+//		SwGrad_matrix[ndom].initialize(.0);
 	}
 
 	void PhysicPropData::deallocateData(SimulatorParameters *pSimPar){
 		int ndom = pSimPar->getNumDomains();
 		for (int k=0; k<ndom; k++){
 			pGrad_matrix[k].freeMemory();
+			//SwGrad_matrix[k].freeMemory();
 		}
+//		SwGrad_matrix[ndom].freeMemory();
+//		delete[] SwGrad_matrix; SwGrad_matrix = 0;
 		delete[] pGrad_matrix; pGrad_matrix = 0;
-		//SwGrad_matrix.freeMemory();
 	}
 
 	void PhysicPropData::setInitialVelocity(pMesh theMesh, SimulatorParameters *pSimPar){

@@ -9,7 +9,7 @@
 // If this variable is a class member, it will not compile!
 // Global variable <argh!>. I swear I would not do that!
 extern Matrix<double> *pGrad_matrix;
-extern Matrix<double> SwGrad_matrix;
+extern Matrix<double> *SwGrad_matrix;
 extern Matrix<double> nonvisc_matrix;
 
 
@@ -70,18 +70,12 @@ public:
 	 *  grad - pointer to an array of three positions. Ex.: double p[3];
 	 */
 	static void set_pw_Grad(pVertex node, int dom, int row, const double* grad){
-//		pGrad_matrix[dom](row,0) = grad[0];
-//		pGrad_matrix[dom](row,1) = grad[1];
-//		pGrad_matrix[dom](row,2) = grad[2];
 		pGrad_matrix[dom].setValue(row,0,grad[0]);
 		pGrad_matrix[dom].setValue(row,1,grad[1]);
 		pGrad_matrix[dom].setValue(row,2,grad[2]);
 	}
 
 	static void get_pw_Grad(pVertex node, int dom, int row, double* grad){
-//		grad[0] = pGrad_matrix[dom](row,0);
-//		grad[1] = pGrad_matrix[dom](row,1);
-//		grad[2] = pGrad_matrix[dom](row,2);
 		grad[0] = pGrad_matrix[dom].getValues(row,0);
 		grad[1] = pGrad_matrix[dom].getValues(row,1);
 		grad[2] = pGrad_matrix[dom].getValues(row,2);
@@ -91,28 +85,23 @@ public:
 	 * The same explanation for the functions below. Those are for saturation.
 	 */
 	static void set_Sw_Grad(pVertex node, int dom, int row, const double* grad){
-//		SwGrad_matrix(row,0) = grad[0];
-//		SwGrad_matrix(row,1) = grad[1];
-//		SwGrad_matrix(row,2) = grad[2];
-//		SwGrad_matrix.setValue(row,0,grad[0]);
-//		SwGrad_matrix.setValue(row,1,grad[1]);
-//		SwGrad_matrix.setValue(row,2,grad[2]);
-		EN_attachDataDbl(node,MD_lookupMeshDataId("Swgrad_0"),grad[0]);
-		EN_attachDataDbl(node,MD_lookupMeshDataId("Swgrad_1"),grad[1]);
-		EN_attachDataDbl(node,MD_lookupMeshDataId("Swgrad_2"),grad[2]);
-
+//		SwGrad_matrix[dom].setValue(row,0,grad[0]);
+//		SwGrad_matrix[dom].setValue(row,1,grad[1]);
+//		SwGrad_matrix[dom].setValue(row,2,grad[2]);
+		for(int i=0;i<3;i++){
+			char string[256]; sprintf(string,"Swgrad_%d_%d",dom,i);
+			EN_attachDataDbl(node,MD_lookupMeshDataId(string),grad[i]);
+		}
 	}
 
 	static void get_Sw_Grad(pVertex node, int dom, int row, double* grad){
-//		grad[0] = SwGrad_matrix(row,0);
-//		grad[1] = SwGrad_matrix(row,1);
-//		grad[2] = SwGrad_matrix(row,2);
-//		grad[0] = SwGrad_matrix.getValues(row,0);
-//		grad[1] = SwGrad_matrix.getValues(row,1);
-//		grad[2] = SwGrad_matrix.getValues(row,2);
-		EN_getDataDbl(node,MD_lookupMeshDataId("Swgrad_0"),&grad[0]);
-		EN_getDataDbl(node,MD_lookupMeshDataId("Swgrad_1"),&grad[1]);
-		EN_getDataDbl(node,MD_lookupMeshDataId("Swgrad_2"),&grad[2]);
+//		grad[0] = SwGrad_matrix[dom].getValues(row,0);
+//		grad[1] = SwGrad_matrix[dom].getValues(row,1);
+//		grad[2] = SwGrad_matrix[dom].getValues(row,2);
+		for(int i=0;i<3;i++){
+			char string[256]; sprintf(string,"Swgrad_%d_%d",dom,i);
+			EN_getDataDbl(node,MD_lookupMeshDataId(string),&grad[i]);
+		}
 	}
 
 	// ************************************************************************************************************************************

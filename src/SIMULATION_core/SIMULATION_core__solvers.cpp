@@ -97,10 +97,13 @@ namespace PRS{
 		PADMEC_mesh *pm = new PADMEC_mesh;
 #endif
 		LogFiles(OPENLG,0,0,0,0,pSimPar->getOutputPathName(),pSimPar->useRestart(),pSimPar->getTStepNumber(),pSimPar->getCPU_time());
-				double timeStep;
-				double time_step_summation = .0;
+		double timeStep;
+		double time_step_summation = .0;
+
+		int count = 0;
 		while ( !pSimPar->finishSimulation() ){
 			pElliptic_eq->solver(theMesh);
+			pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
 			pHyperbolic_eq->solver(theMesh,timeStep);
 			pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
 #ifndef NOADAPTATION

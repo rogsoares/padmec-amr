@@ -78,11 +78,6 @@ double EBFV1_hyperbolic::calculateIntegralAdvectiveTerm(pMesh theMesh, int dom){
 			if ( fabs(non_visc_ad) > 0.0 || fabs(non_visc_fv) > 0.0 ) check_IAT = true;
 			#endif
 
-//			cout << setprecision(5) << fixed;
-//			cout << "alpha: " << alpha << " Cij_norm: " << pGCData->getCij_norm(edge,dom);
-//			cout << "  Cij: " << Cij[0] << ", " << Cij[1];
-//			cout << "  vel: " << vel[0] << ", " << vel[1];
-//			cout << "  FluxIJ: " << FluxIJ[0] << ", " << FluxIJ[1] << endl;
 			// Computing "Non-Viscous" Terms
 			nonvisc_I = pStruct->pPPData->getNonViscTerm(I) + (non_visc_fv - non_visc_ad);///nrc;
 			nonvisc_J = pStruct->pPPData->getNonViscTerm(J) - (non_visc_fv - non_visc_ad);///nrc;
