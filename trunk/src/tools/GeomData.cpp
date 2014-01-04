@@ -1,14 +1,6 @@
 #include "GeomData.h"
-//
-//Matrix<double> Cij_matrix;
-//Matrix<double> Cij_norm_matrix;
-//Matrix<double> Dij_matrix;
-//Matrix<double> volume_matrix;
 
-
-namespace PRS
-{
-
+namespace PRS{
 	GeomData::GeomData(){
 		setMeshDataId("GC_Data");
 
@@ -255,5 +247,83 @@ namespace PRS
 		Coefficients* pCoeffnt = getAttachedData_pointer<Coefficients>(node);
 		sumIJ = pCoeffnt->sumIJ;
 	}
+
+	void GeomData::calculateNumEdges(pMesh theMesh, int ndom, int* domList){
+		numDomEdges = new int[ndom];
+		pEntity face;
+		std::set<pEntity> edgeList;
+		for (int i=0; i<ndom; i++){
+			FIter fit = M_faceIter(theMesh);
+			while ( (face = FIter_next(fit)) ){
+				if (getFaceFlag(face)==domList[i]){
+					for (int j = 0; j<3; j++){
+						edgeList.insert(face->get(1,j));
+					}
+				}
+			}
+			FIter_delete(fit);
+			numDomEdges[i] = (int)edgeList.size();
+			edgeList.clear();
+		}
+	}
+
+	void GeomData::allocatePointers(int ndom){
+			Cij = 0;
+			Cij = new Matrix<double>[ndom];
+	//		Cij_norm = new Matrix<double>[ndom];
+	//		Dij = new Matrix<double>[ndom];
+	//		Vi = new Matrix<double>[ndom];
+	//		edgeVersor = new Matrix<double>[ndom];
+	//
+			for (int k=0; k<ndom; k++){
+				int nedges = this->numDomEdges[k];
+				Cij[k].allocateMemory(nedges,3);
+				Cij[k].initialize(.0);
+	//			Cij_norm[k].allocateMemory(nedges);
+	//			Cij_norm[k].initialize(.0);
+	//			edge_length[k].allocateMemory(nedges);
+	//			edge_length[k].initialize(.0);
+	//
+	//			edgeVersor[k].allocateMemory(nedges,3);
+	//			edgeVersor[k].initialize(.0);
+	//
+	//			int nbedges = this->numDomBDRYEdges.getValue(k);
+	//			Dij[k].allocateMemory(nbedges,3);
+	//			Dij[k].initialize(.0);
+	//
+	//			int nnodes = this->numDomNodes.getValue(k);
+	//			Vi[k].allocateMemory(nnodes);
+	//			Vi[k].initialize(.0);
+			}
+		}
+
+		void GeomData::deallocatePointers(int ndom){
+			for (int k=0; k<ndom; k++){
+				Cij[k].freeMemory();
+	//			Cij_norm[k].freeMemory();
+	//			edge_length[k].freeMemory();
+	//			Dij[k].freeMemory();
+	//			Vi[k].freeMemory();
+	//			edgeVersor[k].freeMemory();
+			}
+			delete[] Cij; Cij = 0;
+			delete[] numDomEdges; numDomEdges = 0;
+	//		delete[] Cij_norm; Cij_norm = 0;
+	//		delete[] Dij; Dij = 0;
+	//		delete[] Vi; Vi = 0;
+	//		delete[] edge_length; edge_length = 0;
+	//		delete[] edgeVersor; edgeVersor = 0;
+		}
+
+		void GeomData::getCij(int dom, int row, double* cij){
+			cij[0] = Cij[dom].getValue(row,0);
+			cij[1] = Cij[dom].getValue(row,1);
+			cij[2] = Cij[dom].getValue(row,2);
+		}
+		void GeomData::setCij(int dom, int row, double* cij){
+			Cij[dom].setValue(row,0,cij[0]);
+			Cij[dom].setValue(row,1,cij[1]);
+			Cij[dom].setValue(row,2,cij[2]);
+		}
 }
 

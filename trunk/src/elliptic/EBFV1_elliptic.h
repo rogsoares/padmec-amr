@@ -53,9 +53,9 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 		int assemblyMatrix(Mat);
 		
 		// Fill matrices E,G and F for a specific edge and domain. Theses function are called inside a loop of domains
-		int divergence_E(Mat, pEntity, const int&, int, dblarray&);
-		int divergence_G(Mat, pEntity, const int&, int, dblarray&);
-		int gradient_F_edges(Mat, pEntity, const int&, int, dblarray&);
+		int divergence_E(Mat, pEntity, const int&, int, double*);
+		int divergence_G(Mat, pEntity, const int&, int, double*);
+		int gradient_F_edges(Mat, pEntity, const int&, int, double*);
 		int gradient_F_bdry(pMesh, Mat, const int&);
 		int F_bdryFaces(pMesh, Mat, const int&);
 		int F_bdryEdges(pMesh, Mat, const int&);

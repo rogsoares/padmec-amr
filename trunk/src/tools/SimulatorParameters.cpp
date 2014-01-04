@@ -86,17 +86,17 @@ namespace PRS{
 	
 	bool SimulatorParameters::finishSimulation(){
 		std:: cout << setprecision(2) << fixed;
-		if (!stop_simulation || (getAccumulatedSimulationTime() >= getSimTime()) ){
+		if (!stop_simulation || (getCumulativeSimulationTime() >= getSimTime()) ){
 			if (!P_pid()){
 				std::cout << "#################################\n";
-				std::cout << "Simulation " << (double)100.0*getAccumulatedSimulationTime()/getSimTime() << "% concluded.\n";
+				std::cout << "Simulation " << (double)100.0*getCumulativeSimulationTime()/getSimTime() << "% concluded.\n";
 				std::cout << "End of Simulation\n";
 				std::cout << "#################################\n";
 			}
 			return 1;
 		}
 		else{
-			if (!P_pid()) std::cout << "Simulation " << (double)100.0*getAccumulatedSimulationTime()/getSimTime() << "% concluded.\n";
+			if (!P_pid()) std::cout << "Simulation " << (double)100.0*getCumulativeSimulationTime()/getSimTime() << "% concluded.\n";
 			return 0;
 		}
 	}
@@ -160,9 +160,9 @@ namespace PRS{
 				well_info = MWells[flag];
 				well_info.wellVolume = Vt;
 				MWells[flag] = well_info;
-				cout << "flag = " << flag << endl;
-				cout << "Vt   = " << Vt << endl;
-				cout << "ID   = " << id << endl;
+//				cout << "flag = " << flag << endl;
+//				cout << "Vt   = " << Vt << endl;
+//				cout << "ID   = " << id << endl;
 			}
 		}
 		//STOP();
@@ -306,12 +306,12 @@ namespace PRS{
 			VIter_delete(vit);
 			TPV_tmp *= getPorosity(*dom);
 			TPV += TPV_tmp;
-			//printf("TPV_tmp: %f TPV: %f\n",TPV_tmp,TPV);;
+			//printf("TPV_tmp: %f TPV: %f\tphi = %5f\n",TPV_tmp,TPV,getPorosity(*dom));
 		}
 		
 		double Sw = 1.0 - Sw_initial();
-		//printf("TPV: %f   TPV*Sw: %f\n",TPV,TPV*Sw); throw 1;
 		_IOV = P_getSumDbl(TPV)*Sw;
+		//printf("TPV: %f   TPV*Sw: %f\tIOV = %5f\n",TPV,TPV*Sw,_IOV); throw 1;
 	}
 	
 	
@@ -328,13 +328,12 @@ namespace PRS{
 			updatePrintOutVTKFrequency();  
 		}
 		double timeFrequency = getPrintOutVTKFrequency();
-		double accST = timeStep + getAccumulatedSimulationTime();
+		double accST = timeStep + getCumulativeSimulationTime();
 		if ( accST > timeFrequency ){
 			timeStep = timeStep - (accST - timeFrequency);
 			accST = timeFrequency;
 			allowPrintingVTK = true;
-			
-			TSCountingList.push_back(TScounter); TScounter = 0;
+			//TSCountingList.push_back(TScounter); TScounter = 0;
 			
 			#ifdef __PRINTDEBUGGING__
 			if (!P_pid()) std::cout << "VTK file output simulation time: " << accST << endl;
@@ -343,18 +342,6 @@ namespace PRS{
 	}
 	
 	void SimulatorParameters::printOutVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3, pFunc_PrintVTK printVTK){
-		// 	#ifdef _SEEKFORBUGS_
-		// 		allowPrintingVTK = true;
-		// 	#endif
-		// 
-		// 	#ifdef CRUMPTON_EXAMPLE
-		// 		allowPrintingVTK = true;
-		// 	#endif
-		
-		// 	#ifdef TESTINGADAPTATION
-		// 		allowPrintingVTK = true;
-		// 	#endif
-		
 		//allowPrintingVTK = true;
 		if (allowPrintingVTK){
 			static int theStep = getStepOutputFile();

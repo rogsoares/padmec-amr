@@ -117,8 +117,12 @@ public:
 		*vec = mat[row]; 
 	}
 
-	T getValues(int i, int j){
+	T getValue(int i, int j){
 		return mat[i][j];
+	}
+
+	T getValue(int i){
+		return mat[i][0];
 	}
 
 	void setRow(int row,const T *vec){ 

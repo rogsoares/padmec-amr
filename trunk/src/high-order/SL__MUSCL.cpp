@@ -46,16 +46,14 @@ namespace PRS{
 	}
 
 	void Edge_MUSCL::calculateEdgeSlopeLimiters(pEntity edge, const double &Sw_I,const double &Sw_J,double& SLII,double& SLJJ, double& DSwII,double& DSwJJ, int dim){
-		int dom=3300;
-
 		// get nodes I and J
 		pEntity I = (pVertex)edge->get(0,0);
 		pEntity J = (pVertex)edge->get(0,1);
 
-		/*
-		 * edIJ is a versor that points from I to J where I corresponds to
-		 * smallest edge node global ID
-		 */
+		if (EN_id(edge->get(0,0)) > EN_id(edge->get(0,1))){
+			std::swap(I,J);
+		}
+
 		double coord1[3]; V_coord(I,coord1);
 		double coord2[3]; V_coord(J,coord2);
 		double edIJ[3] = {.0,.0,.0};

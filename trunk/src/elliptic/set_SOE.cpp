@@ -49,7 +49,8 @@ namespace PRS{
 		matvec_struct->ndom = ndom;
 		matvec_struct->F_nrows = np*dim;
 		matvec_struct->F_ncols = np;
-		dblarray Cij(3);
+		//dblarray Cij(3);
+		double Cij[3];
 		
 		SIter_const dom;
 		if (!pSimPar->setOfDomains.size()){
@@ -63,22 +64,24 @@ namespace PRS{
 		Mat G_tmp, E[ndom], F[ndom];
 
 		// Create matrix G.
+		int dom_counter = 0;
 		ierr = MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np,np,80,PETSC_NULL,80,PETSC_NULL,&G_tmp); CHKERRQ(ierr);
 		for (dom=pSimPar->setDomain_begin(); dom!=pSimPar->setDomain_end(); dom++){
+			int row = 0;
 			// Matrices E and F are created to each domain.
 			ierr = MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np,np*dim,100,PETSC_NULL,100,PETSC_NULL,&E[i]);CHKERRQ(ierr);
 			ierr = MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np*dim,np,100,PETSC_NULL,100,PETSC_NULL,&F[i]);CHKERRQ(ierr);
-			cout << __LINE__ << endl;
-			// Matrices E,F,G are assembled edge-by-edge.
 			EIter eit = M_edgeIter(mesh);
 			while (pEntity edge = EIter_next(eit) ){
 				if (!mesh->getRefinementDepth(edge)){
 					if (  pGCData->edgeBelongToDomain(edge,*dom) ){
 						//cout << "dom = " << *dom << "\tedge: " << EN_id(edge->get(0,0)) << " - " << EN_id(edge->get(0,1)) << endl;
-						pGCData->getCij(edge,*dom,Cij);
+						//pGCData->getCij(edge,*dom,Cij);
+						pGCData->getCij(dom_counter,row,Cij);
 						divergence_E(E[i],edge,*dom,dim,Cij);
 						divergence_G(G_tmp,edge,*dom,dim,Cij);
 						gradient_F_edges(F[i],edge,*dom,dim,Cij);
+						row++;
 					}
 				}
 			}
@@ -89,6 +92,7 @@ namespace PRS{
 			assemblyMatrix(F[i]);
 			assemblyMatrix(E[i]);
 			i++;
+			dom_counter++;
 		}
 		assemblyMatrix(G_tmp);
  		//printMatrixToFile(G_tmp,"G_tmp__PA.txt");

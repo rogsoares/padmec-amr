@@ -21,8 +21,7 @@ namespace PRS{
 	typedef std::list<OPData> OPList;
 	typedef std::list<OPData>::iterator LIter;
 
-	class OilProductionManagement
-	{
+	class OilProductionManagement{
 	public:
 
 		OilProductionManagement();
@@ -37,8 +36,12 @@ namespace PRS{
 		void createOilProductionOutput(string);
 
 		// print a new oil production value frequency controlled by getPrintStep
-		void printOilProduction(double timeStep, double accumlatedTime, double totalSimulationTime,
-				double recOilValue);
+		void printOilProduction(double timeStep,
+                double cml_time,
+                double total_SimTime,
+                double rec_oil,
+                double cml_oil,
+                int timestep_counter);
 
 		// print frequency control
 		double getPrintStep() const { return (double)1./200.; }

@@ -16,29 +16,29 @@ double EBFV1_hyperbolic::calculateVelocityField(pMesh theMesh, int dom, int dom_
 	double startt = MPI_Wtime();
 	int i,j;
 	int dim = pGCData->getMeshDim();			// mesh dimension
-	dblarray edIJ(dim,.0),edIJ2(dim,.0), v(dim,.0);
-	double pw_grad_I[3], pw_grad_J[3], pw_grad_IJ[3];
+	dblarray edIJ(dim,.0),edIJ2(dim,.0);//, v(dim,.0);
+	double pw_grad_I[3], pw_grad_J[3], pw_grad_IJ[3], vel[3];
 	pEntity edge;
 	double sign = 1.0;
 	int row_I, row_J;
 	char tag[4]; sprintf(tag,"%d",dom_counter);
 
-
 	// check if pressure gradient exist for all mesh nodes
 #ifdef _SEEKFORBUGS_
-	pEntity node;
-	VIter vit = M_vertexIter(theMesh);
-	while ( (node = VIter_next(vit)) ){
-		pStruct->pSimPar->getLocalNodeIDNumbering(node,tag,row_I);
-		pStruct->pPPData->get_pw_Grad(node,dom_counter,row_I,pw_grad_I);
-		if ( fabs(pw_grad_I[0])<1e-8 && fabs(pw_grad_I[1])<1e-8 ){
-			char msg[256]; sprintf(msg,"Gradient has all its componets null for node %d\n",EN_id(node));
-			throw Exception(__LINE__,__FILE__,msg);
-		}
-	}
-	VIter_delete(vit);
+//	pEntity node;
+//	VIter vit = M_vertexIter(theMesh);
+//	while ( (node = VIter_next(vit)) ){
+//		pStruct->pSimPar->getLocalNodeIDNumbering(node,tag,row_I);
+//		pStruct->pPPData->get_pw_Grad(node,dom_counter,row_I,pw_grad_I);
+//		if ( fabs(pw_grad_I[0])<1e-8 && fabs(pw_grad_I[1])<1e-8 ){
+//			char msg[256]; sprintf(msg,"Gradient has all its componets null for node %d\n",EN_id(node));
+//			throw Exception(__LINE__,__FILE__,msg);
+//		}
+//	}
+//	VIter_delete(vit);
 #endif
 
+	int row = 0;
 	// loop over all edges from domain 'dom'
 	EIter eit = M_edgeIter(theMesh);
 	while ( (edge = EIter_next(eit)) ){
@@ -95,11 +95,14 @@ double EBFV1_hyperbolic::calculateVelocityField(pMesh theMesh, int dom, int dom_
 			double aux[3] = {VIJFD[0]+VIJN[0], VIJFD[1]+VIJN[1], VIJFD[2]+VIJN[2]};
 
 			// make v_old = v_new (for t=0, v_new = 0)
-			pStruct->pPPData->getVelocity_new(edge,dom,v);
-			pStruct->pPPData->setVelocity_old(edge,dom,v);
+//			pStruct->pPPData->getVelocity_new(edge,dom,v);
+//			pStruct->pPPData->setVelocity_old(edge,dom,v);
+
+			pStruct->pPPData->getVelocity_new(dom_counter,row,vel);
+			pStruct->pPPData->setVelocity_old(dom_counter,row,vel);
 
 			// update v_new
-			dblarray vel(dim,.0);
+			//dblarray vel(dim,.0);
 
 			// get absolute permeability tensor: dim x dim
 			const double *K = pStruct->pSimPar->getPermeability(dom);
@@ -110,7 +113,9 @@ double EBFV1_hyperbolic::calculateVelocityField(pMesh theMesh, int dom, int dom_
 			const double MobIJ = .5*(MobI + MobJ);
 
 			int pos = 0;
-
+			for (i=0; i<dim; i++){
+				vel[i] = 0;
+			}
 			for (i=0; i<dim; i++){
 				for (j=0; j<dim; j++){
 					vel[i] += K[dim*i+j]*aux[j];
@@ -122,7 +127,9 @@ double EBFV1_hyperbolic::calculateVelocityField(pMesh theMesh, int dom, int dom_
 			}
 
 			// total velocity: VTIJ = VIJFD + VIJN
-			pStruct->pPPData->setVelocity_new(edge,dom,vel);
+			//pStruct->pPPData->setVelocity_new(edge,dom,vel);
+			pStruct->pPPData->setVelocity_new(dom_counter,row,vel);
+			row++;
 		}
 	}
 	EIter_delete(eit);

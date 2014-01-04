@@ -37,7 +37,7 @@ namespace PRS
 		 * that they must be called.
 		 */
 		double calculateVelocityField(pMesh, int,int);
-		double calculateIntegralAdvectiveTerm(pMesh, int);
+		double calculateIntegralAdvectiveTerm(pMesh, int, int, double&);
 		double calculateExplicitAdvanceInTime(pMesh, double);
 
 		/*
@@ -61,11 +61,19 @@ namespace PRS
 		/// For mesh adaptation, saturation field interpolation between old and new mesh over Sw_t, and not Sw_t+1
 		void saveSwField(pMesh);
 
-		inline void setRecoveredOilValue(double val){
+		void setRecoveredOil(double val){
 			oilRecovered = val;
 		}
 
-		inline double getRecoveredOilValue() const{
+		double getCumulativeOil() const{
+			return _cumulativeOil;
+		}
+
+		void setCumulativeOil(double co){
+			_cumulativeOil = co;
+		}
+
+		double getRecoveredOil() const{
 			return oilRecovered;
 		}
 
@@ -110,7 +118,7 @@ namespace PRS
 		void resetSaturationGradient(pMesh);
 		
 		/// loop over all edges (omega domain
-		void calc_Sw_grad_1(pMesh, int, int);
+		void calc_Sw_grad_1(pMesh, int, int, int);
 		
 		/// loop over all boundary edges (2-D) or all external faces (3-D)
 		void calc_Sw_grad_2(pMesh, int, int);
@@ -123,6 +131,8 @@ namespace PRS
 		/// Imposition of Homogeneus Neumman Boundary Conditions
 		void calc_Sw_grad_4(pMesh, int);
 		
+		double _cumulativeOil;
+
 		PetscErrorCode ierr;
 	};
 }

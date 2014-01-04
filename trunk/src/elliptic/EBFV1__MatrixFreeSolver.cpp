@@ -56,9 +56,19 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 
 	// call PETSc to solver system of equation
 	KSP_solver(matrix,matvec_struct->G,matvec_struct->RHS,output,pSimPar,guessNonZero,KSPBCGS,PCASM,its);
-	cout << "KSP_Solver: Num. iter =  " << its << endl;
-	
+
+//	printVectorToFile(output,"SOLUTION.txt");
+//	printVectorToFile(matvec_struct->RHS,"RHS.txt");
+	if (its >= 10000){
+		throw Exception(__LINE__,__FILE__,"Number of KSP iterations reached the maximum number allowed: 10.000 iterations."
+				                          " It means that the system of equations didn't converged. Please check boundary conditions.\n");
+	}
+	else{
+		cout << "KSP_Solver: Num. iter =  " << its << endl;
+	}
 	//printVectorToFile(output,"SOLUTION.txt");
+//	printVectorToFile(output,"SOLUTION.txt");
+//	printVectorToFile(matvec_struct->RHS,"RHS.txt");
 	//VecView(matvec_struct->RHS,PETSC_VIEWER_STDOUT_WORLD); //STOP();
 	//MatView(matvec_struct->G,PETSC_VIEWER_STDOUT_WORLD); //STOP();
 //	VecView(output,PETSC_VIEWER_STDOUT_WORLD);

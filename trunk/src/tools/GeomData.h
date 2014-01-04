@@ -2,15 +2,7 @@
 #define GEOMETRICCOEFFICIENTSDATA_H_
 
 #include "AttachData.h"
-
-// NASTY THING
-// I need a variable to store pressure gradients to be used into a static member function
-// If this variable is a class member, it will not compile!
-// Global variable <argh!>. I swear I would not do that!
-//extern Matrix<double> Cij_matrix;
-//extern Matrix<double> Cij_norm_matrix;
-//extern Matrix<double> Dij_matrix;
-//extern Matrix<double> volume_matrix;
+#include "Matrix.h"
 
 
 namespace PRS
@@ -58,32 +50,6 @@ namespace PRS
 		GeomData();
 		~GeomData();
 
-//		/*
-//		 * New set/get functions for Cij, Cij_norm, Dij, volume coefficients. More efficient.
-//		 */
-//		void setCij(int dom, int row, const double* grad){
-//			int col = 3*dom - 3;
-//			Cij_matrix(row,col) = grad[0];
-//			Cij_matrix(row,col+1) = grad[1];
-//			Cij_matrix(row,col+2) = grad[2];
-//		}
-//
-//		void getCij(int dom, int row, double* grad){
-//			int col = 3*dom - 3;
-//			grad[0] = Cij_matrix(row,col);
-//			grad[1] = Cij_matrix(row,col+1);
-//			grad[2] = Cij_matrix(row,col+2);
-//		}
-//
-//		void setCij_norm(int dom, int row, double norm){
-//			Cij_matrix(row,0) = norm;
-//		}
-//
-//		double getCij_norm(int dom, int row){
-//			Cij_matrix(row,0) = norm;
-//		}
-
-
         /*
          * Geometric coefficients
          * ----------------------------------------------------------------------------------
@@ -97,7 +63,7 @@ namespace PRS
 		void getCij(pEntity , const int &, DataArray &);
 		void getCij(pEntity edge, const int &dom, double *Cij);
 
-		double getCij_norm(pEntity , const int &);
+
 		bool getDij(pEntity , const int &, DataArray &);
 		double getVolume(pEntity , const int &);
 		double getWeightedVolume(pEntity);
@@ -105,6 +71,15 @@ namespace PRS
 		int getFlag(pEntity);
 		void setCij(pEntity , const int &, DataArray );
 		void setCij_norm(pEntity , const int &, double );
+		double getCij_norm(pEntity , const int &);
+//		void setCij_norm(int dom, int row, double norm){
+//			Cij_norm[dom].setValue(row,norm);
+//		}
+//
+//		double getCij_norm(int dom, int row) const{
+//			return Cij_norm[dom].getValue(row);
+//		}
+
 		void setDij(pEntity , const int &, const int &, const DataArray &);
 		void setVolume(pEntity , const int &, const  double &);
 		void setWeightedVolume(pEntity, const  double &);
@@ -169,12 +144,29 @@ namespace PRS
 		// used to verify coefficients summation
 		void getSumIJ(pEntity,DataArray&);
 
+		void getCij(int dom, int row, double* cij);
+		void setCij(int dom, int row, double* cij);
+
+		void calculateNumEdges(pMesh, int, int*);
+//		void calculateNumBDRYEdges(pMesh, int, int*);
+//		void calculateNumNodes(pMesh, int, int*);
+		void allocatePointers(int);
+		void deallocatePointers(int);
+
+		int getNumEdgesPerDomain(int i) const{
+			return numDomEdges[i];
+		}
+
 	private:
 		double reservoirHeight;
 		double reservoirVolume;
 		int dim;
 		double smallestEdge;
 		int numGEdges;	// number or global edges
+
+		int* numDomEdges;	// number of edges per domain
+		Matrix<double>* Cij;		// Cij vector
+		//Matrix<double>* Cij_norm;
 	};
 }
 

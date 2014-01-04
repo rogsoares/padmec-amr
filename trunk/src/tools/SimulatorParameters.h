@@ -182,8 +182,8 @@ public:
 	 */
 	bool useRestart() const { return restart; }
 	string getRestartFilename() const { return restartFilename; }
-	double getAccumulatedSimulationTime() const { return accSimTime; }
-	void setAccumulatedSimulationTime(double time_increment) { accSimTime += time_increment; }
+	double getCumulativeSimulationTime() const { return accSimTime; }
+	void setCumulativeSimulationTime(double time_increment) { accSimTime += time_increment; }
 	int getStepOutputFile() const { return vtk_step; }
 	void setStepOutputFile(int s) { vtk_step = s; }
 	void setCPU_time(double cput) { cpu_time=cput; }
@@ -221,7 +221,7 @@ public:
 	void updatePrintOutVTKFrequency();
 	string getFilename(string f);
 	void generateFilename(const string &meshFilename, char *filename);
-
+	bool timeToPrintVTK() const { return allowPrintingVTK; }
 
 	/*
 	 * Adaptation parameters
