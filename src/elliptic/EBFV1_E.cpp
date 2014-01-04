@@ -11,7 +11,7 @@
 
 namespace PRS
 {
-int EBFV1_elliptic::divergence_E(Mat E, pEntity edge, const int &dom, int dim, dblarray &Cij){
+int EBFV1_elliptic::divergence_E(Mat E, pEntity edge, const int &dom, int dim, double *Cij){
 	const double I2D[4] = {1.0,.0,.0,1.0};
 	const double I3D[9] = {1.0,.0,.0,.0,1.0,.0,.0,.0,1.0};
 	int i, j, k;

@@ -92,7 +92,7 @@ int SIMULATION_core::initialize(int argc, char **argv){
 	 *  	- boundary and initial conditions, mapping
 	 */
 	pSimPar->initialize(pGCData,theMesh);
-	pPPData->initialize(pMData,pSimPar,theMesh,false);
+	pPPData->initialize(pMData,pSimPar,theMesh,false,pGCData);
 	pMData->initialize(theMesh,pGCData);
 
 	if (!P_pid()){
@@ -104,7 +104,7 @@ int SIMULATION_core::initialize(int argc, char **argv){
 	 */
 	if ( pSimPar->rankHasProductionWell() ) {
 		string path = pSimPar->getOutputPathName();
-		char tmp[256]; sprintf(tmp,"%s_oil-production-%d.xls",path.c_str(),P_size());
+		char tmp[256]; sprintf(tmp,"%s_oil-production-%d.csv",path.c_str(),P_size());
 		string FileName(tmp);
 		pOilProduction = new OilProductionManagement(FileName,pSimPar->getInitialOilVolume(),pSimPar->getTotalInjectionFlowRate());
 	}
@@ -144,21 +144,13 @@ void SIMULATION_core::updatePointersData(pMesh theMesh){
 	cout << "TRACKING_PROGRAM_STEPS: updating Pointers\tIN\n";
 #endif
 	// starting deallocating data related to simulation pointers
-	cout << __LINE__ << endl;
-	
-	pSimPar->deallocateData(); cout << __LINE__ << endl;
-	pPPData->deallocateData(pSimPar); cout << __LINE__ << endl;
-	FIter fit = M_faceIter( theMesh );
-	FIter_delete(fit);
-	cout << __LINE__ << endl;
-	pMData->deallocateData(); cout << __LINE__ << endl;
-	
-	
-	
+	pSimPar->deallocateData();
+	pPPData->deallocateData(pSimPar);
+	pMData->deallocateData();
 	// initialize them once more
-	pSimPar->initialize(pGCData,theMesh); cout << __LINE__ << endl;
-	pPPData->initialize(pMData,pSimPar,theMesh,true); cout << __LINE__ << endl;
-	pMData->initialize(theMesh,pGCData); cout << __LINE__ << endl;
+	pSimPar->initialize(pGCData,theMesh);
+	pPPData->initialize(pMData,pSimPar,theMesh,true,pGCData);
+	pMData->initialize(theMesh,pGCData);
 #ifdef TRACKING_PROGRAM_STEPS
 	cout << "TRACKING_PROGRAM_STEPS: updating Pointers\tOUT\n";
 #endif
@@ -166,9 +158,7 @@ void SIMULATION_core::updatePointersData(pMesh theMesh){
 }
 
 int SIMULATION_core::finalize(){
-	/*
-	 * Write to file oil production output. Only rank 0 is in charge of it.
-	 */
+	// Write to file oil production output. Only rank 0 is in charge of it.
 	string path = pSimPar->getOutputPathName();
 
 	char tmp[256]; sprintf(tmp,"%s_PETSc_summary_nproc%d.log",path.c_str(),P_size());

@@ -13,7 +13,7 @@
 
 namespace PRS
 {
-	int EBFV1_elliptic::divergence_G(Mat G, pEntity edge, const int &dom, int dim, dblarray &Cij){
+	int EBFV1_elliptic::divergence_G(Mat G, pEntity edge, const int &dom, int dim, double *Cij){
 		int i, j;
 		double edgeLength, sign = 1.0;
 

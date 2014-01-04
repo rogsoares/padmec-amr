@@ -8,6 +8,7 @@
 
 #include "EBFV1__pre-processors.h"
 
+void transferCijData(pMesh theMesh, GeomData* pGCData, int ndom, int* domlist);
 
 // calculates: Cij, Dij and nodal volume
 // ---------------------------------------------------------------------
@@ -98,9 +99,6 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 				Cij[0] += v[1];
 				Cij[1] += -v[0];
 
-				for (j=0; j<2; j++){
-					Cij[j] = H*Cij[j];
-				}
 				pGCData->setCij(edge,dom,Cij);
 				//cout << "Cij = " << Cij[0] << "\t" << Cij[1] << "\t" << Cij[2] << "\n";
 #ifdef __ADAPTATION_DEBUG__
@@ -136,7 +134,6 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 		if ( !theMesh->getRefinementDepth(edge) ){
  			flag = EN_getFlag(edge);
  			std::set<int>::iterator iter = setOfDomain.find( flag );
-//			if ( E_numFaces(edge)==1 ){				// this line works for homogeneous adaptation
  			if (iter == setOfDomain.end()){		// this line is for general (homo/hetero) adaptation
 				numBE++;
 				double I[3] = {.0,.0,.0}, J[3] = {.0,.0,.0};
@@ -182,12 +179,6 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 				// associate to edge domains flags to wjich it belongs
 				EN_attachDataInt(edge,MD_lookupMeshDataId("dom1"),domains[0]);
 				EN_attachDataInt(edge,MD_lookupMeshDataId("dom1"),domains[1]);
-
-				// associate to edge Dij vector
-				// REMEMBER THAT: Dij points domains[0] -> domains[1] ALWAYS!!!
-				for (j=0; j<2; j++){
-					Dij[j] *= H;
-				}
 				pGCData->setDij(edge,domains[0],domains[1],Dij);
 				//cout << "Dij = " << Dij[0] << "\t" << Dij[1] << "\t" << Dij[2] << "\n";
 			}
@@ -222,11 +213,8 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 	calculateEdgeLength(theMesh,pGCData);
 	calculateCijNorm(theMesh,pGCData,setOfDomain);
 
-
-	/*
-	 * For 2-D domains, multiply volume by reservoir height (H) for 2D/3D simulations (physics occurs only on 2-D but
-	 * reservoir volume is considered)
-	 */
+	// For 2-D domains, multiply volume by reservoir height (H) for 2D/3D simulations (physics occurs only on 2-D but
+	// reservoir volume is considered)
 	double vt = .0;
 	double vol,wvol;
 	std::set<int>::iterator iter = setOfDomain.begin();
@@ -234,13 +222,9 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 		VIter vit = M_vertexIter(theMesh);
 		while (pEntity node = VIter_next(vit)){
 			// do not divide vol by number of remote copies!
-			vol = H*pGCData->getVolume(node,*iter);
+			vol = pGCData->getVolume(node,*iter);
 			vt += vol;
-			wvol = H*0.2*vol;
-			if (vol == .0){
-				char msg[256]; sprintf(msg,"Volume in Vertex (ID = %d) is 0!",EN_id(node));
-				//throw Exception(__LINE__,__FILE__,msg);
-			}
+			wvol = 0.2*vol;
 			pGCData->setWeightedVolume(node,wvol);
 		}
 		VIter_delete(vit);
@@ -251,10 +235,49 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 		cout << *iter << "  ";
 	}
 	cout << endl;
+
+
+//	// transfer geometric data from FMDB to Matrix structure
+	i = 0;
+	ndom = (int)setOfDomain.size();
+	int *domlist = new int[ndom];
+	for(iter = setOfDomain.begin(); iter!=setOfDomain.end(); iter++){
+		domlist[i++] =  *iter;
+	}
+	pGCData->calculateNumEdges(theMesh,ndom,domlist);
+//	pGCData->calculateNumBDRYEdges(theMesh,ndom,domlist);
+//	pGCData->calculateNumNodes(theMesh,ndom,domlist);
+	pGCData->allocatePointers(ndom);
+//	pGCData->calculateEdgeProperties(theMesh,ndom,domlist);
+	transferCijData(theMesh,pGCData,ndom,domlist);
+	delete[] domlist; domlist = 0;
+
+
 #ifdef TRACKING_PROGRAM_STEPS
 	cout << "TRACKING_PROGRAM_STEPS: EBFV1_preprocessor_2D\tOUT\n";
 #endif
 	return 0;
+}
+
+void transferCijData(pMesh theMesh, GeomData* pGCData, int ndom, int* domlist){
+	dblarray Cij(3,.0);
+	double cij[3];
+	for (int i=0; i<ndom; i++){
+		int dom = domlist[i];
+		int row = 0;
+		EIter eit = M_edgeIter(theMesh);
+		while ( pEdge edge = EIter_next(eit) ){
+			if ( pGCData->edgeBelongToDomain(edge,dom) ){
+				pGCData->getCij(edge,dom,Cij);
+				cij[0] = Cij[0];
+				cij[1] = Cij[1];
+				cij[2] = Cij[2];
+				pGCData->setCij(i,row,cij);
+				row++;
+			}
+		}
+		EIter_delete(eit);
+	}
 }
 
 
@@ -264,6 +287,8 @@ void initializeCoefficients(pMesh theMesh, GeomData *pGCData){
 		pGCData->setWeightedVolume(v,0.0);
 		pGCData->setVolume(v,3300,.0);
 		pGCData->setVolume(v,3301,.0);
+		pGCData->setVolume(v,3302,.0);
+		pGCData->setVolume(v,3303,.0);
 	}
 	VIter_delete(vit);
 
@@ -271,9 +296,17 @@ void initializeCoefficients(pMesh theMesh, GeomData *pGCData){
 	EIter eit = M_edgeIter(theMesh);
 	while ( pEdge edge = EIter_next(eit) ){
 		pGCData->setCij(edge,3300,vec);
-		//pGCData->setCij(edge,3300,vec);
+		pGCData->setCij(edge,3301,vec);
+		pGCData->setCij(edge,3302,vec);
+//		pGCData->setCij(edge,3303,vec);
 		if (EN_getFlag(edge)==2000){
 			pGCData->setDij(edge,2000,0,vec);
+		}
+		if (EN_getFlag(edge)==10){
+			pGCData->setDij(edge,10,0,vec);
+		}
+		if (EN_getFlag(edge)==51){
+			pGCData->setDij(edge,51,0,vec);
 		}
 	}
 	EIter_delete(eit);

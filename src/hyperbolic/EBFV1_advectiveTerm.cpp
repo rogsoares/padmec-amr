@@ -7,22 +7,25 @@ static bool check_IAT = false;
 #endif //_SEEKFORBUGS_
 
 // computes total velocity on edges for domain dom
-double EBFV1_hyperbolic::calculateIntegralAdvectiveTerm(pMesh theMesh, int dom){
+double EBFV1_hyperbolic::calculateIntegralAdvectiveTerm(pMesh theMesh, int dom, int dom_counter, double &timeStep){
 	cout << "calculateIntegralAdvectiveTerm\n";
 	int dim = pGCData->getMeshDim();
 	double startt = MPI_Wtime();
 
 	pEntity edge;
-	dblarray Cij(dim,.0), vel(dim,0);
+//	dblarray vel(dim,0);
 	double dt = 1e+10, Sw_I, Sw_J, fwII, fwJJ, fwIJ, df_dsIJ, n, alpha;
 	double  non_visc_fv, non_visc_ad, nonvisc_I, nonvisc_J;
 	double courant, phi, length;
+	double Cij[3], vel[3];
 	
+	int row = 0;
 	// loop over edges
 	EIter eit = M_edgeIter(theMesh);
 	while ( (edge = EIter_next(eit)) ){
 		if ( pGCData->edgeBelongToDomain(edge,dom) ){
-			pGCData->getCij(edge,dom,Cij);
+			//pGCData->getCij(edge,dom,Cij);
+			pGCData->getCij(dom_counter,row,Cij);
 
 			// get nodes I and J
 			pEntity I = (pVertex)edge->get(0,0);
@@ -47,7 +50,8 @@ double EBFV1_hyperbolic::calculateIntegralAdvectiveTerm(pMesh theMesh, int dom){
 			fwIJ = 0.5*(fwII + fwJJ);
 
 			// mid-edge total velocity
-			pStruct->pPPData->getVelocity_new(edge,dom,vel);
+//			pStruct->pPPData->getVelocity_new(edge,dom,vel);
+			pStruct->pPPData->getVelocity_new(dom_counter,row,vel);
 
 			// Numerical Flux Function
 			const double FluxIJ[3] = { fwIJ*vel[0], fwIJ*vel[1], fwIJ*vel[2] };
@@ -85,6 +89,7 @@ double EBFV1_hyperbolic::calculateIntegralAdvectiveTerm(pMesh theMesh, int dom){
 			// update nonvisc term. it will be set to 0 at the next time iteration
 			pStruct->pPPData->setNonViscTerm(I,nonvisc_I);
 			pStruct->pPPData->setNonViscTerm(J,nonvisc_J);
+			row++;
 		}
 	}
 	EIter_delete(eit);
@@ -107,11 +112,12 @@ double EBFV1_hyperbolic::calculateIntegralAdvectiveTerm(pMesh theMesh, int dom){
 	}
 	#endif //_SEEKFORBUGS_
 	
-	dt = (courant*length*phi)/alpha_max;
-	cout << setprecision(8) << fixed << " ##### TIME STEP = " << dt << endl;
+	//dt = (courant*length*phi)/alpha_max;
+	timeStep = std::min(timeStep,(courant*length*phi)/alpha_max);
+	cout << setprecision(8) << fixed << " ##### TIME STEP = " << timeStep << endl;
 
 	// use dt as time step to advance saturation
-	timeStepByDomain.insert(dt);
+	//timeStepByDomain.insert(dt);
 
 	double endt = MPI_Wtime();
 	return endt-startt;

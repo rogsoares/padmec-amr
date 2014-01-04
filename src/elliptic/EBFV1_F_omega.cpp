@@ -2,7 +2,7 @@
 
 namespace PRS
 {
-	int EBFV1_elliptic::gradient_F_edges(Mat F, pEntity edge, const int &dom, int dim, dblarray &Cij){
+	int EBFV1_elliptic::gradient_F_edges(Mat F, pEntity edge, const int &dom, int dim, double *Cij){
 		int i;
 
 		// get nodes I and J

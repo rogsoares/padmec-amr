@@ -3,6 +3,7 @@
 
 #include "MeshData.h"
 #include "Matrix.h"
+#include "GeomData.h"
 
 // NASTY THING
 // I need a variable to store pressure gradients to be used into a static member function
@@ -37,7 +38,6 @@ struct NodePhysicalProperties{
 	double S_Limit;
 	double nonvisc;
 	double volume;
-
 	bool projected;
 };
 
@@ -56,7 +56,7 @@ public:
 	PhysicPropData();
 	~PhysicPropData();
 
-	void initialize(MeshData *, SimulatorParameters *, pMesh, bool);
+	void initialize(MeshData *, SimulatorParameters *, pMesh, bool, GeomData* pGCData);
 	void deallocateData(SimulatorParameters *pSimPar);
 
 	/*
@@ -76,18 +76,25 @@ public:
 	}
 
 	static void get_pw_Grad(pVertex node, int dom, int row, double* grad){
-		grad[0] = pGrad_matrix[dom].getValues(row,0);
-		grad[1] = pGrad_matrix[dom].getValues(row,1);
-		grad[2] = pGrad_matrix[dom].getValues(row,2);
+		grad[0] = pGrad_matrix[dom].getValue(row,0);
+		grad[1] = pGrad_matrix[dom].getValue(row,1);
+		grad[2] = pGrad_matrix[dom].getValue(row,2);
 	}
 
 	/*
 	 * The same explanation for the functions below. Those are for saturation.
 	 */
 	static void set_Sw_Grad(pVertex node, int dom, int row, const double* grad){
-//		SwGrad_matrix[dom].setValue(row,0,grad[0]);
-//		SwGrad_matrix[dom].setValue(row,1,grad[1]);
-//		SwGrad_matrix[dom].setValue(row,2,grad[2]);
+//		row =  1;
+//		static double time = .0;
+//		double t1 = MPI_Wtime();
+//		SwGrad_matrix[0].setValue(row,0,grad[0]);
+//		SwGrad_matrix[0].setValue(row,1,grad[1]);
+//		SwGrad_matrix[0].setValue(row,2,grad[2]);
+//		double t2 = MPI_Wtime();
+//		time += t2-t1;
+//		cout << "time: " << time << endl;
+
 		for(int i=0;i<3;i++){
 			char string[256]; sprintf(string,"Swgrad_%d_%d",dom,i);
 			EN_attachDataDbl(node,MD_lookupMeshDataId(string),grad[i]);
@@ -95,18 +102,39 @@ public:
 	}
 
 	static void get_Sw_Grad(pVertex node, int dom, int row, double* grad){
-//		grad[0] = SwGrad_matrix[dom].getValues(row,0);
-//		grad[1] = SwGrad_matrix[dom].getValues(row,1);
-//		grad[2] = SwGrad_matrix[dom].getValues(row,2);
+//		static double time = .0;
+//		double t1 = MPI_Wtime();
+//		grad[0] = SwGrad_matrix[0].getValue(row,0);
+//		grad[1] = SwGrad_matrix[0].getValue(row,1);
+//		grad[2] = SwGrad_matrix[0].getValue(row,2);
+//		double t2 = MPI_Wtime();
+//		time += t2-t1;
+//		cout << "time: " << time << endl;
 		for(int i=0;i<3;i++){
 			char string[256]; sprintf(string,"Swgrad_%d_%d",dom,i);
 			EN_getDataDbl(node,MD_lookupMeshDataId(string),&grad[i]);
 		}
 	}
 
-	// ************************************************************************************************************************************
+	static void setNonViscTerm(int row, double nonvisc){
+		nonvisc_matrix.setValue(row,nonvisc);
+	}
 
-	// SET PRESSURE/SATURATION/NONVISCTERM
+	static double getNonViscTerm(int row){
+		return nonvisc_matrix.getValue(row);
+	}
+
+
+	static void setNonViscTerm(pEntity node, double nonvisc){
+		EN_attachDataDbl(node,MD_lookupMeshDataId( "NonViscTerm_id" ),nonvisc);
+	}
+
+	static double getNonViscTerm(pEntity node){
+		double nonvisc;
+		EN_getDataDbl(node,MD_lookupMeshDataId( "NonViscTerm_id" ),&nonvisc);
+		return nonvisc;
+	}
+
 	static void setPressure(pEntity node, double p){
 		EN_attachDataDbl(node,MD_lookupMeshDataId("p_id"),p);
 	}
@@ -136,30 +164,44 @@ public:
 		return sat;
 	}
 
-	static void setNonViscTerm(pEntity node, double nonvisc){
-		EN_attachDataDbl(node,MD_lookupMeshDataId( "NonViscTerm_id" ),nonvisc);
-	}
-
-	static double getNonViscTerm(pEntity node){
-		double nonvisc;
-		EN_getDataDbl(node,MD_lookupMeshDataId( "NonViscTerm_id" ),&nonvisc);
-		return nonvisc;
-	}
-
 	void setInitialSaturation(pMesh, SimulatorParameters*);
 	void setSw_max(pEntity,double);
 	void setSw_min(pEntity,double);
 	void setS_Limit(pEntity,double);
 
 	// GET VELOCITIES
-	void setInitialVelocity(pMesh, SimulatorParameters*);
-	void setVelocity_new(pEdge, const int&, std::vector<double>);
-	void setVelocity_old(pEdge, const int&, std::vector<double>);
-	void setVelocity(pEdge, const int&, bool, std::vector<double>);
-	void getVelocity_new(pEdge, const int &, std::vector<double>&);
-	void getVelocity_old(pEdge, const int &, std::vector<double>&);
-	void getVelocity(pEdge, const int &, bool, std::vector<double>&);
-	void getVelocity(GeomData*, SimulatorParameters*, pEdge, const int&, dblarray&, double&, double&);
+//	void setInitialVelocity(pMesh, SimulatorParameters*);
+//	void setVelocity_new(pEdge, const int&, std::vector<double>);
+//	void setVelocity_old(pEdge, const int&, std::vector<double>);
+
+	void setVelocity_new(int dom, int row, double* vel){
+		velocity[dom].setValue(row,0,vel[0]);
+		velocity[dom].setValue(row,1,vel[1]);
+		velocity[dom].setValue(row,2,vel[2]);
+	}
+	void setVelocity_old(int dom, int row, double* vel){
+		velocity[dom].setValue(row,3,vel[0]);
+		velocity[dom].setValue(row,4,vel[1]);
+		velocity[dom].setValue(row,5,vel[2]);
+	}
+
+	void getVelocity_new(int dom, int row, double* vel){
+		vel[0] = velocity[dom].getValue(row,0);
+		vel[1] = velocity[dom].getValue(row,1);
+		vel[2] = velocity[dom].getValue(row,2);
+	}
+
+	void getVelocity_old(int dom, int row, double* vel){
+		vel[0] = velocity[dom].getValue(row,3);
+		vel[1] = velocity[dom].getValue(row,4);
+		vel[2] = velocity[dom].getValue(row,5);
+	}
+
+//	void setVelocity(pEdge, const int&, bool, std::vector<double>);
+//	void getVelocity_new(pEdge, const int &, std::vector<double>&);
+//	void getVelocity_old(pEdge, const int &, std::vector<double>&);
+//	void getVelocity(pEdge, const int &, bool, std::vector<double>&);
+//	void getVelocity(GeomData*, SimulatorParameters*, pEdge, const int&, dblarray&, double&, double&);
 
 	double getSw_max(pEntity);
 	double getSw_min(pEntity);
@@ -189,8 +231,8 @@ public:
 
 	// get set/get pointers to arrays of pointer functions
 	GetPFuncGrad* get_getPFuncArray() { return pGetGradArray; }
-//	GetPFuncScalar* get_getPFuncScalarArray() const { return pGetScalarArray; }
-//	SetPFuncScalar* get_setPFuncScalarArray() const { return pSetScalarArray; }
+	//	GetPFuncScalar* get_getPFuncScalarArray() const { return pGetScalarArray; }
+	//	SetPFuncScalar* get_setPFuncScalarArray() const { return pSetScalarArray; }
 
 	/*! brief For steady-state simulations, total mobility must be equal 1, otherwise it must be calculated.
 	 * \param state if true, lambda_total = 1.0;
@@ -209,6 +251,8 @@ private:
 
 	// pointers to arrays of pointer functions
 	GetPFuncGrad* pGetGradArray;
+
+	Matrix<double>* velocity;
 };
 }
 #endif /*PHYSICALPROPERTIESDATA_H_*/

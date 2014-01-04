@@ -14,9 +14,11 @@ double EBFV1_hyperbolic::calculateSaturationGradient(pMesh theMesh){
 	double start = MPI_Wtime();
 	int dim = pGCData->getMeshDim();
 	resetSaturationGradient(theMesh);
+	int dom_counter = 0;
 	for (SIter_const dom= pStruct->pSimPar->setDomain_begin(); dom!=pStruct->pSimPar->setDomain_end();dom++){
-		calc_Sw_grad_1(theMesh,*dom,dim);
+		calc_Sw_grad_1(theMesh,*dom,dom_counter,dim);
 		calc_Sw_grad_2(theMesh,*dom,dim);
+		dom_counter++;
 	}
 	calc_Sw_grad_31(theMesh);
 
@@ -27,19 +29,22 @@ double EBFV1_hyperbolic::calculateSaturationGradient(pMesh theMesh){
 	return end-start;
 }
 
-void EBFV1_hyperbolic::calc_Sw_grad_1(pMesh theMesh, int dom, int dim){
+void EBFV1_hyperbolic::calc_Sw_grad_1(pMesh theMesh, int dom, int dom_counter, int dim){
 	pEntity edge, I, J;
-	dblarray Cij(dim,.0);
-	int dom_counter = 0;
+	//dblarray Cij(dim,.0);
+	//int dom_counter = 0;
 	int row_I, row_J;
 	double Sw_grad_I[3]={.0,.0,.0}, Sw_grad_J[3]={.0,.0,.0};
 	char tag[4]; sprintf(tag,"%d",dom_counter);
 
+	double Cij[3];
+	int row = 0;
 	EIter eit = M_edgeIter(theMesh);
 	while ( (edge = EIter_next(eit)) ){
 		if ( pGCData->edgeBelongToDomain(edge,dom) ){
 			// get Cij vector (normal to control volume surface)
-			pGCData->getCij(edge,dom,Cij);
+			//pGCData->getCij(edge,dom,Cij);
+			pGCData->getCij(dom_counter,row,Cij); row++;
 
 			// get nodes I and J
 			I = (pVertex)edge->get(0,0);

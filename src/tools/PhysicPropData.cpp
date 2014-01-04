@@ -17,7 +17,7 @@ namespace PRS{
 	PhysicPropData::~PhysicPropData(){
 	}
 
-	void PhysicPropData::initialize(MeshData *pMData, SimulatorParameters *pSimPar, pMesh theMesh, bool isUpdate){
+	void PhysicPropData::initialize(MeshData *pMData, SimulatorParameters *pSimPar, pMesh theMesh, bool isUpdate, GeomData* pGCData){
 		Swr = pSimPar->Swr();				// Irreducible water saturation
 		Sor = pSimPar->Sor();				// Residual oil saturation
 		mi_w = pSimPar->waterViscosity();	// water viscosity
@@ -53,11 +53,15 @@ namespace PRS{
 #endif
 
 		pGrad_matrix = new Matrix<double>[ndom];
+		velocity = new Matrix<double>[ndom];
 //		SwGrad_matrix = new Matrix<double>[ndom+1];
 		for (int k=0; k<ndom; k++){
 			int nrows = pNumNodesDom[k];
+			int nedges = pGCData->getNumEdgesPerDomain(k);
 			pGrad_matrix[k].allocateMemory(nrows,3);
 			pGrad_matrix[k].initialize(.0);
+			velocity[k].allocateMemory(nedges,6);
+			velocity[k].initialize(.0);
 //			SwGrad_matrix[k].allocateMemory(nrows,3);
 //			SwGrad_matrix[k].initialize(.0);
 		}
@@ -69,63 +73,65 @@ namespace PRS{
 		int ndom = pSimPar->getNumDomains();
 		for (int k=0; k<ndom; k++){
 			pGrad_matrix[k].freeMemory();
+			velocity[k].freeMemory();
 			//SwGrad_matrix[k].freeMemory();
 		}
 //		SwGrad_matrix[ndom].freeMemory();
 //		delete[] SwGrad_matrix; SwGrad_matrix = 0;
 		delete[] pGrad_matrix; pGrad_matrix = 0;
+		delete[] velocity; velocity = 0;
 	}
 
-	void PhysicPropData::setInitialVelocity(pMesh theMesh, SimulatorParameters *pSimPar){
-		pEdge edge;
-		for (SIter sit=pSimPar->setDomain_begin(); sit!=pSimPar->setDomain_end(); sit++)	{
-			const int dom = *sit;
-			EIter eit = M_edgeIter(theMesh);
-			while ( (edge = EIter_next(eit)) ){
-				dblarray v(3,.0);
-				setVelocity_new(edge,dom,v);
-				setVelocity_old(edge,dom,v);
-			}
-			EIter_delete(eit);
-		}
-	}
+//	void PhysicPropData::setInitialVelocity(pMesh theMesh, SimulatorParameters *pSimPar){
+//		pEdge edge;
+//		for (SIter sit=pSimPar->setDomain_begin(); sit!=pSimPar->setDomain_end(); sit++)	{
+//			const int dom = *sit;
+//			EIter eit = M_edgeIter(theMesh);
+//			while ( (edge = EIter_next(eit)) ){
+//				dblarray v(3,.0);
+//				setVelocity_new(edge,dom,v);
+//				setVelocity_old(edge,dom,v);
+//			}
+//			EIter_delete(eit);
+//		}
+//	}
 
-	void PhysicPropData::setVelocity_new(pEdge edge, const int &dom, dblarray v){
-		setVelocity(edge,dom,true,v);
-	}
-
-	void PhysicPropData::setVelocity_old(pEdge edge, const int &dom, dblarray v){
-		setVelocity(edge,dom,false,v);
-	}
-
-	void PhysicPropData::setVelocity(pEdge edge, const int &dom, bool time, dblarray v){
-		EdgePhysicalProperties* pEdgeCoeff = getAttachedData_pointer<EdgePhysicalProperties>(edge);
-		if (pEdgeCoeff){
-			if ( time )
-				pEdgeCoeff->v_new[dom] = v;
-			else
-				pEdgeCoeff->v_old[dom] = v;
-			setAttachedData_pointer(edge,pEdgeCoeff);
-		}
-		else
-			throw Exception(__LINE__,__FILE__,"Null pointer.\n");
-	}
-
-	void PhysicPropData::getVelocity_new(pEdge edge, const int &dom, dblarray &v){
-		getVelocity(edge,dom,true,v);
-	}
-
-	void PhysicPropData::getVelocity_old(pEdge edge, const int &dom, dblarray &v){
-		getVelocity(edge,dom,false,v);
-	}
-
-	void PhysicPropData::getVelocity(pEdge edge, const int &dom, bool time, dblarray &v){
-		EdgePhysicalProperties *pEdgeCoeff = getAttachedData_pointer<EdgePhysicalProperties>(edge);
-		if ( time )
-			v = pEdgeCoeff->v_new[dom];
-		else
-			v = pEdgeCoeff->v_old[dom];
-	}
+//	void PhysicPropData::setVelocity_new(pEdge edge, const int &dom, dblarray v){
+//		setVelocity(edge,dom,true,v);
+//	}
+//
+//	void PhysicPropData::setVelocity_old(pEdge edge, const int &dom, dblarray v){
+//		setVelocity(edge,dom,false,v);
+//	}
+//
+//	void PhysicPropData::setVelocity(pEdge edge, const int &dom, bool time, dblarray v){
+//		EdgePhysicalProperties* pEdgeCoeff = getAttachedData_pointer<EdgePhysicalProperties>(edge);
+//		if (pEdgeCoeff){
+//			if ( time )
+//				pEdgeCoeff->v_new[dom] = v;
+//			else
+//				pEdgeCoeff->v_old[dom] = v;
+//			setAttachedData_pointer(edge,pEdgeCoeff);
+//		}
+//		else
+//			throw Exception(__LINE__,__FILE__,"Null pointer.\n");
+//	}
+//
+//	void PhysicPropData::getVelocity_new(pEdge edge, const int &dom, dblarray &v){
+//		getVelocity(edge,dom,true,v);
+//	}
+//
+//	void PhysicPropData::getVelocity_old(pEdge edge, const int &dom, dblarray &v){
+//		getVelocity(edge,dom,false,v);
+//	}
+//
+//	void PhysicPropData::getVelocity(pEdge edge, const int &dom, bool time, dblarray &v){
+//		EdgePhysicalProperties *pEdgeCoeff = getAttachedData_pointer<EdgePhysicalProperties>(edge);
+//		if ( time )
+//			v = pEdgeCoeff->v_new[dom];
+//		else
+//			v = pEdgeCoeff->v_old[dom];
+//	}
 
 	void PhysicPropData::setInitialSaturation(pMesh theMesh, SimulatorParameters *simPar){
 
@@ -174,8 +180,8 @@ namespace PRS{
 //			if (simPar->isInjectionWell(flag)){
 //				setSaturation(edge->get(0,0),1.0);
 //				setSaturation(edge->get(0,1),1.0);
-//				edge->get(0,0)->classify( edge->getClassification() );
-//				edge->get(0,1)->classify( edge->getClassification() );
+////				edge->get(0,0)->classify( edge->getClassification() );
+////				edge->get(0,1)->classify( edge->getClassification() );
 //			}
 //		}
 //		EIter_delete(eit);

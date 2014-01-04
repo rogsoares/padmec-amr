@@ -55,30 +55,26 @@ namespace PRS{
 		int node_ID,well_flag,i;
 		double Sw,Sw0,Sw_old,Vt,Qi,Vi,Qwi,Qt,fw,nonvisc,wp,volume, nrc, porosity;
 		double dt_well = (double)delta_T/N;			// time step for well nodes saturation
-		double oilFlow = .0;
+		double cml_oil,Qo,Qw;
 		pVertex node;
 		
 		if ( pStruct->pSimPar->rankHasProductionWell() ){
 			// FOR EACH PRODUCTION WELL
+			cml_oil = .0;
 			map<int,set<int> >::iterator miter;
 			for ( miter=pStruct->pSimPar->mapNodesOnWell.begin(); miter!=pStruct->pSimPar->mapNodesOnWell.end(); miter++){
 				well_flag = miter->first;
 				if ( pStruct->pSimPar->isProductionWell(well_flag) ){
-					// source/sink term
-					Qt = pStruct->pSimPar->getFlowrateValue(well_flag);
-					
-					// for node i, Qi is a fraction of total well flow rate (Qt)
-					Vt = pStruct->pSimPar->getWellVolume(well_flag);
-					
+					Qt = pStruct->pSimPar->getFlowrateValue(well_flag);	// source/sink term
+					Vt = pStruct->pSimPar->getWellVolume(well_flag);	// for node i, Qi is a fraction of total well flow rate (Qt)
+					Qo = .0;
+					Qw = .0;
 					// FOR EACH NODE ON PRODUCTION WELL
 					for (SIter siter = miter->second.begin(); siter!=miter->second.end();siter++){
 						node_ID = *siter;
 						node = (mEntity*)theMesh->getVertex( node_ID );
 						Sw_old = pStruct->pPPData->getSaturation(node);
 						nonvisc = pStruct->pPPData->getNonViscTerm(node);
-//						int geomFlag = pGCData->getDomainFlag(node);
-//						wp = pGCData->getVolume(node,geomFlag)*pStruct->pSimPar->getPorosity(geomFlag);
-
 						Vi = .0;
 						wp = .0;
 						for (SIter_const dom=pStruct->pSimPar->setDomain_begin(); dom!=pStruct->pSimPar->setDomain_end(); dom++){
@@ -103,7 +99,6 @@ namespace PRS{
 							fw = pStruct->pPPData->getFractionalFlux(Sw0);
 							Qwi = fabs(fw*Qi);
 							Sw = Sw0 - dt_well*(Qwi/wp);
-							if ( Sw < 1.0e-6 ) Sw = .0;
 							Sw_old = Sw;
 						}
 						
@@ -112,12 +107,15 @@ namespace PRS{
 						}
 
 						pStruct->pPPData->setSaturation(node,Sw);
-						
-						// Oil production
-						double Qoi = fabs(Qi) - fabs(fw*Qi);
-						oilFlow += fabs(Qoi);
+						double fw = pStruct->pPPData->getFractionalFlux(Sw);	// oil fractional flux
+						double fo = pStruct->pPPData->getOilFractionalFlux(Sw);	// oil fractional flux
+						Qo += fabs(Qi*fo);
+						Qw += fabs(Qi*fw);
+						cml_oil += Qo;
 					}
-					setRecoveredOilValue(oilFlow);
+					setRecoveredOil(Qo/(Qo+Qw));
+					cml_oil = cml_oil*delta_T + getCumulativeOil();
+					setCumulativeOil(cml_oil);
 				}
 			}
 		}

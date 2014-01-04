@@ -16,9 +16,10 @@ double EBFV1_elliptic::pressureGradient(pMesh theMesh){
 	int dom_counter = 0;
 	int dim = pGCData->getMeshDim();
 	pEntity node, edge;//, face;
-	dblarray Cij(dim,.0), Dij(dim,.0);
+	dblarray Dij(dim,.0);
 	double pw_grad_I[3], pw_grad_J[3];//,  pw_grad_K[3];
 	double pressure_I, pressure_J;//, pressure_K;
+	double Cij[3];
 
 	// loop over domains
 	SIter_const iter=pSimPar->setDomain_begin();
@@ -30,6 +31,7 @@ double EBFV1_elliptic::pressureGradient(pMesh theMesh){
 		// before any calculation, reset all previous values
 		resetPressureGradient(theMesh,dom_counter,tag);
 
+		int row = 0;
 		// loop over all edges
 		EIter eit = M_edgeIter(theMesh);
 		while ( (edge = EIter_next(eit)) ){
@@ -49,7 +51,9 @@ double EBFV1_elliptic::pressureGradient(pMesh theMesh){
 				pSimPar->getLocalNodeIDNumbering(J,tag,row_J);
 
 				// get Cij vector (normal to control volume surface)
-				pGCData->getCij(edge,dom,Cij);
+				//pGCData->getCij(edge,dom,Cij);
+				pGCData->getCij(dom_counter,row,Cij);
+				row++;
 
 				// get nodal pressure gradient
 				pPPData->get_pw_Grad(I,dom_counter,row_I,pw_grad_I);
@@ -161,12 +165,12 @@ double EBFV1_elliptic::pressureGradient(pMesh theMesh){
 		//pMData->unifyVectorsOnMeshNodes(pPPData->get_pw_Grad2,pPPData->set_pw_Grad2,pGCData,dom);
 
 #ifdef _SEEKFORBUGS_
-		if (!check1){
-			throw Exception(__LINE__,__FILE__,"Pressure field null!\n");
-		}
-		if (!check2){
-			throw Exception(__LINE__,__FILE__,"Gradient null!\n");
-		}
+//		if (!check1){
+//			throw Exception(__LINE__,__FILE__,"Pressure field null!\n");
+//		}
+//		if (!check2){
+//			throw Exception(__LINE__,__FILE__,"Gradient null!\n");
+//		}
 #endif
 
 		dom_counter++;

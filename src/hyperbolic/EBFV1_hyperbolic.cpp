@@ -22,6 +22,7 @@ namespace PRS{
 		pStruct->pErrorAnalysis = pEA;
 		pHOApproximation = new HighOrderApproximation(pStruct);
 		pMData = md;
+		_cumulativeOil = .0;
 	}
 
 	EBFV1_hyperbolic::~EBFV1_hyperbolic(){
@@ -37,9 +38,8 @@ namespace PRS{
 		}
 	#endif
 		double hyp_time = .0;
-
-		// set to 0 all fluxes across control volumes from previous time-step
-		resetNodalNonviscTerms(theMesh);
+		static int timestep_counter = 0;			// counts number of time steps every new VTK
+		resetNodalNonviscTerms(theMesh);			// set to 0 all fluxes across control volumes from previous time-step
 
 		/*
 		 * For each domain, calculate:
@@ -48,12 +48,13 @@ namespace PRS{
 		 * 3 - fluxes across surfaces from control volumes
 		 */
 
-		// loop over domains
 		// calculate saturation gradient if adaptation or high order approximation were required
 		if (  pStruct->pSimPar->userRequiresAdaptation() || pStruct->pSimPar->useHOApproximation()){
 			hyp_time += calculateSaturationGradient(theMesh);
 		}
 
+		// initialize time step with a very high number
+		timeStep = 1.0e10;
 		int dom_counter = 0;
 		for (SIter_const dom=pStruct->pSimPar->setDomain_begin(); dom!=pStruct->pSimPar->setDomain_end();dom++){
 			hyp_time += calculateVelocityField(theMesh,*dom,dom_counter);
@@ -61,12 +62,9 @@ namespace PRS{
 				NodeSlopeLimiter* pNodeSL = pHOApproximation->getNodeSL_Ptr();
 				hyp_time += pNodeSL->defineSlopeLimiters();
 			}
-			hyp_time += calculateIntegralAdvectiveTerm(theMesh,*dom);
+			hyp_time += calculateIntegralAdvectiveTerm(theMesh,*dom,dom_counter,timeStep);
 			dom_counter++;
 		}
-
-		// take minimum time-step calculated by domain
-		 timeStep = getTimeStep();
 
 	#ifdef _SEEKFORBUGS_
 		if (!P_pid()) std::cout << "<_SEEKFORBUGS_>  timeStep = : " << timeStep << endl;
@@ -79,7 +77,7 @@ namespace PRS{
 		if (timeStep==.0) throw Exception(__LINE__,__FILE__,"Time step NULL!");
 	#endif
 		// AccSimTime = AccSimTime + timeStep
-		 pStruct->pSimPar->setAccumulatedSimulationTime(timeStep);
+		 pStruct->pSimPar->setCumulativeSimulationTime(timeStep);
 
 	#ifdef _SEEKFORBUGS_
 		if (timeStep==.0) throw Exception(__LINE__,__FILE__,"Time step NULL!");
@@ -88,15 +86,17 @@ namespace PRS{
 		// Calculate saturation field: Sw(n+1)
 		hyp_time += calculateExplicitAdvanceInTime(theMesh,timeStep);
 
-		// Output data (VTK) VAZAMANETO NA SAIDA DO VTK
-		//pStruct->pSimPar->printOutVTK(theMesh,pStruct->pPPData,pStruct->pErrorAnalysis,pStruct->pSimPar,exportSolutionToVTK);
+		timestep_counter++;
 
-		/*
-		 * The following lines below will be condensed to a function member call
-		 * and it will belong to EBFV1_hyperbolic
-		 */
-		if (pStruct->pSimPar->rankHasProductionWell()){
-			pOPManager->printOilProduction(timeStep,pStruct->pSimPar->getAccumulatedSimulationTime(),pStruct->pSimPar->getSimTime(),getRecoveredOilValue());
+		// oil production output
+		if (pStruct->pSimPar->rankHasProductionWell() && pStruct->pSimPar->timeToPrintVTK()){
+			pOPManager->printOilProduction(timeStep,
+					                       pStruct->pSimPar->getCumulativeSimulationTime(),
+					                       pStruct->pSimPar->getSimTime(),
+					                       getRecoveredOil(),
+					                       getCumulativeOil(),
+					                       timestep_counter);
+			timestep_counter = 0;
 		}
 
 		if (!P_pid()) std::cout << "done.\n\n";

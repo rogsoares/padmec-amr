@@ -252,7 +252,7 @@ namespace PRS{
 
 				double H = (pGCData->getMeshDim()==2)?pGCData->getReservoirHeight():1.0;
 
-				for (j=0; j<dim; j++) Cij[j] = H*strtod(str[j+4].c_str(),0);
+				for (j=0; j<dim; j++) Cij[j] = strtod(str[j+4].c_str(),0);
 
 				if (Cij[0] == .0 && Cij[1] == .0 && Cij[2] == .0){
 					char msg[256]; sprintf(msg,"Cij from edge %d-%d is completely null!",EN_id(edge->get(0,0)),EN_id(edge->get(0,1)));
@@ -325,7 +325,7 @@ namespace PRS{
 			 * is considered)
 			 */
 			double H = (pGCData->getMeshDim()==2)?pGCData->getReservoirHeight():1.0;
-			for (j=0; j<dim; j++) Dij[j] = H*strtod(str[j+dim+3].c_str(),0);
+			for (j=0; j<dim; j++) Dij[j] = strtod(str[j+dim+3].c_str(),0);
 
 			if (dim==2) // edge already exist!
 				edge = theMesh->getEdge(theMesh->getVertex(IDs[0]),theMesh->getVertex(IDs[1]));
