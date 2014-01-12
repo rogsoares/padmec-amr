@@ -3,9 +3,10 @@
 
 #include "PhysicPropData.h"
 #include "ErrorAnalysis.h"
+#include "GeomData.h"
 
 
-void exportSolutionToVTK(pMesh,void*,void*,void*,string);
+void exportSolutionToVTK(pMesh,void*,void*,void*,void*,string);
 void printVTKHeader(ofstream &, pMesh);
 void printVerticesCoordenates(ofstream &, pMesh);
 void printElementConnectivities(ofstream&, pMesh, int, int);
@@ -13,6 +14,7 @@ void printElementConnectivities(ofstream&, pEntity, int);
 void printCellTypeList(ofstream &, int, int);
 void printPressure(ofstream &, pMesh, PRS::PhysicPropData*);
 void printSaturation(ofstream &, pMesh, PRS::PhysicPropData*);
+void printSaturation(ofstream &, pMesh, PRS::PhysicPropData*, PRS::GeomData*);
 
 void printDegreeOfRefinement(ofstream &, pMesh, ErrorAnalysis*);
 void printCharacteristicLentgh(ofstream &fid, pMesh theMesh);

@@ -9,64 +9,58 @@
 // bled in serial.
 // =============================================================================
 
-//static int gcount = 0;
-
-namespace PRS
-{
-	int EBFV1_elliptic::divergence_G(Mat G, pEntity edge, const int &dom, int dim, double *Cij){
+namespace PRS{
+//	int EBFV1_elliptic::divergence_G(Mat G, pEntity edge, const int &dom, int dim, double *Cij){
+int EBFV1_elliptic::divergence_G(Mat G, double *Cij, int edge, int dom, int dom_flag, int idx0_global, int idx1_global, int id0, int id1, int dim){
 		int i, j;
-		double edgeLength, sign = 1.0;
-
-		// get nodes I and J
-		pEntity I = (pVertex)edge->get(0,0);
-		pEntity J = (pVertex)edge->get(0,1);
-
-		// todo: colocar este codigo em algum luar de forma que so seja feito uma unica vez.
-		if (EN_id(edge->get(0,0)) > EN_id(edge->get(0,1))){
-			std::swap(I,J);
+		double versor[3], length, sign = 1.0;
+		if (id0 > id1){
+			std::swap(id0,id1);
 			sign = -sign;
 		}
 
 		// index for global Fg
-		const int id0 = pMData->get_AppToPETSc_Ordering(EN_id(I));
-		const int id1 = pMData->get_AppToPETSc_Ordering(EN_id(J));
+		id0 = pMData->get_AppToPETSc_Ordering(id0);
+		id1 = pMData->get_AppToPETSc_Ordering(id1);
 
 		// permeability tensor
-		const double *Permeability = pSimPar->getPermeability(dom);
+		const double *Permeability = pSimPar->getPermeability(dom_flag);
 
-		// nodal mobility
-		double MobI = pPPData->getTotalMobility(I);
-		double MobJ = pPPData->getTotalMobility(J);
+		double Sw_I, Sw_J, MobI, MobJ, MobIJ;
+		Sw_I = pPPData->getSaturation(idx0_global);
+		Sw_J = pPPData->getSaturation(idx1_global);
+		MobI = pPPData->getTotalMobility(Sw_I);
+		MobJ = pPPData->getTotalMobility(Sw_J);
+		MobIJ = 0.5*(MobI + MobJ);
 
-		// average mobility
-		double MobIJ = 0.5*(MobI + MobJ);
-
-		pGCData->getEdgeVec_Unitary(edge,Lij);
-		for (i=0; i<dim; i++) Lij[i] *= sign;
-		edgeLength = pGCData->getEdgeLength(edge);
+		pGCData->getLength(dom,edge,length);
+		pGCData->getVersor(dom,edge,versor);
+		for (i=0; i<dim; i++){
+			versor[i] *= sign;
+		}
 
 		// ####################################################################
-		// what is calculated below: Gij = -(K*Mob_IJ)*Lij/(length)*Cij*|1 -1|
+		// what is calculated below: Gij = -(K*Mob_IJ)*versor/(length)*Cij*|1 -1|
 		//											                    |-1 1|
 		// ####################################################################
-		// KL = Permeability * Lij
+		// KL = Permeability * versor
 		double KL[3] = {.0, .0, .0};
 
 		int pos = 0;
 		if ( pSimPar->is_K_Isotropic() ){
 			for (i=0; i<dim; i++){
-				KL[i] = Permeability[pos]*Lij[i];
+				KL[i] = Permeability[pos]*versor[i];
 				pos += dim+1;
 			}
 		}
 		else{
 			for (i=0; i<dim; i++)
-				for (j=0; j<dim; j++) KL[i] += Permeability[dim*i+j]*Lij[j];
+				for (j=0; j<dim; j++) KL[i] += Permeability[dim*i+j]*versor[j];
 		}
 
 		double aux = .0;
 		for (i=0; i<dim; i++) aux += Cij[i]*KL[i];
-		aux /= -edgeLength;
+		aux /= -length;
 		double nrc = 1.0;
 		//			// if an edge is on partition boundary, the result from all processors
 		//			//  contribution for this edge must be equal as if was ran in serial

@@ -215,7 +215,7 @@ public:
 	 *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	void correctTimeStep(double&);
-	void printOutVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3, pFunc_PrintVTK printVTK);
+	void printOutVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3, void *pData4, pFunc_PrintVTK printVTK);
 	double getPrintOutVTKFrequency() const { return vtk_time_frequency; }
 	void setPrintOutVTKFrequency(double vtf) { vtk_time_frequency = vtf; }
 	void updatePrintOutVTKFrequency();

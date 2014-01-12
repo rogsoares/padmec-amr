@@ -19,7 +19,7 @@
 	typedef map<int,BdryConditionType*> MapFlag;
 	typedef MapFlag::iterator MapFlagIter;
 	typedef set<int>::const_iterator SIter_const;
-	typedef void (*pFunc_PrintVTK)(pMesh, void*, void*, void*, string);
+	typedef void (*pFunc_PrintVTK)(pMesh, void*, void*, void*, void*, string);
 
 /*
  * Rock Properties structures

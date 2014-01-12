@@ -47,10 +47,10 @@ namespace PRS{
 
 		do{
 			pElliptic_eq->solver(theMesh);
-			pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
+			pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,pGCData,exportSolutionToVTK);
 #ifndef NOADAPTATION
 			adapt = calculate_ErrorAnalysis(pErrorAnalysis,theMesh,pSimPar,tol1,tol2,pPPData->get_getPFuncArray(),numFields);
-			pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
+			pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,pGCData,exportSolutionToVTK);
 			if ( adapt ){
 				makeMeshCopy2(pIData->m1,pm,pPPData->getPressure,pPPData->getSaturation_Old);
 				pMeshAdapt->rodar(pErrorAnalysis,pIData->m1);
@@ -103,9 +103,8 @@ namespace PRS{
 		int count = 0;
 		while ( !pSimPar->finishSimulation() ){
 			pElliptic_eq->solver(theMesh);
-			//pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
 			pHyperbolic_eq->solver(theMesh,timeStep);
-			pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,exportSolutionToVTK);
+			pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,pGCData,exportSolutionToVTK);
 //			if (count++ > 100){
 //				STOP();
 //			}

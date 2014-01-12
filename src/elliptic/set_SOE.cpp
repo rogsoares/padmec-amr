@@ -35,69 +35,49 @@ namespace PRS{
 		
 		// auxiliar vector to assembly distributed matrix system of equations
 		pMData->rowsToImport(mesh,matvec_struct->nrows,matvec_struct->rows);
-		fid << "matvec_struct->nrows = " << matvec_struct->nrows << endl;
-		for (int i=0; i<matvec_struct->nrows; i++){
-			fid << "matvec_struct->rows[" << i <<"] = " << matvec_struct->rows[i] << endl;
-		}
 
 		if (!dim || !np || !numGF || !ndom){
 			char msg[256]; sprintf(msg,"dim = %d, np = %d, numGF = %d, ndom = %d.  NULL parameters found!\n",dim,np,numGF,ndom);
 			throw Exception(__LINE__,__FILE__,msg);
 		}
-
-		int i = 0;
 		matvec_struct->ndom = ndom;
 		matvec_struct->F_nrows = np*dim;
 		matvec_struct->F_ncols = np;
-		//dblarray Cij(3);
-		double Cij[3];
-		
-		SIter_const dom;
-		if (!pSimPar->setOfDomains.size()){
-			throw Exception(__LINE__,__FILE__,"Size zero!");
-		}
-		if (!M_numEdges(mesh)){
-			throw Exception(__LINE__,__FILE__,"Mesh has any edge!");
-		}
 
 		// these matrices take all mesh vertices and will be delete very soon.
 		Mat G_tmp, E[ndom], F[ndom];
 
 		// Create matrix G.
-		int dom_counter = 0;
+		double Cij[3];
+		int i,j,nedges, dom, idx0, idx1,idx0_global, idx1_global, id0, id1, dom_flag;
 		ierr = MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np,np,80,PETSC_NULL,80,PETSC_NULL,&G_tmp); CHKERRQ(ierr);
-		for (dom=pSimPar->setDomain_begin(); dom!=pSimPar->setDomain_end(); dom++){
-			int row = 0;
-			// Matrices E and F are created to each domain.
-			ierr = MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np,np*dim,100,PETSC_NULL,100,PETSC_NULL,&E[i]);CHKERRQ(ierr);
-			ierr = MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np*dim,np,100,PETSC_NULL,100,PETSC_NULL,&F[i]);CHKERRQ(ierr);
-			EIter eit = M_edgeIter(mesh);
-			while (pEntity edge = EIter_next(eit) ){
-				if (!mesh->getRefinementDepth(edge)){
-					if (  pGCData->edgeBelongToDomain(edge,*dom) ){
-						//cout << "dom = " << *dom << "\tedge: " << EN_id(edge->get(0,0)) << " - " << EN_id(edge->get(0,1)) << endl;
-						//pGCData->getCij(edge,*dom,Cij);
-						pGCData->getCij(dom_counter,row,Cij);
-						divergence_E(E[i],edge,*dom,dim,Cij);
-						divergence_G(G_tmp,edge,*dom,dim,Cij);
-						gradient_F_edges(F[i],edge,*dom,dim,Cij);
-						row++;
-					}
-				}
+		for (dom=0; dom<ndom; dom++){
+			ierr = MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np,np*dim,100,PETSC_NULL,100,PETSC_NULL,&E[dom]);CHKERRQ(ierr);
+			ierr = MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np*dim,np,100,PETSC_NULL,100,PETSC_NULL,&F[dom]);CHKERRQ(ierr);
+			nedges = pGCData->getNumEdgesPerDomain(dom);
+			dom_flag = pGCData->getDomFlag(dom);
+			for (i=0; i<nedges; i++){
+				pGCData->getCij(dom,i,Cij);
+				pGCData->getEdge(dom,i,idx0,idx1,idx0_global,idx1_global);
+				pGCData->getID(dom,idx0,idx1,id0,id1);
+				divergence_E(E[dom],Cij,i,dom,dom_flag,idx0_global,idx1_global,id0,id1,dim);
+				divergence_G(G_tmp,Cij,i,dom,dom_flag,idx0_global,idx1_global,id0,id1,dim);
+				gradient_F_edges(F[dom],Cij,dom,idx0,idx1,id0,id1,dim);
 			}
-			EIter_delete(eit);
-			
-			// Matrix F needs boundary (external and inter-domains) faces contributions.
-			gradient_F_bdry(mesh,F[i],*dom);
-			assemblyMatrix(F[i]);
-			assemblyMatrix(E[i]);
-			i++;
-			dom_counter++;
+			gradient_F_bdry(mesh,F[dom],dom_flag,dom);
+			assemblyMatrix(F[dom]);
+			assemblyMatrix(E[dom]);
 		}
 		assemblyMatrix(G_tmp);
- 		//printMatrixToFile(G_tmp,"G_tmp__PA.txt");
- 		//printMatrixToFile(E[0],"E__PA.txt");
- 		//printMatrixToFile(F[0],"F__PA.txt");
+
+//		static int step=0;
+//		char file1[256]; sprintf(file1,"G_tmp__%d.txt",step);
+// 		printMatrixToFile(G_tmp,file1);
+//// 		printMatrixToFile(E[0],"E__PA.txt");
+// 		char file2[256]; sprintf(file2,"F__%d.txt",step);
+// 		printMatrixToFile(F[0],file2);
+// 		step++;
+// 		STOP();
 			
 		//int printVectorToFile(Vec& v,const char* filename){
 
@@ -128,10 +108,18 @@ namespace PRS{
 		// Gets all E[i] columns. Same for all processors
 		int nrows = matvec_struct->nrows;
 		int *rows = matvec_struct->rows;
-		
-		
 
-		pMData->createVectorsForMatrixF(F[0]);
+		static bool cvfm = true;
+		if (!pSimPar->userRequiresAdaptation()){
+			if (cvfm){
+				pMData->createVectorsForMatrixF(F[0]);
+				cvfm = false;
+			}
+		}
+		else{
+			pMData->createVectorsForMatrixF(F[0]);
+		}
+
 		for (i=0; i<ndom; i++){
 			ierr = MatGetSubMatrixRaw(F[i],pMData->get_F_nrows(),pMData->get_F_rows_ptr(),numGF,pMData->get_F_cols_ptr(),PETSC_DECIDE,MAT_INITIAL_MATRIX,&matvec_struct->F[i]);CHKERRQ(ierr);
 			ierr = MatGetSubMatrixRaw(E[i],nrows,rows,np*dim,pMData->get_pos_ptr(),PETSC_DECIDE,MAT_INITIAL_MATRIX,&matvec_struct->E[i]);CHKERRQ(ierr);

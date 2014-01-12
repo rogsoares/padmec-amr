@@ -9,52 +9,55 @@
 // =============================================================================
 
 
-namespace PRS
-{
-int EBFV1_elliptic::divergence_E(Mat E, pEntity edge, const int &dom, int dim, double *Cij){
+namespace PRS{
+//int EBFV1_elliptic::divergence_E(Mat E, pEntity edge, const int &dom, int dim, double *Cij){
+int EBFV1_elliptic::divergence_E(Mat E, double *Cij, int edge, int dom, int dom_flag, int idx0_global, int idx1_global, int id0, int id1, int dim){
 	const double I2D[4] = {1.0,.0,.0,1.0};
 	const double I3D[9] = {1.0,.0,.0,.0,1.0,.0,.0,.0,1.0};
 	int i, j, k;
 	double sign = 1.0;
-	// get nodes I and J
-	pEntity I = (pVertex)edge->get(0,0);
-	pEntity J = (pVertex)edge->get(0,1);
 
-	// todo: colocar este codigo em algum luar de forma que so seja feito uma unica vez.
-	if (EN_id(edge->get(0,0)) > EN_id(edge->get(0,1))){
-		std::swap(I,J);
+	if (id0 > id1){
+		std::swap(id0,id1);
 		sign = -sign;
 	}
 
 	// index for global Fg
-	int id0 = pMData->get_AppToPETSc_Ordering(EN_id(I));
-	int id1 = pMData->get_AppToPETSc_Ordering(EN_id(J));
+	id0 = pMData->get_AppToPETSc_Ordering(id0);
+	id1 = pMData->get_AppToPETSc_Ordering(id1);
 		
-// 	cout << "node : " << EN_id(I) << "\t assembled in: " << id0 << endl; 
-// 	cout << "node : " << EN_id(J) << "\t assembled in: " << id1 << endl;
-	//STOP();
-
 	// get absolute K tensor: dim x dim
-	const double *K = pSimPar->getPermeability(dom);
+	const double *K = pSimPar->getPermeability(dom_flag);
 
 	// get mobility for nodes I and J
-	const double MobI = pPPData->getTotalMobility(I);
-	const double MobJ = pPPData->getTotalMobility(J);
-	const double MobIJ = 0.5*(MobI + MobJ);
+	double Sw_I, Sw_J, MobI, MobJ, MobIJ;
+	Sw_I = pPPData->getSaturation(idx0_global);
+	Sw_J = pPPData->getSaturation(idx1_global);
+	MobI = pPPData->getTotalMobility(Sw_I);
+	MobJ = pPPData->getTotalMobility(Sw_J);
+	MobIJ = 0.5*(MobI + MobJ);
+
 
 	// ####################################################################
-	// what is calculated below: Eij = -(K*Mob_IJ)/2*|I-Lij*Lij I-Lij*Lij|*Cij
-	//												 |Lij*Lij-I Lij*Lij-I|
+	// what is calculated below: Eij = -(K*Mob_IJ)/2*|I-versor*versor I-versor*versor|*Cij
+	//												 |versor*versor-I versor*versor-I|
 	// ####################################################################
 
-	// product between two vectors: Lij*Lij => matrix 3x3
-	k = 0;
-	pGCData->getEdgeVec_Unitary(edge,Lij);
-//	printf("Simadapt-- versor: %f %f\n",Lij[0],Lij[1]);
-	for (i=0; i<dim; i++) Lij[i] *= sign;
+	// product between two vectors: versor*versor => matrix 3x3
+	double versor[3];
+	pGCData->getVersor(dom,edge,versor);
+//	printf("versor: %f %f\n",versor[0],versor[1]);
+//	STOP();
+	for (i=0; i<dim; i++){
+		versor[i] *= sign;
+	}
 	double matLij[dim*dim];
-	for (i=0; i<dim; i++)
-		for (j=0; j<dim; j++) matLij[k++] = Lij[i]*Lij[j];
+	k = 0;
+	for (i=0; i<dim; i++){
+		for (j=0; j<dim; j++){
+			matLij[k++] = versor[i]*versor[j];
+		}
+	}
 
 	const double *Identity = (dim==2)?I2D:I3D;
 	double matSubtrac_ILij[dim*dim];

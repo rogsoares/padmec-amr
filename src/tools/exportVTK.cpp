@@ -3,7 +3,7 @@
 void print_pwgrad(ofstream &fid, pMesh theMesh, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData);
 void printNonVisc(ofstream &fid, pMesh theMesh, PRS::PhysicPropData *pPPData);
 
-void exportSolutionToVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3, string filename){
+void exportSolutionToVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3, void *pData4, string filename){
 	// open file
 	ofstream fid;
 	fid.open(filename.c_str());
@@ -19,6 +19,7 @@ void exportSolutionToVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3
 	PRS::PhysicPropData *pPPData  = (PRS::PhysicPropData*)pData1;
 	ErrorAnalysis *pErrorAnalysis  = (ErrorAnalysis*)pData2;
 	PRS::SimulatorParameters *pSimPar = (PRS::SimulatorParameters*)pData3;
+	PRS::GeomData *pGCData = (PRS::GeomData*)pData4;
 	// print data to file
 	fid << "# vtk DataFile Version 2.0\n";
 	fid << "Two phases flow simulation\n";
@@ -41,7 +42,8 @@ void exportSolutionToVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3
 	// start print nodal values
 	fid << "\nPOINT_DATA "<< M_numVertices(theMesh) << endl;
 	printPressure(fid,theMesh,pPPData);
-	printSaturation(fid,theMesh,pPPData);
+	//printSaturation(fid,theMesh,pPPData);
+	printSaturation(fid,theMesh,pPPData,pGCData);
 	print_Swgrad(fid,theMesh,pSimPar,pPPData);
 	
 #ifndef NOADAPTATION
@@ -135,6 +137,15 @@ void printPressure(ofstream &fid, pMesh theMesh, PRS::PhysicPropData *pPPData){
 		fid << val << endl;
 	}
 	VIter_delete(vit);
+}
+
+void printSaturation(ofstream &fid, pMesh theMesh, PRS::PhysicPropData* pPPData, PRS::GeomData* pGCData){
+	fid << "SCALARS Saturation float 1\n";
+	fid << "LOOKUP_TABLE default\n";
+	int nnodes = M_numVertices(theMesh);
+	for(int i=0; i<nnodes; i++){
+		fid << pPPData->getSaturation(i) << endl;
+	}
 }
 
 void printSaturation(ofstream &fid, pMesh theMesh, PRS::PhysicPropData *pPPData){
@@ -348,19 +359,12 @@ void print_Sw_GradientNorm(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAn
 
 void print_Swgrad(ofstream &fid, pMesh theMesh, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData){
 	fid << "VECTORS Sw_grad float\n";
-	pEntity node;
-	double grad[3];
-	int dom_counter = 0; // one domain for while (soon multiple domains)
-	int row;
-	char tag[4]; sprintf(tag,"%d",dom_counter);
-
-	VIter vit = M_vertexIter(theMesh);
-	while( (node = VIter_next(vit)) ){
-		pSimPar->getLocalNodeIDNumbering(node,tag,row);
-		pPPData->get_Sw_Grad(node,dom_counter,row,grad);
-		fid << grad[0] << " " << grad[1] << " .0\n";
+	double Sw_grad[3];
+	int nnodes = M_numVertices(theMesh);
+	for (int node=0; node<nnodes; node++){
+		pPPData->get_Sw_Grad(node,Sw_grad);
+		fid << Sw_grad[0] << " " << Sw_grad[1] << " " << .0 << endl;
 	}
-	VIter_delete(vit);
 }
 
 void print_pwgrad(ofstream &fid, pMesh theMesh, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData){
