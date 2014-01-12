@@ -12,14 +12,13 @@ double EBFV1_elliptic::pressureGradient(pMesh theMesh){
 #endif
 
 
-	int i, row_I, row_J;//, row_K;
+	int i, row_I, row_J;
 	int dom_counter = 0;
 	int dim = pGCData->getMeshDim();
-	pEntity node, edge;//, face;
-	dblarray Dij(dim,.0);
-	double pw_grad_I[3], pw_grad_J[3];//,  pw_grad_K[3];
-	double pressure_I, pressure_J;//, pressure_K;
-	double Cij[3];
+	pEntity node, edge;
+	double pw_grad_I[3], pw_grad_J[3];
+	double pressure_I, pressure_J;
+	double Cij[3], Dij[3];
 
 	// loop over domains
 	SIter_const iter=pSimPar->setDomain_begin();
@@ -91,14 +90,15 @@ double EBFV1_elliptic::pressureGradient(pMesh theMesh){
 		}
 #endif
 
+		row = 0;
 		// edge (boundary) contribution to pressure gradient (2D meshes)
 		if (dim==2){
 			eit = M_edgeIter(theMesh);
 			while ( (edge = EIter_next(eit)) ){
 				if ( pGCData->edgeBelongToDomain(edge,dom) ){
 					if (pGCData->belongsToBoundary(edge)){
-						Dij[0] = .0; Dij[1] = .0;
-						pGCData->getDij(edge,dom,Dij);
+						pGCData->getDij(dom_counter,row,Dij);
+						row++;
 
 						// get nodes I and J
 						pEntity I = (pVertex)edge->get(0,0);

@@ -17,12 +17,13 @@ namespace PRS{
 		pGCData = gcd;
 		pOPManager = popm;
 		pStruct = new PointerStruct;
-		pStruct->pPPData = ppd;
-		pStruct->pSimPar = sp;
+		pPPData = ppd;
+		pSimPar = sp;
 		pStruct->pErrorAnalysis = pEA;
-		pHOApproximation = new HighOrderApproximation(pStruct);
+		pStruct->pSimPar = sp;
 		pMData = md;
 		_cumulativeOil = .0;
+		pHOApproximation = 0;
 	}
 
 	EBFV1_hyperbolic::~EBFV1_hyperbolic(){
@@ -39,7 +40,12 @@ namespace PRS{
 	#endif
 		double hyp_time = .0;
 		static int timestep_counter = 0;			// counts number of time steps every new VTK
-		resetNodalNonviscTerms(theMesh);			// set to 0 all fluxes across control volumes from previous time-step
+		int nnodes = M_numVertices(theMesh);
+		for(int i=0; i<nnodes; i++){
+			pPPData->setNonvisc(i,.0);
+		}
+		alpha_max = .0;
+
 
 		/*
 		 * For each domain, calculate:
@@ -49,64 +55,76 @@ namespace PRS{
 		 */
 
 		// calculate saturation gradient if adaptation or high order approximation were required
-		if (  pStruct->pSimPar->userRequiresAdaptation() || pStruct->pSimPar->useHOApproximation()){
-			hyp_time += calculateSaturationGradient(theMesh);
+		if (  pSimPar->userRequiresAdaptation() || pSimPar->useHOApproximation()){
+			calculateSaturationGradient(theMesh);
 		}
 
 		// initialize time step with a very high number
-		timeStep = 1.0e10;
+		timeStep = 1.0e+10;
 		int dom_counter = 0;
-		for (SIter_const dom=pStruct->pSimPar->setDomain_begin(); dom!=pStruct->pSimPar->setDomain_end();dom++){
-			hyp_time += calculateVelocityField(theMesh,*dom,dom_counter);
-			if ( pStruct->pSimPar->useHOApproximation() ){
-				NodeSlopeLimiter* pNodeSL = pHOApproximation->getNodeSL_Ptr();
-				hyp_time += pNodeSL->defineSlopeLimiters();
-			}
-			hyp_time += calculateIntegralAdvectiveTerm(theMesh,*dom,dom_counter,timeStep);
+		for (SIter_const dom=pSimPar->setDomain_begin(); dom!=pSimPar->setDomain_end();dom++){
+			calculateVelocityField(theMesh,*dom,dom_counter);
+			calculateIntegralAdvectiveTerm(theMesh,*dom,dom_counter,timeStep);
 			dom_counter++;
 		}
+		pSimPar->correctTimeStep(timeStep);					// correct time-step value to print out the desired simulation moment
+		pSimPar->setCumulativeSimulationTime(timeStep); 	// AccSimTime = AccSimTime + timeStep
+		calculateExplicitAdvanceInTime(theMesh,timeStep);	// Calculate saturation field: Sw(n+1)
 
 	#ifdef _SEEKFORBUGS_
 		if (!P_pid()) std::cout << "<_SEEKFORBUGS_>  timeStep = : " << timeStep << endl;
-	#endif
-
-		// correct time-step value to print out the desired simulation moment
-		 pStruct->pSimPar->correctTimeStep(timeStep);
-
-	#ifdef _SEEKFORBUGS_
-		if (timeStep==.0) throw Exception(__LINE__,__FILE__,"Time step NULL!");
-	#endif
-		// AccSimTime = AccSimTime + timeStep
-		 pStruct->pSimPar->setCumulativeSimulationTime(timeStep);
-
-	#ifdef _SEEKFORBUGS_
 		if (timeStep==.0) throw Exception(__LINE__,__FILE__,"Time step NULL!");
 	#endif
 
-		// Calculate saturation field: Sw(n+1)
-		hyp_time += calculateExplicitAdvanceInTime(theMesh,timeStep);
+//		ofstream fid;
+//		static int step = 0;
+//		char file[256];
+//		sprintf(file,"monitor-%d.txt",step);
+//		fid.open(file);
+//		double nonvisc;
+//		int nnodes = M_numVertices(theMesh);
+//		for(int i=0; i<nnodes; i++){
+//			pPPData->getNonvisc(i,nonvisc);
+//			fid << i+1 << " " << setprecision(6) << nonvisc << " " << pPPData->getSaturation(i) << endl;
+//		}
+//		fid.close();
+//
+//		char file1[256];
+//		sprintf(file1,"monitorvel-%d.txt",step);
+//		fid.open(file1);
+//		pEntity edge;
+//		double vel[3],norm;
+//		dom_counter=0;
+//		for (SIter_const dom=pSimPar->setDomain_begin(); dom!=pSimPar->setDomain_end();dom++){
+//			int row=0;
+//			EIter eit = M_edgeIter(theMesh);
+//			while ( (edge = EIter_next(eit)) ){
+//				if ( pGCData->edgeBelongToDomain(edge,*dom) ){
+//					pPPData->getVelocity_new(dom_counter,row,vel);
+//					pGCData->getCij_norm(dom_counter,row,norm);
+//					fid << *dom << fixed << setprecision(6) << " vel: " << vel[0] << "  " << vel[1] << "\tCij_norm " << norm << endl;
+//					row++;
+//				}
+//			}
+//			EIter_delete(eit);
+//			dom_counter++;
+//		}
+//		step++;
 
 		timestep_counter++;
 
 		// oil production output
-		if (pStruct->pSimPar->rankHasProductionWell() && pStruct->pSimPar->timeToPrintVTK()){
+		if (pSimPar->rankHasProductionWell() && pSimPar->timeToPrintVTK()){
 			pOPManager->printOilProduction(timeStep,
-					                       pStruct->pSimPar->getCumulativeSimulationTime(),
-					                       pStruct->pSimPar->getSimTime(),
+					                       pSimPar->getCumulativeSimulationTime(),
+					                       pSimPar->getSimTime(),
 					                       getRecoveredOil(),
 					                       getCumulativeOil(),
 					                       timestep_counter);
 			timestep_counter = 0;
 		}
 
-		if (!P_pid()) std::cout << "done.\n\n";
+		if (!P_pid()) std::cerr << "done.\n\n";
 		return hyp_time;
-	}
-
-	// it also works for parallel simulation
-	double EBFV1_hyperbolic::getTimeStep(){
-		double dt = *min_element(timeStepByDomain.begin(),timeStepByDomain.end());
-		timeStepByDomain.clear();
-		return dt;
 	}
 }

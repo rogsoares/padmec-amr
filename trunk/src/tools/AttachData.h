@@ -38,7 +38,6 @@ namespace PRS{
 		T* getAttachedData_pointer(pEntity ent){
 			void *p; p=0;
 			EN_getDataPtr(ent,dataAttached_id,&p);
-		//	cout << p << endl;
 			return (p) ? (T*)p : new T;
 		}
 
@@ -47,6 +46,11 @@ namespace PRS{
 			void *p; p=0;
 			p = (T*)ptr;
 			EN_attachDataPtr(ent,dataAttached_id,p);
+		}
+
+		template <class T>
+		void deleteAttachedData_pointer(pEntity ent, T* ptr){
+			EN_deleteData(ent,dataAttached_id);
 		}
 
 	private:

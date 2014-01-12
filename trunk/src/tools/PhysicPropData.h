@@ -10,45 +10,17 @@
 // If this variable is a class member, it will not compile!
 // Global variable <argh!>. I swear I would not do that!
 extern Matrix<double> *pGrad_matrix;
-extern Matrix<double> *SwGrad_matrix;
-extern Matrix<double> nonvisc_matrix;
+extern Matrix<double> SwGrad;
+extern Matrix<double> Sw;
 
 
-namespace PRS		// PRS: Petroleum Reservoir Simulator
-{
-
-// properties associated to edge: EX.: velocity
-// =========================================================================
-struct EdgePhysicalProperties{
-	map<int,dblarray> v_new;
-	map<int,dblarray> v_old;
-	bool projected;
-};
-
-// properties associated to edge: EX.: pressure, ssaturation, grad(u), ...
-// =========================================================================
-struct NodePhysicalProperties{
-	map<int,dblarray> pw_Grad;
-	map<int,dblarray> Sw_Grad;
-	double pw;
-	double Sw;
-	double Sw_old;
-	double Sw_min;
-	double Sw_max;
-	double S_Limit;
-	double nonvisc;
-	double volume;
-	bool projected;
-};
-
+namespace PRS{
 
 /**
- * PhysicPropData class provides methods to set/get physical proper-
- * ties such as pressure, saturation and their respective gradients as well
- * as rock-fluid properties (fractional flow and total mobilities). Fluid ve-
- * locity is also managed by this class. All properties are associated to a
- * mesh entity (node or edge) through the class AttachData that is in charge
- * of store all data (physical, numeric, geometric,...) to mesh entities.
+ * PhysicPropData class provides methods to set/get physical properties such as pressure, saturation and their respective gradients
+ * as well as rock-fluid properties (fractional flow and total mobilities). Fluid velocity is also managed by this class. All proper-
+ * ties are associated to a mesh entity (node or edge) through the class AttachData that is in charge of store all data (physical,
+ * numeric, geometric,...) to mesh entities.
  */
 class PhysicPropData : public AttachData{
 public:
@@ -81,20 +53,8 @@ public:
 		grad[2] = pGrad_matrix[dom].getValue(row,2);
 	}
 
-	/*
-	 * The same explanation for the functions below. Those are for saturation.
-	 */
-	static void set_Sw_Grad(pVertex node, int dom, int row, const double* grad){
-//		row =  1;
-//		static double time = .0;
-//		double t1 = MPI_Wtime();
-//		SwGrad_matrix[0].setValue(row,0,grad[0]);
-//		SwGrad_matrix[0].setValue(row,1,grad[1]);
-//		SwGrad_matrix[0].setValue(row,2,grad[2]);
-//		double t2 = MPI_Wtime();
-//		time += t2-t1;
-//		cout << "time: " << time << endl;
 
+	static void set_Sw_Grad(pVertex node, int dom, int row, const double* grad){
 		for(int i=0;i<3;i++){
 			char string[256]; sprintf(string,"Swgrad_%d_%d",dom,i);
 			EN_attachDataDbl(node,MD_lookupMeshDataId(string),grad[i]);
@@ -102,28 +62,43 @@ public:
 	}
 
 	static void get_Sw_Grad(pVertex node, int dom, int row, double* grad){
-//		static double time = .0;
-//		double t1 = MPI_Wtime();
-//		grad[0] = SwGrad_matrix[0].getValue(row,0);
-//		grad[1] = SwGrad_matrix[0].getValue(row,1);
-//		grad[2] = SwGrad_matrix[0].getValue(row,2);
-//		double t2 = MPI_Wtime();
-//		time += t2-t1;
-//		cout << "time: " << time << endl;
 		for(int i=0;i<3;i++){
 			char string[256]; sprintf(string,"Swgrad_%d_%d",dom,i);
 			EN_getDataDbl(node,MD_lookupMeshDataId(string),&grad[i]);
 		}
 	}
 
-	static void setNonViscTerm(int row, double nonvisc){
-		nonvisc_matrix.setValue(row,nonvisc);
+	static void set_Sw_Grad(int row, const double* grad){
+		SwGrad.setValue(row,0,grad[0]);
+		SwGrad.setValue(row,1,grad[1]);
+		SwGrad.setValue(row,2,grad[2]);
 	}
 
-	static double getNonViscTerm(int row){
-		return nonvisc_matrix.getValue(row);
+	static void get_Sw_Grad(int row, double* grad){
+		grad[0] = SwGrad.getValue(row,0);
+		grad[1] = SwGrad.getValue(row,1);
+		grad[2] = SwGrad.getValue(row,2);
 	}
 
+	void set_Sw_Grad(int dom, int row, const double* grad){
+		SwGrad_dom[dom].setValue(row,0,grad[0]);
+		SwGrad_dom[dom].setValue(row,1,grad[1]);
+		SwGrad_dom[dom].setValue(row,2,grad[2]);
+	}
+
+	void get_Sw_Grad(int dom, int row, double* grad){
+		grad[0] = SwGrad_dom[dom].getValue(row,0);
+		grad[1] = SwGrad_dom[dom].getValue(row,1);
+		grad[2] = SwGrad_dom[dom].getValue(row,2);
+	}
+
+	static void setSaturation(int idx, double v){
+		Sw.setValue(idx,v);
+	}
+
+	static double getSaturation(int idx){
+		return Sw.getValue(idx);
+	}
 
 	static void setNonViscTerm(pEntity node, double nonvisc){
 		EN_attachDataDbl(node,MD_lookupMeshDataId( "NonViscTerm_id" ),nonvisc);
@@ -169,11 +144,6 @@ public:
 	void setSw_min(pEntity,double);
 	void setS_Limit(pEntity,double);
 
-	// GET VELOCITIES
-//	void setInitialVelocity(pMesh, SimulatorParameters*);
-//	void setVelocity_new(pEdge, const int&, std::vector<double>);
-//	void setVelocity_old(pEdge, const int&, std::vector<double>);
-
 	void setVelocity_new(int dom, int row, double* vel){
 		velocity[dom].setValue(row,0,vel[0]);
 		velocity[dom].setValue(row,1,vel[1]);
@@ -197,20 +167,15 @@ public:
 		vel[2] = velocity[dom].getValue(row,5);
 	}
 
-//	void setVelocity(pEdge, const int&, bool, std::vector<double>);
-//	void getVelocity_new(pEdge, const int &, std::vector<double>&);
-//	void getVelocity_old(pEdge, const int &, std::vector<double>&);
-//	void getVelocity(pEdge, const int &, bool, std::vector<double>&);
-//	void getVelocity(GeomData*, SimulatorParameters*, pEdge, const int&, dblarray&, double&, double&);
-
-	double getSw_max(pEntity);
-	double getSw_min(pEntity);
-	double getS_Limit(pEntity);
+//	double getSw_max(pEntity);
+//	double getSw_min(pEntity);
+//	double getS_Limit(pEntity);
 
 	// GET Volume/mobility,fractionalflux
 	double getVolume(pEntity, const int&);
 	double getWeightedVolume(pEntity);
 	double getTotalMobility(pEntity);
+	double getTotalMobility(double Sw);
 	double getFractionalFlux(const double&);
 	double getOilFractionalFlux(const double &);
 	double get_ksw(const double&);
@@ -219,26 +184,55 @@ public:
 	void retrieveSwField(pMesh);
 	void storeSwField(pMesh);
 
-	// that's for Sw gradient
-	bool isProjected(pEntity);
-	void setAsProjected(pEntity);
-	void setAsNOTProjected(pEntity);
-
-	// that's for velocity
-	bool isVelProjected(pEntity);
-	void setVelAsProjected(pEntity);
-	void setVelAsNOTProjected(pEntity);
 
 	// get set/get pointers to arrays of pointer functions
 	GetPFuncGrad* get_getPFuncArray() { return pGetGradArray; }
-	//	GetPFuncScalar* get_getPFuncScalarArray() const { return pGetScalarArray; }
-	//	SetPFuncScalar* get_setPFuncScalarArray() const { return pSetScalarArray; }
 
 	/*! brief For steady-state simulations, total mobility must be equal 1, otherwise it must be calculated.
 	 * \param state if true, lambda_total = 1.0;
 	 */
 	void setSimulationState(bool state){
 		steady_state = state;
+	}
+
+	int getNumNodeFreeWells() const{
+		return nfree;
+	}
+
+	int getNumNodesWells() const{
+		return nneumann;
+	}
+
+	void getNeumannIndex(int i, int &idx) const{
+		idx = pWellsNeumann_index[i];
+	}
+
+	void getFreeIndex(int i, int &idx) const{
+		idx = pWellsFree_index[i];
+	}
+
+	void getNonvisc(int idx, double &val){
+		val = nonvisc.getValue(idx);
+	}
+
+	void setNonvisc(int idx, double val){
+		nonvisc.setValue(idx,val);
+	}
+
+	void initializeNonvisc(){
+		nonvisc.initialize(.0);
+	}
+
+	bool isInjectionWell(int idx){
+		return injectionWell.getValue(idx);
+	}
+
+	void setProjectedSwgrad(int k, bool val){
+		projectedSw_grad.setValue(k,val);
+	}
+
+	bool getProjectedSwgrad(int k){
+		return projectedSw_grad.getValue(k);
 	}
 
 private:
@@ -253,6 +247,14 @@ private:
 	GetPFuncGrad* pGetGradArray;
 
 	Matrix<double>* velocity;
+	Matrix<double> nonvisc;
+	Matrix<double> *SwGrad_dom;
+	Matrix<bool> projectedSw_grad;
+	Matrix<bool> injectionWell; // idx = 0 (not injectio/ could be production), idx = 1 free well
+	int nfree;
+	int nneumann;
+	int* pWellsFree_index;
+	int* pWellsNeumann_index;
 };
 }
 #endif /*PHYSICALPROPERTIESDATA_H_*/

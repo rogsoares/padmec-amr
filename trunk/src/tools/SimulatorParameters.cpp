@@ -341,7 +341,7 @@ namespace PRS{
 		}
 	}
 	
-	void SimulatorParameters::printOutVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3, pFunc_PrintVTK printVTK){
+	void SimulatorParameters::printOutVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3, void *pData4, pFunc_PrintVTK printVTK){
 		//allowPrintingVTK = true;
 		if (allowPrintingVTK){
 			static int theStep = getStepOutputFile();
@@ -349,7 +349,7 @@ namespace PRS{
 			++theStep;
 			sprintf(fname,"%s__%d-of-%d__step-%d.vtk",expofName.c_str(),P_pid(),P_size(),theStep);
 			PetscPrintf(PETSC_COMM_WORLD,"VTK Output: step file #%d\n",theStep);
-			printVTK(theMesh,pData1,pData2,pData3,fname);
+			printVTK(theMesh,pData1,pData2,pData3,pData4,fname);
 			updatePrintOutVTKFrequency();
 			allowPrintingVTK = false;
 		}

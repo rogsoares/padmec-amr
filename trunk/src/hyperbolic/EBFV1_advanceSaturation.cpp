@@ -1,7 +1,7 @@
 #include "EBFV1_hyperbolic.h"
 
 namespace PRS{
-	
+
 	// Euler Foward - time advance:  (compute saturation explicitly). For each new time step compute a new saturation.
 	double EBFV1_hyperbolic::calculateExplicitAdvanceInTime(pMesh theMesh, double delta_T){
 		double startt = MPI_Wtime();
@@ -11,124 +11,87 @@ namespace PRS{
 		double endt = MPI_Wtime();
 		return endt-startt;
 	}
-	
+
 	// Advance time for all free node not located in wells
 	int EBFV1_hyperbolic::nodeWithOut_Wells(pMesh theMesh, double delta_T){
 		cout << "nodeWithOut_Wells\n";
-		double Sw,Sw_old,nonvisc,wp,volume,phi;
-		pEntity node;
-		
-		VIter vit = M_vertexIter(theMesh);
-		while ( (node = VIter_next(vit)) ){
-			int id = EN_id(node);
-			int well_flag = GEN_tag(node->getClassification());
-			//if ( Sw != 1.0 ){
-				if ( !pStruct->pSimPar->isInjectionWell(well_flag) && !pStruct->pSimPar->isProductionWell(well_flag) ){
-					Sw_old = pStruct->pPPData->getSaturation(node);
-					nonvisc = pStruct->pPPData->getNonViscTerm(node);
-					wp = .0;
-					for (SIter dom=pStruct->pSimPar->setDomain_begin(); dom!=pStruct->pSimPar->setDomain_end();dom++){
-						volume = pGCData->getVolume(node,*dom);
-						phi = pStruct->pSimPar->getPorosity(*dom);
-						wp += volume*phi;
-					}
-					// calculate new saturation value
-					Sw = Sw_old - (delta_T/wp)*nonvisc;
-					if ( Sw<1.0e-6 ) Sw = .0;
-					pStruct->pPPData->setSaturation(node,Sw);
-					
-					if (Sw > 1.01 || Sw < .0){
-						char msg[256]; sprintf(msg,"Water saturation is out-of-bound [0 1]. Sw = %.10E on node %d.  Sw_old = %f\n",Sw,id,Sw_old);
-						throw Exception(__LINE__,__FILE__,msg);
-					}
-				}
-			//}
+		double Sw,Sw_old,nonvisc,volume;
+		int idx;
+		int nnode = pPPData->getNumNodeFreeWells();
+		for(int i=0; i<nnode; i++){
+			pPPData->getFreeIndex(i,idx);
+			Sw_old = pPPData->getSaturation(idx);
+			pPPData->getNonvisc(idx,nonvisc);
+			pGCData->getVolume(idx,volume);
+			Sw = Sw_old - (delta_T/(0.2*volume))*nonvisc;
+			if ( Sw<1.0e-6 ) Sw = .0;
+			pPPData->setSaturation(idx,Sw);
+	#ifdef _SEEKFORBUGS_
+			if (Sw > 1.01 || Sw < .0){
+				char msg[256]; sprintf(msg,"Sw[%d/%d] = %.4f. 0.0 <= Sw <-1.0 \n",i,nnode,Sw);
+				throw Exception(__LINE__,__FILE__,msg);
+			}
+	#endif
 		}
-		VIter_delete(vit);
 		return 0;
 	}
-	
+
 	// Advance time for nodes in production well
 	void EBFV1_hyperbolic::nodeWith_Wells(pMesh theMesh, double delta_T){
 		cout << "nodeWith_Wells\n";
-		const int N = pStruct->pSimPar->getWellTimeDiscretion(); ///  1000;								// magic number :)
-		int node_ID,well_flag,i;
+		const int N = pSimPar->getWellTimeDiscretion(); ///  1000;								// magic number :)
+		int i,j, well_idx;
 		double Sw,Sw0,Sw_old,Vt,Qi,Vi,Qwi,Qt,fw,nonvisc,wp,volume, nrc, porosity;
 		double dt_well = (double)delta_T/N;			// time step for well nodes saturation
 		double cml_oil,Qo,Qw;
-		pVertex node;
-		
-		if ( pStruct->pSimPar->rankHasProductionWell() ){
-			// FOR EACH PRODUCTION WELL
-			cml_oil = .0;
-			map<int,set<int> >::iterator miter;
-			for ( miter=pStruct->pSimPar->mapNodesOnWell.begin(); miter!=pStruct->pSimPar->mapNodesOnWell.end(); miter++){
-				well_flag = miter->first;
-				if ( pStruct->pSimPar->isProductionWell(well_flag) ){
-					Qt = pStruct->pSimPar->getFlowrateValue(well_flag);	// source/sink term
-					Vt = pStruct->pSimPar->getWellVolume(well_flag);	// for node i, Qi is a fraction of total well flow rate (Qt)
-					Qo = .0;
-					Qw = .0;
-					// FOR EACH NODE ON PRODUCTION WELL
-					for (SIter siter = miter->second.begin(); siter!=miter->second.end();siter++){
-						node_ID = *siter;
-						node = (mEntity*)theMesh->getVertex( node_ID );
-						Sw_old = pStruct->pPPData->getSaturation(node);
-						nonvisc = pStruct->pPPData->getNonViscTerm(node);
-						Vi = .0;
-						wp = .0;
-						for (SIter_const dom=pStruct->pSimPar->setDomain_begin(); dom!=pStruct->pSimPar->setDomain_end(); dom++){
-							pVertex node = (mEntity*)theMesh->getVertex( node_ID );
-							volume = pGCData->getVolume(node,*dom);
-							porosity = pStruct->pSimPar->getPorosity(*dom);
-							wp += volume*porosity;
-//							nrc = 1.0;//pGCData->getNumRemoteCopies(node) + 1.0;
-							Vi += volume;///nrc;
-						}
 
-						#ifdef _SEEKFORBUGS_
-						if ( fabs(wp)==0.0 || fabs(Vi)==0.0 || fabs(Vt)==0.0 || fabs(Qt)==0.0 )
-							throw Exception(__LINE__,__FILE__,"Volume cannot be null.\n");
-							#endif
-							
-							Qi = Qt*(Vi/Vt);	// Fluid (water+oil) flow rate through node i
-						
-						// FOR 'N' WELL TIME-STEPS
-						for (i=0; i<N; i++){
-							Sw0 = Sw_old - (dt_well/wp)*(nonvisc);
-							fw = pStruct->pPPData->getFractionalFlux(Sw0);
-							Qwi = fabs(fw*Qi);
-							Sw = Sw0 - dt_well*(Qwi/wp);
-							Sw_old = Sw;
-						}
-						
-						if (Sw > 1.01 || Sw < .0){
-							char msg[256]; sprintf(msg,"Water saturation is out-of-bound [0 1]. Sw = %.10E on node %d.  Sw_old = %f\n",Sw,node_ID,Sw_old);
-						}
-
-						pStruct->pPPData->setSaturation(node,Sw);
-						double fw = pStruct->pPPData->getFractionalFlux(Sw);	// oil fractional flux
-						double fo = pStruct->pPPData->getOilFractionalFlux(Sw);	// oil fractional flux
-						Qo += fabs(Qi*fo);
-						Qw += fabs(Qi*fw);
-						cml_oil += Qo;
-					}
-					setRecoveredOil(Qo/(Qo+Qw));
-					cml_oil = cml_oil*delta_T + getCumulativeOil();
-					setCumulativeOil(cml_oil);
-				}
+		// todo: REMOVER ESSE BACALHO!!!!
+		Qt = pSimPar->getFlowrateValue(51);	// source/sink term
+		Vt = pSimPar->getWellVolume(51);		// for node i, Qi is a fraction of total well flow rate (Qt)
+		cml_oil = .0;
+		Qo = .0;
+		Qw = .0;
+		int nnodes = pPPData->getNumNodesWells();
+		for (i=0; i<nnodes; i++){
+			pPPData->getNeumannIndex(i,well_idx);
+			pPPData->getNonvisc(well_idx,nonvisc);
+			Sw_old = pPPData->getSaturation(well_idx);
+			pGCData->getVolume(well_idx,Vi);
+			Qi = Qt*(Vi/Vt);							// Fluid (water+oil) flow rate through node i
+			wp = 0.2*Vi;
+			for (j=0; j<N; j++){
+				Sw0 = Sw_old - (dt_well/wp)*(nonvisc);
+				fw = pPPData->getFractionalFlux(Sw0);
+				Qwi = fabs(fw*Qi);
+				Sw = Sw0 - dt_well*(Qwi/wp);
+				Sw_old = Sw;
 			}
+	#ifdef _SEEKFORBUGS_
+			if (Sw > 1.01 || Sw < .0){
+				char msg[256]; sprintf(msg,"Water saturation is out-of-bound [0 1]. Sw = %.4f\n",Sw);
+			}
+	#endif
+
+			pPPData->setSaturation(well_idx,Sw);
+			double fw = pPPData->getFractionalFlux(Sw);	// oil fractional flux
+			double fo = pPPData->getOilFractionalFlux(Sw);	// oil fractional flux
+			Qo += fabs(Qi*fo);
+			Qw += fabs(Qi*fw);
+			cml_oil += Qo;
 		}
+		setRecoveredOil(Qo/(Qo+Qw));
+		cml_oil = cml_oil*delta_T + getCumulativeOil();
+		setCumulativeOil(cml_oil);
 	}
-	
+
 	void EBFV1_hyperbolic::saveSwField(pMesh theMesh){
 		pEntity node;
 		VIter vit = M_vertexIter(theMesh);
 		while ( (node = VIter_next(vit)) ){
 			int id = EN_id(node);
-			double Sw_old = pStruct->pPPData->getSaturation(node);
-			pStruct->pPPData->setSaturation_Old(node,Sw_old);
-//			cout << "Sw_t = " << pStruct->pPPData->getSaturation_Old(node) << endl;
+			double Sw_old = pPPData->getSaturation(node);
+			pPPData->setSaturation_Old(node,Sw_old);
+			//			cout << "Sw_t = " << pPPData->getSaturation_Old(node) << endl;
 		}
 		VIter_delete(vit);
 	}

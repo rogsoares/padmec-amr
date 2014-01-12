@@ -22,8 +22,8 @@ namespace PRS{
 		int val = pStruct->pSimPar->getNodeSlopeLimitFunc();
 		if (val==node_MUSCL || val==node_Superbee || val== node_Minmod || val==node_Osher || val==node_Van_Albada)
 			return new Node_MUSCL(pStruct);
-		else if (val==node_WoodField)
-			return new Node_WoodField(pStruct);
+//		else if (val==node_WoodField)
+//			return new Node_WoodField(pStruct);
 		else
 			throw Exception(__LINE__,__FILE__,"Unknown high order methods.\n");
 	}
@@ -32,8 +32,8 @@ namespace PRS{
 		int val = pStruct->pSimPar->getNodeSlopeLimitFunc();
 		if (val==MUSCL || val==SUPERBEE || val== MINMOD || val==OSHER || val==VAN_ALBADA)
 			return new Edge_MUSCL(pStruct);
-		else if (val==WOODFIELD)
-			return new Edge_WoodField(pStruct);
+//		else if (val==WOODFIELD)
+//			return new Edge_WoodField(pStruct);
 		else
 			throw Exception(__LINE__,__FILE__,"Unknown high order methods.\n");
 	}

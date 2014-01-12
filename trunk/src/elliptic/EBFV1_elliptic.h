@@ -53,12 +53,16 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 		int assemblyMatrix(Mat);
 		
 		// Fill matrices E,G and F for a specific edge and domain. Theses function are called inside a loop of domains
-		int divergence_E(Mat, pEntity, const int&, int, double*);
-		int divergence_G(Mat, pEntity, const int&, int, double*);
-		int gradient_F_edges(Mat, pEntity, const int&, int, double*);
-		int gradient_F_bdry(pMesh, Mat, const int&);
+		//int divergence_E(Mat, pEntity, const int&, int, double*);
+		int divergence_E(Mat E, double *Cij, int edge, int dom, int dom_flag, int idx0_global, int idx1_global, int id0, int id1, int dim);
+		//int divergence_G(Mat, pEntity, const int&, int, double*);
+		int divergence_G(Mat G, double *Cij, int edge, int dom, int dom_flag, int idx0_global, int idx1_global, int id0, int id1, int dim);
+		//int gradient_F_edges(Mat, pEntity, const int&, int, double*);
+		int gradient_F_edges(Mat F, double *Cij, int dom, int idx0, int idx1, int id0, int id1, int dim);
+		int gradient_F_bdry(pMesh, Mat, const int&, int);
 		int F_bdryFaces(pMesh, Mat, const int&);
-		int F_bdryEdges(pMesh, Mat, const int&);
+		//int F_bdryEdges(pMesh, Mat, const int&, int);
+		int F_bdryEdges(int,Mat);
 
 		 // Solves (EF + G)u = q as showed below:
 		 // 			G * u^k+1 = q - EF * u^k		 
@@ -94,7 +98,6 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 			ierr = MatMult(mats->G,u,y); CHKERRQ(ierr);
 
 			// step 2:  y = y + (E*F*u)_dom1 + (E*F*u)_dom2 + ... + (E*F*u)_domN
-			int m,n;
 			for (int i=0; i<mats->ndom; i++){
 				// z = [F]*u
 				ierr = VecZeroEntries(mats->z); CHKERRQ(ierr);
