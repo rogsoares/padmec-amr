@@ -9,7 +9,7 @@
 #define EBFV1HYPERBOLI_H_
 
 #include "Hyperbolic_equation.h"
-#include "HighOrderApproximation.h"
+//#include "HighOrderApproximation.h"
 
 namespace PRS
 {
@@ -89,7 +89,7 @@ namespace PRS
 		SimulatorParameters *pSimPar;
 
 		// Define a pointer to handle high order approximations for saturation field.
-		HighOrderApproximation *pHOApproximation;
+		//HighOrderApproximation *pHOApproximation;
 
 		// Saturation gradient is calculated for all domains at once. Nodes on boundary domains contains one gradient vector for each domain.
 		double calculateSaturationGradient(pMesh);

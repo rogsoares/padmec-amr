@@ -16,12 +16,13 @@
 #include <list>
 
 #include "AMR.h"
-
+#ifndef NOADAPTATION
 #include "ModelInterface.h"
 #include "MeshDataBaseInterface.h"
 #include "AdaptInterface.h"
 #include "PWLinearSField.h"
 #include "MAdResourceManager.h"
+#endif
 
 #define MEM 1
 
@@ -34,6 +35,7 @@ public:
 	
 	void rodar(ErrorAnalysis *pErrorAnalysis, pMesh & theMesh);
 	
+#ifndef NOADAPTATION
 private:
 	std::list<MAd::pEntity> listaver;
 	
@@ -78,7 +80,7 @@ private:
 	
 	//The Mesh Adapter
 	MAd::MeshAdapter* adapter;
-	
+#endif
 public:
 	//Clear all data
 	void clear();

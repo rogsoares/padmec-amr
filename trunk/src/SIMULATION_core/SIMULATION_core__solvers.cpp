@@ -105,9 +105,6 @@ namespace PRS{
 			pElliptic_eq->solver(theMesh);
 			pHyperbolic_eq->solver(theMesh,timeStep);
 			pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,pGCData,exportSolutionToVTK);
-//			if (count++ > 100){
-//				STOP();
-//			}
 #ifndef NOADAPTATION
 			if ( pSimPar->userRequiresAdaptation() ){
 				adapt = calculate_ErrorAnalysis(pErrorAnalysis,theMesh,pSimPar,tol1,tol2,pPPData->get_getPFuncArray(),numFields);

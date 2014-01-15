@@ -107,9 +107,9 @@ public:
 	}
 
 	void setValue(int i, const T &val){
-		if ((i<0 && i>=_rows))
-			throw Exception(__LINE__,__FILE__,"Attempt of getting value out of bound\n");
-		else
+//		if ((i<0 || i>=_rows))
+//			throw Exception(__LINE__,__FILE__,"Attempt of getting value out of bound\n");
+//		else
 			mat[i][0] = val;
 	}
 
