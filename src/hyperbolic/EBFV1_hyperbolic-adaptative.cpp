@@ -27,7 +27,7 @@ namespace PRS{
 		pStruct->pSimPar = sp;
 		//theMesh = mesh;
 		pStruct->pErrorAnalysis = pEA;
-		pHOApproximation = new HighOrderApproximation(pStruct);
+		//pHOApproximation = new HighOrderApproximation(pStruct);
 
 		initial_vel_ts_old = true;
 		print_ATE_Data = true;

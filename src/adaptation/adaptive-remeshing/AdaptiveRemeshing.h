@@ -9,15 +9,15 @@
 #define MESHADAPTAION__REMESHING_H_
 
 #include "AMR.h"
+#ifndef NOADAPTATION
 #include "Gmsh.h"
+#endif
 
 class AdaptiveRemeshing : public AMR{
 public:
 
 	AdaptiveRemeshing(int argc, char* argv[]);
 	~AdaptiveRemeshing();
-
-	//void rodar(ErrorAnalysis*,pMesh);
 	void rodar(ErrorAnalysis *pErrorAnalysis, pMesh & theMesh);
 };
 

@@ -23,12 +23,9 @@ namespace PRS{
 		pStruct->pSimPar = sp;
 		pMData = md;
 		_cumulativeOil = .0;
-		pHOApproximation = 0;
 	}
 
 	EBFV1_hyperbolic::~EBFV1_hyperbolic(){
-		delete pStruct;
-		delete pHOApproximation;
 	}
 
 	double EBFV1_hyperbolic::solver(pMesh theMesh, double &timeStep){
@@ -75,41 +72,6 @@ namespace PRS{
 		if (!P_pid()) std::cout << "<_SEEKFORBUGS_>  timeStep = : " << timeStep << endl;
 		if (timeStep==.0) throw Exception(__LINE__,__FILE__,"Time step NULL!");
 	#endif
-
-//		ofstream fid;
-//		static int step = 0;
-//		char file[256];
-//		sprintf(file,"monitor-%d.txt",step);
-//		fid.open(file);
-//		double nonvisc;
-//		int nnodes = M_numVertices(theMesh);
-//		for(int i=0; i<nnodes; i++){
-//			pPPData->getNonvisc(i,nonvisc);
-//			fid << i+1 << " " << setprecision(6) << nonvisc << " " << pPPData->getSaturation(i) << endl;
-//		}
-//		fid.close();
-//
-//		char file1[256];
-//		sprintf(file1,"monitorvel-%d.txt",step);
-//		fid.open(file1);
-//		pEntity edge;
-//		double vel[3],norm;
-//		dom_counter=0;
-//		for (SIter_const dom=pSimPar->setDomain_begin(); dom!=pSimPar->setDomain_end();dom++){
-//			int row=0;
-//			EIter eit = M_edgeIter(theMesh);
-//			while ( (edge = EIter_next(eit)) ){
-//				if ( pGCData->edgeBelongToDomain(edge,*dom) ){
-//					pPPData->getVelocity_new(dom_counter,row,vel);
-//					pGCData->getCij_norm(dom_counter,row,norm);
-//					fid << *dom << fixed << setprecision(6) << " vel: " << vel[0] << "  " << vel[1] << "\tCij_norm " << norm << endl;
-//					row++;
-//				}
-//			}
-//			EIter_delete(eit);
-//			dom_counter++;
-//		}
-//		step++;
 
 		timestep_counter++;
 
