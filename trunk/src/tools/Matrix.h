@@ -28,18 +28,24 @@ public:
 
 	Matrix (int rows, int cols):_rows(rows),_cols(cols){
 		mat = new T*[_rows];
-		for (int i=0; i<_rows; i++) mat[i] = new T[_cols];
+		for (int i=0; i<_rows; i++){
+			mat[i] = new T[_cols];
+		}
 	}
 	
 	Matrix (int rows, int cols,T val):_rows(rows),_cols(cols){
 		mat = new T*[_rows];
-		for (int i=0; i<_rows; i++) mat[i] = new T[_cols];
+		for (int i=0; i<_rows; i++){
+			mat[i] = new T[_cols];
+		}
 		initialize(val);
 	}
 
 	~Matrix (){
 		if (mat){
-			for (int i=0; i<_rows; i++) delete mat[i];
+			for (int i=0; i<_rows; i++){
+				delete mat[i];
+			}
 			delete [] mat; mat = 0;
 		}
 	}
@@ -59,7 +65,9 @@ public:
 
 	void allocateMemory(){
 		mat = new T*[_rows];
-		for (int i=0; i<_rows; i++) mat[i] = new T[_cols];
+		for (int i=0; i<_rows; i++){
+			mat[i] = new T[_cols];
+		}
 	}
 
 	void freeMemory(){
@@ -73,13 +81,18 @@ public:
 	void initialize(T val){
 		if (!_rows || !_cols)
 			cout << "WARNING: Cannot initialize matrix with null size.\n";
-		for (int i=0; i<_rows; i++)
-			for (int j=0; j<_cols; j++) mat[i][j] = val;
+		for (int i=0; i<_rows; i++){
+			for (int j=0; j<_cols; j++){
+				mat[i][j] = val;
+			}
+		}
 	}
 
 	void printfMatrix() const{
 		for (int i=0; i<_rows; i++){
-			for (int j=0; j<_cols; j++) cout << mat[i][j] << "  ";
+			for (int j=0; j<_cols; j++){
+				cout << mat[i][j] << "  ";
+			}
 		cout << endl;
 		}
 				
@@ -107,9 +120,6 @@ public:
 	}
 
 	void setValue(int i, const T &val){
-//		if ((i<0 || i>=_rows))
-//			throw Exception(__LINE__,__FILE__,"Attempt of getting value out of bound\n");
-//		else
 			mat[i][0] = val;
 	}
 

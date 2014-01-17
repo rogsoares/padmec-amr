@@ -130,11 +130,13 @@ void printPressure(ofstream &fid, pMesh theMesh, PRS::PhysicPropData *pPPData){
 	fid << "SCALARS Pressure float 1\n";
 	fid << "LOOKUP_TABLE default\n";
 	pEntity node;
-	double val;
+	double p;
+	int idx=0;
 	VIter vit = M_vertexIter(theMesh);
 	while( (node = VIter_next(vit)) ){
-		val = pPPData->getPressure(node);
-		fid << val << endl;
+		pPPData->getPressure(idx,p);
+		fid << p << endl;
+		idx++;
 	}
 	VIter_delete(vit);
 }

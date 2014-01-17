@@ -42,12 +42,16 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 	PetscTruth guessNonZero = PETSC_FALSE;
 	if (guess_sol){
 		int row = 0;
+		double p;
 		guessNonZero = PETSC_TRUE;
 		// get solution from mesh nodes and set output vector for guess solution
+		int idx = 0;
 		VIter vit = M_vertexIter(theMesh);
 		while (pEntity node = VIter_next(vit)){
 			if ( pSimPar->isNodeFree( GEN_tag( node->getClassification() )) ){
-				ierr = VecSetValue(output,row++,pPPData->getPressure(node),INSERT_VALUES); CHKERRQ(ierr);
+				pPPData->getPressure(idx,p);
+				ierr = VecSetValue(output,row++,p,INSERT_VALUES); CHKERRQ(ierr);
+				idx++;
 			}
 		}
 		VIter_delete(vit);

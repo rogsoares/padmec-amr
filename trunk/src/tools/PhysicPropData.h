@@ -5,11 +5,8 @@
 #include "Matrix.h"
 #include "GeomData.h"
 
-// NASTY THING
-// I need a variable to store pressure gradients to be used into a static member function
-// If this variable is a class member, it will not compile!
-// Global variable <argh!>. I swear I would not do that!
-extern Matrix<double> *pGrad_matrix;
+extern Matrix<double> *pGrad_dom;
+extern Matrix<double> pressure;
 extern Matrix<double> SwGrad;
 extern Matrix<double> Sw;
 
@@ -41,18 +38,26 @@ public:
 	 *  row - local node numbering. Do not use global ID or it will not work!!!!
 	 *  grad - pointer to an array of three positions. Ex.: double p[3];
 	 */
-	static void set_pw_Grad(pVertex node, int dom, int row, const double* grad){
-		pGrad_matrix[dom].setValue(row,0,grad[0]);
-		pGrad_matrix[dom].setValue(row,1,grad[1]);
-		pGrad_matrix[dom].setValue(row,2,grad[2]);
+	static void set_pw_Grad(int dom, int row, const double* grad){
+		pGrad_dom[dom].setValue(row,0,grad[0]);
+		pGrad_dom[dom].setValue(row,1,grad[1]);
+		pGrad_dom[dom].setValue(row,2,grad[2]);
 	}
 
-	static void get_pw_Grad(pVertex node, int dom, int row, double* grad){
-		grad[0] = pGrad_matrix[dom].getValue(row,0);
-		grad[1] = pGrad_matrix[dom].getValue(row,1);
-		grad[2] = pGrad_matrix[dom].getValue(row,2);
+	static void get_pw_Grad(int dom, int row, double* grad){
+		grad[0] = pGrad_dom[dom].getValue(row,0);
+		grad[1] = pGrad_dom[dom].getValue(row,1);
+		grad[2] = pGrad_dom[dom].getValue(row,2);
 	}
 
+	static void setPressure(int idx, double p){
+		pressure.setValue(idx,p);
+	}
+
+	static double getPressure(int idx, double& p){
+		p = pressure.getValue(idx);
+		return p;
+	}
 
 	static void set_Sw_Grad(pVertex node, int dom, int row, const double* grad){
 		for(int i=0;i<3;i++){
@@ -110,15 +115,6 @@ public:
 		return nonvisc;
 	}
 
-	static void setPressure(pEntity node, double p){
-		EN_attachDataDbl(node,MD_lookupMeshDataId("p_id"),p);
-	}
-
-	static double getPressure(pEntity node){
-		double p;
-		EN_getDataDbl(node,MD_lookupMeshDataId("p_id"),&p);
-		return p;
-	}
 	static void setSaturation(pEntity node, double sat){
 		EN_attachDataDbl(node,MD_lookupMeshDataId("sat_id"),sat);
 	}
@@ -219,6 +215,8 @@ public:
 		nonvisc.setValue(idx,val);
 	}
 
+	void resetNonvisc();
+
 	void initializeNonvisc(){
 		nonvisc.initialize(.0);
 	}
@@ -255,6 +253,8 @@ private:
 	int nneumann;
 	int* pWellsFree_index;
 	int* pWellsNeumann_index;
+
+	int nnodes;
 };
 }
 #endif /*PHYSICALPROPERTIESDATA_H_*/

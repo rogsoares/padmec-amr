@@ -1,7 +1,7 @@
 #include "EBFV1_hyperbolic.h"
 
 namespace PRS{
-	double EBFV1_hyperbolic::calculateIntegralAdvectiveTerm(pMesh theMesh, int dom, int dom_counter, double &timeStep){
+	double EBFV1_hyperbolic::calculateIntegralAdvectiveTerm(int dom, double &timeStep){
 		cout << "calculateIntegralAdvectiveTerm\n";
 		int dim = pGCData->getMeshDim();
 		double startt = MPI_Wtime();
@@ -14,12 +14,12 @@ namespace PRS{
 		int i,j,idx0_global, idx1_global, idx0, idx1, id0, id1,flag1,flag2;
 		double sign, koef = (double)1./3.;
 
-		int nedges = pGCData->getNumEdgesPerDomain(dom_counter);
+		int nedges = pGCData->getNumEdgesPerDomain(dom);
 		for(j=0; j<nedges; j++){
-			pGCData->getCij(dom_counter,j,Cij);
-			pGCData->getCij_norm(dom_counter,j,Cij_norm);
-			pGCData->getEdge(dom_counter,j,idx0,idx1,idx0_global,idx1_global,flag1,flag2);
-			pGCData->getID(dom_counter,idx0,idx1,id0,id1);
+			pGCData->getCij(dom,j,Cij);
+			pGCData->getCij_norm(dom,j,Cij_norm);
+			pGCData->getEdge(dom,j,idx0,idx1,idx0_global,idx1_global,flag1,flag2);
+			pGCData->getID(dom,idx0,idx1,id0,id1);
 			// todo: colocar este codigo em algum luar de forma que so seja feito uma unica vez.
 			sign = -1.0;
 			if (id0 > id1){
@@ -35,8 +35,8 @@ namespace PRS{
 			if ( pSimPar->useHOApproximation() ){
 				double SLI, SLJ, ratioI, ratioJ, delta_Sw, slimit_I, slimit_J,SLII,SLJJ,DSwII, DSwJJ;
 				slimit_I = slimit_J =1.0;
-				pGCData->getLength(dom_counter,j,length);
-				pGCData->getVersor(dom_counter,j,versor);
+				pGCData->getLength(dom,j,length);
+				pGCData->getVersor(dom,j,versor);
 				for (i=0; i<dim; i++){
 					edIJ[i] = sign*versor[i]*length;
 				}
@@ -64,7 +64,7 @@ namespace PRS{
 			fwIJ = 0.5*(fwII + fwJJ);
 
 			// mid-edge total velocity
-			pPPData->getVelocity_new(dom_counter,j,vel);
+			pPPData->getVelocity_new(dom,j,vel);
 
 			// Numerical Flux Function
 			for (i=0; i<dim; i++){
@@ -107,7 +107,8 @@ namespace PRS{
 		//STOP();
 		//alpha_max = P_getMaxDbl(alpha_max);
 		courant = pSimPar->CFL();
-		phi = pSimPar->getPorosity(dom);
+		int flag = pGCData->getDomFlag(dom);
+		phi = pSimPar->getPorosity(flag);
 		length = pGCData->getSmallestEdgeLength();
 		timeStep = std::min(timeStep,(courant*length*phi)/alpha_max);
 		cout << setprecision(8) << fixed << " ##### TIME STEP = " << timeStep << endl;

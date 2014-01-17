@@ -36,27 +36,27 @@ namespace PRS
 		 * Main functions related to the advective equation presented in order
 		 * that they must be called.
 		 */
-		double calculateVelocityField(pMesh, int,int);
-		double calculateIntegralAdvectiveTerm(pMesh, int, int, double&);
-		double calculateExplicitAdvanceInTime(pMesh, double);
+		double calculateVelocityField(int,int);
+		double calculateIntegralAdvectiveTerm(int, double&);
+		double calculateExplicitAdvanceInTime(double);
 
 		/*
 		 * For new time step, erase previous nonvisc data
 		 */
-		void resetNodalNonviscTerms(pMesh);
+		//void resetNodalNonviscTerms(pMesh);
 
 		/*
 		 * For parallel simulation only. Node on partition boundary have the same value
 		 */
-		int updateNonViscTerm(pMesh);
+		//int updateNonViscTerm(pMesh);
 
-		double getTimeStep();
+		//double getTimeStep();
 
 		/*
 		 * Evaluate Sw_new = Sw_old + DT*nonvisc on node without and with production wells respectively
 		 */
-		int nodeWithOut_Wells(pMesh, double);
-		void nodeWith_Wells(pMesh, double);
+		int nodeWithOut_Wells(double);
+		void nodeWith_Wells(double);
 		
 		/// For mesh adaptation, saturation field interpolation between old and new mesh over Sw_t, and not Sw_t+1
 		void saveSwField(pMesh);
