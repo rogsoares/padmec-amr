@@ -32,35 +32,18 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 		if (pSimPar->userRequiresAdaptation()){
 			matvec_struct = new Data_struct;
 		}
-		
 		#ifdef TRACKING_PROGRAM_STEPS
 		cout << "TRACKING_PROGRAM_STEPS: pressure solver\tIN\n";
 		#endif
-		
-		if (M_numEdges(theMesh)==0){
-			throw Exception(__LINE__,__FILE__,"Can not proceed. Mesh edges missing!");
-		}
-		
-		double cpu_time = assembly_EFG_RHS(theMesh);
-		// which scheme should be used to solve pressure field
-		if (pSimPar->useDefectCorrection()){
-			cpu_time += solveIteratively();
-		}
-		else{
-			cpu_time += setMatrixFreeOperation(theMesh);
-		}
-		cpu_time += updatePressure(theMesh);
-		#ifdef CRUMPTON_EXAMPLE
-		MPI_Barrier(MPI_COMM_WORLD);
-		char msg[256]; sprintf(msg,"CRUMPTON_EXAMPLE:\t\tCPU time elapsed: %f\n",cpu_time);
-		throw Exception(__LINE__,__FILE__,msg);
-		#endif
-		cpu_time += pressureGradient(theMesh);
-		cpu_time += freeMemory();
+		assembly_EFG_RHS(theMesh);
+		setMatrixFreeOperation(theMesh);
+		updatePressure(theMesh);
+		calculatePressureGradient();
+		freeMemory();
 		#ifdef TRACKING_PROGRAM_STEPS
 		cout << "TRACKING_PROGRAM_STEPS: pressure solver\tOUT\n";
 		#endif
-		return cpu_time;
+		return 0;
 	}
 	
 	double EBFV1_elliptic::updatePressure(pMesh theMesh){
@@ -95,25 +78,32 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 		row = m;
 		for(i=0; i<nLIDs;i++){
 			int ID = pMData->get_PETScToApp_Ordering(IDs_ptr[i]+1);
-			pVertex node = theMesh->getVertex(ID);
-			if (!node){
-				throw Exception(__LINE__,__FILE__,"Node does not exist.\n");
-			}
+//			pVertex node = theMesh->getVertex(ID);
+//			if (!node){
+//				throw Exception(__LINE__,__FILE__,"Node does not exist.\n");
+//			}
 			ierr = MatGetValues(mLSol,1,&row,1,&col,&val);CHKERRQ(ierr);
-			pPPData->setPressure(node,val);
+			pPPData->setPressure(ID-1,val);
 			row++;
 		}
 		ierr = MatDestroy(mLSol);CHKERRQ(ierr);
 		
 		static bool key = true;
 		if (key){
-			VIter vit = M_vertexIter(theMesh);
-			while (pEntity node = VIter_next(vit)){
-				int ID = pMData->get_AppToPETSc_Ordering(EN_id(node));
-				if ( pMData->getDirichletValue(ID,&val) )
-					pPPData->setPressure(node,val);
+			int nnodes = M_numVertices(theMesh);
+			for(i=0;i<nnodes;i++){
+				int ID = pMData->get_AppToPETSc_Ordering(i+1);
+				if ( pMData->getDirichletValue(ID,&val) ){
+					pPPData->setPressure(i,val);
+				}
 			}
-			VIter_delete(vit);
+//			VIter vit = M_vertexIter(theMesh);
+//			while (pEntity node = VIter_next(vit)){
+//				int ID = pMData->get_AppToPETSc_Ordering(EN_id(node));
+//				if ( pMData->getDirichletValue(ID,&val) ){
+//					pPPData->setPressure(node,val);
+//			}
+//			VIter_delete(vit);
 			key = false;
 		}
 		return MPI_Wtime()-startt;

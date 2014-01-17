@@ -53,15 +53,11 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 		int assemblyMatrix(Mat);
 		
 		// Fill matrices E,G and F for a specific edge and domain. Theses function are called inside a loop of domains
-		//int divergence_E(Mat, pEntity, const int&, int, double*);
 		int divergence_E(Mat E, double *Cij, int edge, int dom, int dom_flag, int idx0_global, int idx1_global, int id0, int id1, int dim);
-		//int divergence_G(Mat, pEntity, const int&, int, double*);
 		int divergence_G(Mat G, double *Cij, int edge, int dom, int dom_flag, int idx0_global, int idx1_global, int id0, int id1, int dim);
-		//int gradient_F_edges(Mat, pEntity, const int&, int, double*);
 		int gradient_F_edges(Mat F, double *Cij, int dom, int idx0, int idx1, int id0, int id1, int dim);
 		int gradient_F_bdry(pMesh, Mat, const int&, int);
 		int F_bdryFaces(pMesh, Mat, const int&);
-		//int F_bdryEdges(pMesh, Mat, const int&, int);
 		int F_bdryEdges(int,Mat);
 
 		 // Solves (EF + G)u = q as showed below:
@@ -71,11 +67,12 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 		// Associate to mesh nodes new pressure values computed
 		double updatePressure(pMesh theMesh);
 		
-		// Compute pressure gradient and associate them to mesh nodes for all domains. 
-		// Note: nodes between two or more domains can store a vector for each one
-		int pressureGradient(int, int);
-		int resetPressureGradient(pMesh theMesh, int, char*);
-		int updatePressureGradient(int, int);
+
+		void calculatePressureGradient();
+		void resetPressureGradient();
+		void calc_p_grad_1(int,int);
+		void calc_p_grad_2(int,int);
+		void calc_p_grad_3(int);
 
 		// PETSc matrix for matrix-free procedure
 		Mat matrix;

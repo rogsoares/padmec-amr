@@ -1,8 +1,8 @@
 #include "PhysicPropData.h"
 
-Matrix<double> *pGrad_matrix;	// each pointer is a matrix nx3
+Matrix<double> *pGrad_dom;	// each pointer is a matrix nx3
+Matrix<double> pressure;
 Matrix<double> SwGrad;			// a unique matrix nnodesx3 for whole mesh
-Matrix<double> *SwGrad_dom;		// for domain
 Matrix<double> Sw;		// for domain
 
 namespace PRS{
@@ -10,9 +10,9 @@ namespace PRS{
 	PhysicPropData::PhysicPropData(){
 		setMeshDataId("PP_Data");
 		steady_state = false;
-		pGetGradArray = new GetPFuncGrad[2];
-		pGetGradArray[0] = get_pw_Grad;
-		pGetGradArray[1] = get_Sw_Grad;
+//		pGetGradArray = new GetPFuncGrad[2];
+//		pGetGradArray[0] = get_pw_Grad;
+//		pGetGradArray[1] = get_Sw_Grad;
 	}
 
 	PhysicPropData::~PhysicPropData(){
@@ -23,24 +23,26 @@ namespace PRS{
 		int ndom = pSimPar->getNumDomains();
 		const int* pNumNodesDom = pSimPar->getNumNodesDomain();		// let me know how many nodes belong to ech domain
 
-		pGrad_matrix = new Matrix<double>[ndom];
+		pGrad_dom = new Matrix<double>[ndom];
 		velocity = new Matrix<double>[ndom];
 		SwGrad_dom = new Matrix<double>[ndom];
 		for (int k=0; k<ndom; k++){
 			int nrows = pNumNodesDom[k];
 			int nedges = pGCData->getNumEdgesPerDomain(k);
-			pGrad_matrix[k].allocateMemory(nrows,3);
-			pGrad_matrix[k].initialize(.0);
+			pGrad_dom[k].allocateMemory(nrows,3);
+			pGrad_dom[k].initialize(.0);
 			velocity[k].allocateMemory(nedges,6);
 			velocity[k].initialize(.0);
 			SwGrad_dom[k].allocateMemory(nrows,3);
 			SwGrad_dom[k].initialize(.0);
 		}
-		int nnodes = M_numVertices(theMesh);
+		nnodes = M_numVertices(theMesh);
 		SwGrad.allocateMemory(nnodes,3);
 		SwGrad.initialize(.0);
 		Sw.allocateMemory(nnodes);
 		Sw.initialize(0);
+		pressure.allocateMemory(nnodes);
+		pressure.initialize(0);
 		injectionWell.allocateMemory(nnodes);
 		projectedSw_grad.allocateMemory(nnodes);
 		nonvisc.allocateMemory(nnodes);
@@ -116,13 +118,15 @@ namespace PRS{
 	void PhysicPropData::deallocateData(SimulatorParameters *pSimPar){
 		int ndom = pSimPar->getNumDomains();
 		for (int k=0; k<ndom; k++){
-			pGrad_matrix[k].freeMemory();
+			pGrad_dom[k].freeMemory();
 			velocity[k].freeMemory();
-			//SwGrad_matrix[k].freeMemory();
+			SwGrad_dom[k].freeMemory();
 		}
-//		SwGrad_matrix[ndom].freeMemory();
-//		delete[] SwGrad_matrix; SwGrad_matrix = 0;
-		delete[] pGrad_matrix; pGrad_matrix = 0;
+		SwGrad.freeMemory();
+		pressure.freeMemory();
+		Sw.freeMemory();
+		delete[] SwGrad_dom; SwGrad_dom = 0;
+		delete[] pGrad_dom; pGrad_dom = 0;
 		delete[] velocity; velocity = 0;
 	}
 
@@ -188,72 +192,6 @@ namespace PRS{
 		//throw 1;
 	}
 
-
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	 * In modified IMPES implementation, it's desired to keep saturation field stored
-	 * at the begin of every new implicit time-step. When breakthrough is reached it
-	 * will be necessary to step-back to this point and advance in old-fashion way
-	 * until breakthrough be reached again.
-	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * **/
-//	void PhysicPropData::storeSwField(pMesh theMesh){
-//		pVertex node;
-//		double Sw;
-//		VIter vit = M_vertexIter(theMesh);
-//		while ( (node=VIter_next(vit)) ){
-//			Sw = getSaturation(node);
-//			setSaturation_Old(node,Sw);
-//		}
-//		VIter_delete(vit);
-//	}
-
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	 * If breakthrough has been reached, step back to the beginning of implicit time-
-	 * step and advance in time in old-fashion way. Retrieve saturation field.
-	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * **/
-//	void PhysicPropData::retrieveSwField(pMesh theMesh){
-//		pVertex node;
-//		double Sw;
-//		VIter vit = M_vertexIter(theMesh);
-//		while ( (node=VIter_next(vit)) ){
-//			Sw = getSaturation_Old(node);
-//			setSaturation(node,Sw);
-//		}
-//		VIter_delete(vit);
-//	}
-
-//	void PhysicPropData::setSw_min(pEntity node, double Sw){
-//		NodePhysicalProperties* pNode = getAttachedData_pointer<NodePhysicalProperties>(node);
-//		pNode->Sw_min = Sw;
-//		setAttachedData_pointer(node,pNode);
-//	}
-//
-//	void PhysicPropData::setSw_max(pEntity node, double Sw){
-//		NodePhysicalProperties* pNode = getAttachedData_pointer<NodePhysicalProperties>(node);
-//		pNode->Sw_max = Sw;
-//		setAttachedData_pointer(node,pNode);
-//	}
-//
-//	void PhysicPropData::setS_Limit(pEntity node, double S_Limit){
-//		NodePhysicalProperties* pNode = getAttachedData_pointer<NodePhysicalProperties>(node);
-//		pNode->S_Limit = S_Limit;
-//		setAttachedData_pointer(node,pNode);
-//	}
-//
-//	double PhysicPropData::getSw_min(pEntity node){
-//		NodePhysicalProperties* pNode = getAttachedData_pointer<NodePhysicalProperties>(node);
-//		return pNode->Sw_min;
-//	}
-//
-//	double PhysicPropData::getSw_max(pEntity node){
-//		NodePhysicalProperties* pNode = getAttachedData_pointer<NodePhysicalProperties>(node);
-//		return pNode->Sw_max;
-//	}
-
-//	double PhysicPropData::getS_Limit(pEntity node){
-//		NodePhysicalProperties* pNode = getAttachedData_pointer<NodePhysicalProperties>(node);
-//		return pNode->S_Limit;
-//	}
-
 	double PhysicPropData::getTotalMobility(pEntity vertex){
 		if (steady_state){
 			return 1.0;
@@ -305,6 +243,12 @@ namespace PRS{
 			return pow((1. - Sw - Swr)/(1. - Swr - Sor),2);
 		default:
 			throw Exception(__LINE__,__FILE__,"Unknown model for relative permeability.\n");
+		}
+	}
+
+	void PhysicPropData::resetNonvisc(){
+		for (int i=0; i<nnodes; i++){
+			nonvisc.setValue(i,.0);
 		}
 	}
 }

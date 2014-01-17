@@ -3,17 +3,17 @@
 namespace PRS{
 
 	// Euler Foward - time advance:  (compute saturation explicitly). For each new time step compute a new saturation.
-	double EBFV1_hyperbolic::calculateExplicitAdvanceInTime(pMesh theMesh, double delta_T){
+	double EBFV1_hyperbolic::calculateExplicitAdvanceInTime(double delta_T){
 		double startt = MPI_Wtime();
-		saveSwField(theMesh);			// save Sw field (Sw_t) before calculate Sw_t+1
-		nodeWithOut_Wells(theMesh,delta_T);
-		nodeWith_Wells(theMesh,delta_T);
+		//saveSwField(theMesh);			// save Sw field (Sw_t) before calculate Sw_t+1
+		nodeWithOut_Wells(delta_T);
+		nodeWith_Wells(delta_T);
 		double endt = MPI_Wtime();
 		return endt-startt;
 	}
 
 	// Advance time for all free node not located in wells
-	int EBFV1_hyperbolic::nodeWithOut_Wells(pMesh theMesh, double delta_T){
+	int EBFV1_hyperbolic::nodeWithOut_Wells(double delta_T){
 		cout << "nodeWithOut_Wells\n";
 		double Sw,Sw_old,nonvisc,volume;
 		int idx;
@@ -37,7 +37,7 @@ namespace PRS{
 	}
 
 	// Advance time for nodes in production well
-	void EBFV1_hyperbolic::nodeWith_Wells(pMesh theMesh, double delta_T){
+	void EBFV1_hyperbolic::nodeWith_Wells(double delta_T){
 		cout << "nodeWith_Wells\n";
 		const int N = pSimPar->getWellTimeDiscretion(); ///  1000;								// magic number :)
 		int i,j, well_idx;

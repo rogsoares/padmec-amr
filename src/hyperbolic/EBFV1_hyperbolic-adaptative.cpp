@@ -21,19 +21,19 @@ namespace PRS{
 		/*
 		 * Experimental:
 		 */
-		pStruct = new PointerStruct;
-		pStruct->pPPData = ppd;
+		//pStruct = new PointerStruct;
+		pPPData = ppd;
 		pGCData = gcd;
-		pStruct->pSimPar = sp;
+		pSimPar = sp;
 		//theMesh = mesh;
-		pStruct->pErrorAnalysis = pEA;
+		//pErrorAnalysis = pEA;
 		//pHOApproximation = new HighOrderApproximation(pStruct);
 
 		initial_vel_ts_old = true;
 		print_ATE_Data = true;
 		vel_ts_counter = 0;
 		sat_ts_counter = 0;
-		DVTOL = pStruct->pSimPar->getDVTOL();
+		DVTOL = pSimPar->getDVTOL();
 		createDimensionLessFactors();
 		//rowToImport = 0;
 	}
@@ -279,20 +279,20 @@ namespace PRS{
 
 		if (print_ATE_Data){
 
-			int size = P_size();									// number fo processes
-			double dvtol = pStruct->pSimPar->getDVTOL();			// dvtol value
-			string path = pStruct->pSimPar->getOutputPathName();	// where file will be placed
-
-			char fname[256]; sprintf(fname,"%s_AdaptTimeData-DVTOL__%.2E__%dp.xls",path.c_str(),dvtol,size);
-			fid.open(fname);
-
-			if ( !fid.is_open() ){
-				char msg[256]; sprintf(msg,"%s could not be opened or it does not exist.\n",fname);
-				throw Exception(__LINE__,__FILE__,msg);
-			}
-
-			fid << "Time-step ImpExp_TimeStep-ratio velocity_norm\n";
-			print_ATE_Data = false;
+//			int size = P_size();									// number fo processes
+//			double dvtol = pStruct->pSimPar->getDVTOL();			// dvtol value
+//			string path = pStruct->pSimPar->getOutputPathName();	// where file will be placed
+//
+//			char fname[256]; sprintf(fname,"%s_AdaptTimeData-DVTOL__%.2E__%dp.xls",path.c_str(),dvtol,size);
+//			fid.open(fname);
+//
+//			if ( !fid.is_open() ){
+//				char msg[256]; sprintf(msg,"%s could not be opened or it does not exist.\n",fname);
+//				throw Exception(__LINE__,__FILE__,msg);
+//			}
+//
+//			fid << "Time-step ImpExp_TimeStep-ratio velocity_norm\n";
+//			print_ATE_Data = false;
 		}
 
 		if (!P_pid()) {
@@ -311,12 +311,12 @@ namespace PRS{
 	}
 
 	void EBFV1_hyperbolic_adaptative::createDimensionLessFactors(){
-		double L = .0;
-		double H = .0;
-		pStruct->pSimPar->getReservoirGeometricDimensions(L,H);
-		double Q = pStruct->pSimPar->getTotalInjectionFlowRate();
-		time_factor = Q/(pStruct->pSimPar->getPorosity(3300)*pow(L,2)*H);
-		vel_factor = L*H/Q;
+//		double L = .0;
+//		double H = .0;
+//		pStruct->pSimPar->getReservoirGeometricDimensions(L,H);
+//		double Q = pStruct->pSimPar->getTotalInjectionFlowRate();
+//		time_factor = Q/(pStruct->pSimPar->getPorosity(3300)*pow(L,2)*H);
+//		vel_factor = L*H/Q;
 		//printf("vel_factor = %f\n",vel_factor); throw 1;
 	}
 }

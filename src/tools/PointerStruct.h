@@ -20,14 +20,14 @@
 
 namespace PRS{
 
-	struct PointerStruct{
-
-		PhysicPropData *pPPData;
-		SimulatorParameters *pSimPar;
-		GeomData *pGCData;
-		pMesh theMesh;
-		ErrorAnalysis *pErrorAnalysis;
-	};
+//	struct PointerStruct{
+//
+//		PhysicPropData *pPPData;
+//		SimulatorParameters *pSimPar;
+//		GeomData *pGCData;
+//		pMesh theMesh;
+//		ErrorAnalysis *pErrorAnalysis;
+//	};
 
 }
 

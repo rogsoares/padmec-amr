@@ -24,9 +24,6 @@ namespace PRS
 		Hyperbolic_equation() {}
 		virtual ~Hyperbolic_equation(){}
 		virtual double solver(pMesh,double&)=0;
-
-	protected:
-		PointerStruct *pStruct;
 	};
 }
 #endif /* HYPERBOLIC_EQUATION_H_ */
