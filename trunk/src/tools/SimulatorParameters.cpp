@@ -331,10 +331,13 @@ namespace PRS{
 		double accST = timeStep + getCumulativeSimulationTime();
 		if ( accST > timeFrequency ){
 			timeStep = timeStep - (accST - timeFrequency);
+#ifdef _SEEKFORBUGS_
+			if (timeStep < .0){
+				throw Exception(__LINE__,__FILE__,"Negative timeStep");
+			}
+#endif
 			accST = timeFrequency;
 			allowPrintingVTK = true;
-			//TSCountingList.push_back(TScounter); TScounter = 0;
-			
 			#ifdef __PRINTDEBUGGING__
 			if (!P_pid()) std::cout << "VTK file output simulation time: " << accST << endl;
 			#endif

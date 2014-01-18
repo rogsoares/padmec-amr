@@ -10,8 +10,7 @@
 
 #include "EBFV1_hyperbolic.h"
 
-namespace PRS
-{
+namespace PRS{
 	/**
 	 * class: EBFV1_hyperbolic_adaptative
 	 *
@@ -37,6 +36,11 @@ namespace PRS
 		double solver(pMesh, double&);
 
 	private:
+
+		int sumNum_p_DT;						// summation of number of pressure timesteps
+		int sumNum_Sw_DT;						//  summation of number of Sw timesteps
+		double p_timestepOld;
+		double cumulative_p_timestep;
 
 		int vel_ts_counter;						/// counts number of implicit time-steps
 		int sat_ts_counter;						/// counts number of explicit time-steps
@@ -68,7 +72,7 @@ namespace PRS
 		 */
 		ofstream fid;
 		bool print_ATE_Data;
-		void printAdatptativeTimeEvaluationData();
+		void MIMPES_output(double Sw_timestep_sum, double p_timestep, int numCFL_Steps, int sumNum_p_DT, int sumNum_Sw_DT, double DV_norm);
 
 
 		/**
@@ -76,13 +80,13 @@ namespace PRS
 		 * either at the beginning of simulation or when sum of sat_ts be greater
 		 * than DT.
 		 */
-		double calculateNewImplicitTS(pMesh);
+		void calculateImplicitTS(double &p_timestep, double timeStep, double &DV_norm, bool &go_ImplicitTS, bool &go_MIMPES);
 
 		/**
 		 * Compute a new implicit time-step as function of the last implicit time-step,
 		 * velocity norm and DVTOL. DVTOL comes from the input data file 'numeric.dat'.
 		 */
-		double calculateVelocityVariationNorm(pMesh);
+		void calculateVelocityVariationNorm(double &DV_norm, int dim);
 
 		/**
 		 * reset logical variables which control programming flux.
@@ -99,12 +103,15 @@ namespace PRS
 		 * Verify if the explicit time advance (summation of sat_ts) do not exceeded the
 		 * limit imposed by the implicit time advance (vel_ts)
 		 */
-		void verifyExplicitAdvanceForImplicitTS();
+		void correct_p_TS(double &p_timestep, bool &go_MIMPES);
+		void correct_Sw_TS(double &Sw_timestep_sum, double p_timestep, double &timeStep, bool &go_MIMPES);
 
-		/**
-		 * Verify if summation of all sat_ts do not exceed simulation time
-		 */
-		void verifyExplicitAdvanceForSimulationTime();
+		void setCumulative_p_TS(double ts){
+			cumulative_p_timestep = ts;
+		}
+		double getCumulative_p_TS() const{
+			return cumulative_p_timestep;
+		}
 	};
 }
 #endif /* EBFV1_HYPERBOLIC_ADAPTATIVE_H_ */

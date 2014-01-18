@@ -215,7 +215,7 @@ public:
 		nonvisc.setValue(idx,val);
 	}
 
-	void resetNonvisc();
+	void resetNonvisc(double&);
 
 	void initializeNonvisc(){
 		nonvisc.initialize(.0);

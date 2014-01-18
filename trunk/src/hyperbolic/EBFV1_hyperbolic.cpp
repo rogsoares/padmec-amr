@@ -16,11 +16,8 @@ namespace PRS{
 
 		pGCData = gcd;
 		pOPManager = popm;
-//		pStruct = new PointerStruct;
 		pPPData = ppd;
 		pSimPar = sp;
-//		pStruct->pErrorAnalysis = pEA;
-//		pStruct->pSimPar = sp;
 		pMData = md;
 		_cumulativeOil = .0;
 	}
@@ -37,19 +34,21 @@ namespace PRS{
 	#endif
 		double hyp_time = .0;
 		static int timestep_counter = 0;			// counts number of time steps every new VTK
-		pPPData->resetNonvisc();
-		alpha_max = .0;
+
 		int dim = theMesh->getDim();
-		// calculate saturation gradient if adaptation or high order approximation were required
-		if (  pSimPar->userRequiresAdaptation() || pSimPar->useHOApproximation()){
-			calculateSaturationGradient(theMesh);
-		}
 
 		// initialize time step with a very high number
 		timeStep = 1.0e+10;
 		int ndom = (int)pSimPar->setOfDomains.size();
 		for (int dom=0; dom<ndom; dom++){
 			calculateVelocityField(dom,dim);
+		}
+		// calculate saturation gradient if adaptation or high order approximation were required
+		if (  pSimPar->userRequiresAdaptation() || pSimPar->useHOApproximation()){
+			calculateSaturationGradient(theMesh);
+		}
+		pPPData->resetNonvisc(alpha_max);
+		for (int dom=0; dom<ndom; dom++){
 			calculateIntegralAdvectiveTerm(dom,timeStep);
 		}
 		pSimPar->correctTimeStep(timeStep);					// correct time-step value to print out the desired simulation moment

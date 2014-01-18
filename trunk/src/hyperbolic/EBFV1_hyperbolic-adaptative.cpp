@@ -13,29 +13,28 @@ namespace PRS{
 	EBFV1_hyperbolic_adaptative::EBFV1_hyperbolic_adaptative(){
 	}
 
-	EBFV1_hyperbolic_adaptative::EBFV1_hyperbolic_adaptative(pMesh mesh,PhysicPropData *ppd, SimulatorParameters *sp,GeomData *gcd,MeshData *md, OilProductionManagement *popm, ErrorAnalysis *pEA){
-
+	EBFV1_hyperbolic_adaptative::EBFV1_hyperbolic_adaptative(pMesh mesh,PhysicPropData *ppd, SimulatorParameters *sp,GeomData *gcd,MeshData *md, OilProductionManagement *popm, ErrorAnalysis *pEAna){
 		pMData = md;
 		pOPManager = popm;
-
-		/*
-		 * Experimental:
-		 */
-		//pStruct = new PointerStruct;
 		pPPData = ppd;
 		pGCData = gcd;
 		pSimPar = sp;
-		//theMesh = mesh;
-		//pErrorAnalysis = pEA;
-		//pHOApproximation = new HighOrderApproximation(pStruct);
-
-		initial_vel_ts_old = true;
-		print_ATE_Data = true;
-		vel_ts_counter = 0;
-		sat_ts_counter = 0;
+		pEA = pEAna;
 		DVTOL = pSimPar->getDVTOL();
 		createDimensionLessFactors();
-		//rowToImport = 0;
+
+		string filename = pSimPar->getOutputPathName() + "_MIMPES_monitor.csv";
+		fid.open(filename.c_str());
+		if (!fid.is_open()) {
+			char msg[256]; sprintf(msg,"File '%s' could not be opened or it does not exist.\n",filename.c_str());
+			throw Exception(__LINE__,__FILE__,msg);
+		}
+		fid << "PVI   CFL_dt/imp_dt  sum_numSw_dt/sum_nump_dt  vel_norm" << endl;
+		//fid << "0.12    0.123456            0.123456           0.123456" << endl;
+		sumNum_p_DT = 0;
+		sumNum_Sw_DT = 0;
+		p_timestepOld = -1.0;
+		cumulative_p_timestep = 0;
 	}
 
 	EBFV1_hyperbolic_adaptative::~EBFV1_hyperbolic_adaptative(){
@@ -44,279 +43,155 @@ namespace PRS{
 	double EBFV1_hyperbolic_adaptative::solver(pMesh theMesh, double &timeStep){
 		if (!P_pid()) std::cout << "Adaptative Hyperbolic solver...\n";
 
-		// reset logical variables which control programming flux.
-		resetVariables();
+		bool go_MIMPES = true;
+		bool go_ImplicitTS = true;						// calculate implicit time step once
+		static int timestep_counter = 0;				// counts number of time steps every new VTK
+		int dim = theMesh->getDim();
+		timeStep = 1.0e+10;								// initialize time step with a very high number
+		int ndom = (int)pSimPar->setOfDomains.size();
 
-//		double hyp_time = .0;		// CPU time usage counter for hyperbolic equation
-//		while ( allowAdaptativeTimeAdvance ){
-//
-//			// Set flux to zero before evaluate saturation equation.
-//			resetNodalNonviscTerms(theMesh);
-//
-//			// calculate saturation gradient
-//			if (pStruct->pSimPar->useHOApproximation()) hyp_time += calculateSaturationGradient(theMesh);
-//
-//			/*
-//			 * Loop over domains:
-//			 * Avoid physical inconsistent between domains boundary.
-//			 */
-//			int dom_counter = 0;
-//			SIter dom=pStruct->pSimPar->setDomain_begin();
-//			for (; dom!=pStruct->pSimPar->setDomain_end();dom++){
-//
-//				if (allowVelocityCalculation) hyp_time += calculateVelocityField(theMesh,*dom,dom_counter);
-//
-//				// If a high order approximation for saturation equation is required...
-//				if (pStruct->pSimPar->useHOApproximation()){
-//					//NodeSlopeLimiter* pNodeSL = pHOApproximation->getNodeSL_Ptr();
-//					hyp_time += pHOApproximation->getNodeSL_Ptr()->defineSlopeLimiters();
-//				}
-//				hyp_time += calculateIntegralAdvectiveTerm(theMesh,*dom,timeStep);
-//			}
-//			//pMData->unifyScalarsOnMeshNodes(PhysicPropData::getNonViscTerm,PhysicPropData::setNonViscTerm,pStruct->pGCData,0);
-//
-//			// calculate explicit time-step (CFL constrained)
-//			sat_ts = getTimeStep();
-//			if (!P_pid()) printf("Time-step: %f\n",sat_ts);
-//
-//			// correct time-step value to print out the desired simulation moment
-//			pStruct->pSimPar->correctTimeStep(sat_ts);
-//
-//			// calculate implicit time-step
-//			vel_ts = calculateNewImplicitTS(theMesh);
-//
-//			/*
-//			 * Compute saturation field for n+1 (explicit saturation).
-//			 * If saturation is bigger that 1.0 an exception will be thrown.
-//			 */
-//			try{
-//				hyp_time += calculateExplicitAdvanceInTime(theMesh,sat_ts);
-//			}
-//			catch (Exception excp){
-//				excp.showExceptionMessage();
-//				pStruct->pSimPar->stopSimulation();
-//				allowAdaptativeTimeAdvance = false;
-//			}
-//			sat_ts_counter++;
-//
-//			// Output data (VTK)
-//			pStruct->pSimPar->printOutVTK(theMesh,pStruct->pPPData,pStruct->pErrorAnalysis,pStruct->pSimPar,exportSolutionToVTK);
-//
-//			/*
-//			 * The following lines below will be condensed to a function member call
-//			 * and it will belong to EBFV1_hyperbolic
-//			 */
-//		//	if (pStruct->pSimPar->rankHasProductionWell()){pOPManager->printOilProduction(sat_ts,pStruct->pSimPar->getAccumulatedSimulationTime(),pStruct->pSimPar->getSimTime(), getRecoveredOilValue());
-//		//	}
-//		}
-//		vel_ts_counter++;
-//		timeStep = vel_ts;
-
-		if (!P_pid()){
-			//printAdatptativeTimeEvaluationData();
-			std::cout << "done.\n------------------------------------------------------------------\n\n";
+		// calculate velocity field
+		for (int dom=0; dom<ndom; dom++){
+			calculateVelocityField(dom,dim);
 		}
-		return 0;//hyp_time;
+		double DV_norm,  p_timestep, Sw_timestep_sum = .0;
+		calculateVelocityVariationNorm(DV_norm,dim);		// implicitTS returns a dimensionless delta T
+		// calculate how long saturation equation will be solved while pressure field is kept constant
+		// p_DT = sum (Sw_DT)
+		int numCFL_Steps = 0;
+		sumNum_p_DT++;
+
+		do{	// keep velocity field constant if possible
+			// calculate saturation gradient if adaptation or high order approximation were required
+			if (  pSimPar->userRequiresAdaptation() || pSimPar->useHOApproximation()){
+				calculateSaturationGradient(theMesh);
+			}
+
+			timeStep = 1.0e+10;
+			pPPData->resetNonvisc(alpha_max);
+			for (int dom=0; dom<ndom; dom++){
+				calculateIntegralAdvectiveTerm(dom,timeStep);
+			}
+
+			calculateImplicitTS(p_timestep,timeStep,DV_norm,go_ImplicitTS,go_MIMPES);
+			Sw_timestep_sum += timeStep;									// CFL timestep summation
+			correct_Sw_TS(Sw_timestep_sum,p_timestep,timeStep,go_MIMPES);	// do not allow Sw_timestep_sum be greater than p_timestep
+			pSimPar->correctTimeStep(timeStep);								// correct time-step value to print out the desired simulation moment
+			pSimPar->setCumulativeSimulationTime(timeStep); 				// AccSimTime = AccSimTime + timeStep
+			calculateExplicitAdvanceInTime(timeStep);						// Calculate saturation field: Sw(n+1)
+			timestep_counter++;
+			sumNum_Sw_DT++;													// for whole simulation
+			numCFL_Steps++;													// for implicit time steps only
+
+			// oil production output
+			if (pSimPar->rankHasProductionWell() && pSimPar->timeToPrintVTK()){
+				pOPManager->printOilProduction(timeStep,pSimPar->getCumulativeSimulationTime(),pSimPar->getSimTime(),getRecoveredOil(),getCumulativeOil(),timestep_counter);
+				timestep_counter = 0;
+			}
+			pSimPar->printOutVTK(theMesh,pPPData,pEA,pSimPar,pGCData,exportSolutionToVTK);
+			cout << setprecision(6) << fixed <<
+					pSimPar->getCumulativeSimulationTime() << "\t" <<
+					pSimPar->getSimTime() << "\t" <<
+					timeStep << "\t" <<
+					p_timestep << endl;
+
+			if (timeStep<0){
+				throw Exception(__LINE__,__FILE__,"Negative!!!");
+			}
+		}while ( go_MIMPES );
+		MIMPES_output(Sw_timestep_sum,p_timestep,numCFL_Steps,sumNum_p_DT,sumNum_Sw_DT,DV_norm);
+		if (!P_pid()) cout << "done\n";
+		return 0;
 	}
 
-	// Compute a new implicit time-step (vel_ts) if necessary. This happens either at the beginning of simulation or when sum of sat_ts is greater than DT.
-	double EBFV1_hyperbolic_adaptative::calculateNewImplicitTS(pMesh theMesh){
-//		if (allowVelocityCalculation){
-//			/*
-//			 *  stop velocity field be evaluated during saturation advance.
-//			 */
-//			allowVelocityCalculation = false;
-//
-//			/*
-//			 *  set vel_ts_old as sat_ts just once at the beginning of simulation.
-//			 */
-//			if (initial_vel_ts_old){
-//				vel_ts_old         = sat_ts;
-//				initial_vel_ts_old = false;
-//			}
-//
-//			// make implicit vel_ts_old variable dimensionless
-//			vel_ts_old *= time_factor;
-//
-//			// implicitTS returns a dimensionless delta T
-//			dv_norm = calculateVelocityVariationNorm(theMesh);
-//
-//			// Update new implicit time step: vel_ts
-//			vel_ts = (DVTOL/dv_norm)*vel_ts_old;
-//			if (!P_pid()) printf("DVTOL: %f dv_norm: %f  DVTOL/dv_norm: %f time_factor: %f\tvel_ts_old: %f\tvel_ts: %f\n",
-//					DVTOL,dv_norm,DVTOL/dv_norm,time_factor,vel_ts_old,vel_ts);
-//
-//			// dimensionless DT ratio
-//			double RT = (double)(vel_ts/vel_ts_old);
-//			if (RT>1.25)
-//				vel_ts = 1.25*vel_ts_old;
-//			else if ( RT<0.75 )
-//				vel_ts = 0.75*vel_ts_old;
-//
-//			// gives implicit vel_ts variable dimension of time
-//			vel_ts /= time_factor;
-////			printf("DVTOL: %f dv_norm: %f  DVTOL/dv_norm: %f  time_factor: %f\tvel_ts_old: %f\tvel_ts: %f\n",
-////								DVTOL,dv_norm,DVTOL/dv_norm,time_factor,vel_ts_old,vel_ts);
-//			vel_ts_old = vel_ts;
-//
-//			// It doesn't make sense vel_ts be less than sat_ts
-//			if (vel_ts < sat_ts){
-//				vel_ts = sat_ts;
-//				allowAdaptativeTimeAdvance = false;
-//				//if (!P_pid()) std::cerr << "\tWARNNING: vel_ts("<< vel_ts << ") < " << "sat_ts("<<sat_ts<<")." << std::endl;
-//			}
-//		}
-//		/*
-//		 * Verify explicit advance compared to implicit advance:
-//		 * sum(sat_ts)<=vel_ts
-//		 */
-//		cumulativeExplicitTS += sat_ts;				// summation of all sat_ts within the implicit time-step (vel_ts)
-//		verifyExplicitAdvanceForImplicitTS();
-//		//if (!P_pid()) printf("TS=>  implicit: %f  explicit: %f(sat_ts) %f(accumulated)\n",vel_ts,sat_ts,cumulativeExplicitTS);
-//
-//		/*
-//		 * Verify explicit advance compared to simulation time.
-//		 * AccSimTime = AccSimTime + timeStep
-//		 * Summation of all sat_ts for the whole simulation
-//		 */
-////		pStruct->pSimPar->setAccumulatedSimulationTime(sat_ts);
-//		verifyExplicitAdvanceForSimulationTime();
-
-		return vel_ts;
-	}
-
-	/*
-	 * Compute a new implicit time-step as function of the last implicit time-step,
-	 * velocity norm and DVTOL. DVTOL comes from the input data file 'numeric.dat'.
-	 */
-	double EBFV1_hyperbolic_adaptative::calculateVelocityVariationNorm(pMesh theMesh){
-//		const int dim = pGCData->getMeshDim();
-//		const int ndom = pStruct->pSimPar->getNumDomains();
-//		const int numGEdges = pGCData->getNumGEdges();
-//		SIter domIterator = pStruct->pSimPar->setDomain_begin();
-//
-//		pEntity edge;
-//		dblarray v_new(dim), v_old(dim), Cij(dim), Dv_dom(ndom,.0);
-//		dblarray v_var(dim); // velocity variation
-//
-//		int i, k = 0;
-//		//double sumDV;
-//
-//		// loop over domains
-//		for (SIter_const dom=pStruct->pSimPar->setDomain_begin(); dom!=pStruct->pSimPar->setDomain_end();dom++){
-//			Dv_dom[k] = .0;
-//			// loop over domains edges
-//
-//			EIter eit = M_edgeIter(theMesh);
-//			while ( (edge = EIter_next(eit)) ){
-//			// we are supposing only one domain for while
-//				if ( pGCData->edgeBelongToDomain(edge,*dom) ){
-//					pGCData->getCij(edge,*dom,Cij);
-//					pStruct->pPPData->getVelocity_new(edge,*dom,v_new);
-//					pStruct->pPPData->getVelocity_old(edge,*dom,v_old);
-//
-//					// make dimensionless velocity
-//					for (i=0; i<dim; i++){
-//						v_new[i] *= vel_factor;
-//						v_old[i] *= vel_factor;
-//						v_var[i] = v_new[i]-v_old[i];
-//					}
-//					// get Cij norm
-//					double norm = pGCData->getCij_norm(edge,*dom);
-//
-//					// number of remote copies
-//					//double nrc = (double)pGCData->getNumRC(edge,*dom) + 1.0;
-//					double nrc = (double)pGCData->getNumRC(theMesh,edge) + 1.0;
-//					cout << nrc << endl;
-//
-//
-//					double inner_prod = .0;
-//					for (i=0; i<dim; i++) inner_prod += (v_new[i]-v_old[i])*Cij[i];
-//					Dv_dom[k] += pow(fabs(inner_prod)/norm,2)/nrc;
-//
-//					// pre- Flux variation norm
-//					//Dv_dom[k] += pow(fabs(inner_product(v_var,Cij))/norm,2)/nrc;
-//				}
-//			}
-//			EIter_delete(eit);
-//
-//
-//			Dv_dom[k] = P_getSumDbl(Dv_dom[k]);
-//			Dv_dom[k] /= (double)numGEdges;
-//			k++;
-//		}
-//
-//		// take an average of velocity norm for all domains
-//		double vnorm = sqrt( (double)(std::accumulate(Dv_dom.begin(),Dv_dom.end(),.0)/ndom) );
-//		printf("VNORM: %f\n",vnorm);
-//		return vnorm;
-	}
-
-	void EBFV1_hyperbolic_adaptative::resetVariables(){
-		cumulativeExplicitTS = .0;
-		allowVelocityCalculation = true;
-		allowAdaptativeTimeAdvance = true;
-	}
-
-	void EBFV1_hyperbolic_adaptative::verifyExplicitAdvanceForImplicitTS(){
-		if ( cumulativeExplicitTS >= vel_ts ){
-			sat_ts = sat_ts - (cumulativeExplicitTS - vel_ts);
-			allowAdaptativeTimeAdvance = false;
+	// Compute a new implicit time-step (p_timestep) if necessary.
+	// This happens either at the beginning of simulation or when sum of timeStep is greater than DT.
+	void EBFV1_hyperbolic_adaptative::calculateImplicitTS(double &p_timestep, double timeStep, double &DV_norm, bool &go_ImplicitTS, bool &go_MIMPES){
+		if (go_ImplicitTS){
+			if (p_timestepOld<.0){							// initialize p_timestepOld for the beginning of simulation (t=0)
+				p_timestepOld = timeStep;
+			}
+			p_timestepOld *= time_factor;					// make implicit p_timestepOld variable dimensionless
+			p_timestep = (DVTOL/dv_norm)*p_timestepOld;		// Update new implicit time step: p_timestep
+			double RT = (double)(p_timestep/p_timestepOld);	// dimensionless DT ratio
+			if (RT>1.25){
+				p_timestep = 1.25*p_timestepOld;
+			}
+			else if ( RT<0.75 ){
+				p_timestep = 0.75*p_timestepOld;
+			}
+			p_timestep /= time_factor;						// gives implicit p_timestep variable dimension of time
+			p_timestepOld = p_timestep;
+			if (p_timestep < timeStep){						// It doesn't make sense p_timestep be less than timeStep
+				p_timestep = timeStep;
+			}
+			double p = getCumulative_p_TS() + p_timestep;
+			setCumulative_p_TS(p);
+			correct_p_TS(p_timestep,go_MIMPES);						// do not allow p_timestep go beyond total simualtion time
+			go_ImplicitTS = false;
 		}
 	}
 
-	void EBFV1_hyperbolic_adaptative::verifyExplicitAdvanceForSimulationTime(){
-//		double accSimTime = pStruct->pSimPar->getAccumulatedSimulationTime();
-//		double simTime = pStruct->pSimPar->getSimTime();
-//		if ( accSimTime >= simTime ){
-//			sat_ts = sat_ts - (accSimTime - simTime);	// correct sat_ts (last step)
-//			allowAdaptativeTimeAdvance = false;
-//			pStruct->pSimPar->stopSimulation();
-//		}
+	void EBFV1_hyperbolic_adaptative::correct_p_TS(double &p_timestep, bool &go_MIMPES){
+		if ( getCumulative_p_TS() > pSimPar->getSimTime() ){
+			p_timestep = p_timestep - (getCumulative_p_TS() - pSimPar->getSimTime());
+			setCumulative_p_TS( pSimPar->getSimTime() );
+			go_MIMPES = false;
+		}
 	}
 
-	void EBFV1_hyperbolic_adaptative::printAdatptativeTimeEvaluationData(){
-
-		if (print_ATE_Data){
-
-//			int size = P_size();									// number fo processes
-//			double dvtol = pStruct->pSimPar->getDVTOL();			// dvtol value
-//			string path = pStruct->pSimPar->getOutputPathName();	// where file will be placed
-//
-//			char fname[256]; sprintf(fname,"%s_AdaptTimeData-DVTOL__%.2E__%dp.xls",path.c_str(),dvtol,size);
-//			fid.open(fname);
-//
-//			if ( !fid.is_open() ){
-//				char msg[256]; sprintf(msg,"%s could not be opened or it does not exist.\n",fname);
-//				throw Exception(__LINE__,__FILE__,msg);
-//			}
-//
-//			fid << "Time-step ImpExp_TimeStep-ratio velocity_norm\n";
-//			print_ATE_Data = false;
+	void EBFV1_hyperbolic_adaptative::correct_Sw_TS(double &Sw_timestep_sum, double p_timestep, double &timeStep, bool &go_MIMPES){
+		if ( Sw_timestep_sum > p_timestep && timeStep < p_timestep){
+			timeStep = timeStep - (Sw_timestep_sum - p_timestep);
+			go_MIMPES = false;
 		}
+	}
 
-		if (!P_pid()) {
-//			double accSimTime = pStruct->pSimPar->getAccumulatedSimulationTime();
-//			double simTime = pStruct->pSimPar->getSimTime();
-//			double time_ratio = (double)sat_ts_counter/vel_ts_counter;
-//			// convert numeric data into a string
-//			char lineStr[256];
-//			sprintf(lineStr,"%f %f %f",accSimTime/simTime,time_ratio,dv_norm);
-//			cout << "\n\n\n" << lineStr << endl;
-//			string theString(lineStr);
-//			replaceAllOccurencesOnString(theString,1,".",",");
-//			cout << "\n\n\n" << theString << endl;
-//			fid <<  theString << std::endl;
+	void EBFV1_hyperbolic_adaptative::calculateVelocityVariationNorm(double &DV_norm, int dim){
+		int i, dom, ndom, edge, nedges, numGEdges;
+		double Cij[3], v_new[3], v_old[3], Dv[3], DV_domNorm[4], Cij_norm, aux, dot, DV_norm_sum;
+
+		pGCData->getTotalNumberOfEdges(numGEdges);
+		ndom = pSimPar->getNumDomains();
+		for (dom=0; dom<ndom; dom++){
+			nedges = pGCData->getNumEdgesPerDomain(dom);
+			DV_domNorm[dom] = .0;
+			for (edge=0; edge<nedges; edge++){
+				pGCData->getCij(dom,edge,Cij);
+				pGCData->getCij_norm(dom,edge,Cij_norm);
+				pPPData->getVelocity_new(dom,edge,v_new);
+				pPPData->getVelocity_old(dom,edge,v_old);
+				for (i=0; i<dim; i++){
+					Dv[i] = vel_factor*(v_new[i]-v_old[i]);
+				}
+				dot = inner_product(Dv,Cij,dim);
+				aux = dot/Cij_norm;
+				DV_domNorm[dom] += aux*aux;
+			}
+			DV_domNorm[dom] /= numGEdges;
 		}
+		DV_norm_sum = 0;
+		for (dom=0; dom<ndom; dom++){
+			DV_norm_sum += DV_domNorm[dom];
+		}
+		aux = (double)(DV_norm_sum/ndom);
+		DV_norm = sqrt(aux);
+	}
+
+	void EBFV1_hyperbolic_adaptative::MIMPES_output(double Sw_timestep_sum, double p_timestep, int numCFL_Steps, int sumNum_p_DT, int sumNum_Sw_DT, double DV_norm){
+		fid << setprecision(6) << fixed
+			<< (double)(pSimPar->getCumulativeSimulationTime()/pSimPar->getSimTime()) << "    "
+			<< (double)(Sw_timestep_sum/numCFL_Steps)/p_timestep << "            "
+			<< (double)(sumNum_Sw_DT/sumNum_p_DT) << "           "
+			<< DV_norm << endl;
 	}
 
 	void EBFV1_hyperbolic_adaptative::createDimensionLessFactors(){
-//		double L = .0;
-//		double H = .0;
-//		pStruct->pSimPar->getReservoirGeometricDimensions(L,H);
-//		double Q = pStruct->pSimPar->getTotalInjectionFlowRate();
-//		time_factor = Q/(pStruct->pSimPar->getPorosity(3300)*pow(L,2)*H);
-//		vel_factor = L*H/Q;
-		//printf("vel_factor = %f\n",vel_factor); throw 1;
+		double L, H, phi;
+		phi = pSimPar->getPorosity(3300);
+		pSimPar->getReservoirGeometricDimensions(L,H);
+		double Q = pSimPar->getTotalInjectionFlowRate();
+		time_factor = Q/(phi*(L*L)*H);
+		vel_factor = L*H/Q;
 	}
 }

@@ -287,6 +287,15 @@ namespace PRS
 		int getNumEBE() const{
 			return numExtBdryEdges;
 		}
+
+		void setTotalNumberOfEdges(int n){
+			numGEdges = n;
+		}
+
+		void getTotalNumberOfEdges(int &n) const{
+			n = numGEdges;
+		}
+
 	private:
 		double reservoirHeight;
 		double reservoirVolume;

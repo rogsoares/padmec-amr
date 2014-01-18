@@ -2,7 +2,7 @@
 
 namespace PRS{
 	double EBFV1_hyperbolic::calculateIntegralAdvectiveTerm(int dom, double &timeStep){
-		cout << "calculateIntegralAdvectiveTerm\n";
+		//cout << "calculateIntegralAdvectiveTerm\n";
 		int dim = pGCData->getMeshDim();
 		double startt = MPI_Wtime();
 
@@ -111,7 +111,6 @@ namespace PRS{
 		phi = pSimPar->getPorosity(flag);
 		length = pGCData->getSmallestEdgeLength();
 		timeStep = std::min(timeStep,(courant*length*phi)/alpha_max);
-		cout << setprecision(8) << fixed << " ##### TIME STEP = " << timeStep << endl;
 		double endt = MPI_Wtime();
 		return endt-startt;
 	}
