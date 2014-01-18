@@ -21,13 +21,13 @@ Chosse one of the methods availables above to solve the hyperbolic equation:
 2 -> EBFV1_adaptative
 
 type method ID right above:
-1
+2
 
 Use high order approximation:
 no
 
 C.F.L (courant-friedilich-lendroff number):
-0.7
+0.9
 
 Discretization time on production well:
 1000

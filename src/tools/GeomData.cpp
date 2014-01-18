@@ -646,9 +646,11 @@ namespace PRS{
 		setSmallestEdgeLength(P_getMinDbl(delta_x));
 		cout << "smalest = " << delta_x << endl;
 
+		int tnedges = 0;
 		int row = 0;
 		EIter eit = M_edgeIter(theMesh);
 		while ( (edge = EIter_next(eit)) ){
+			tnedges++;
 			if (E_numFaces(edge)==1){
 				E_getVerticesCoord(edge,Icoord,Jcoord);
 				for (j=0; j<dim; j++){
@@ -674,5 +676,6 @@ namespace PRS{
 			}
 		}
 		EIter_delete(eit);
+		this->setTotalNumberOfEdges(tnedges);
 	}
 }

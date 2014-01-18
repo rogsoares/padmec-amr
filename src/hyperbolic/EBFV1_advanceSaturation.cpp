@@ -14,7 +14,7 @@ namespace PRS{
 
 	// Advance time for all free node not located in wells
 	int EBFV1_hyperbolic::nodeWithOut_Wells(double delta_T){
-		cout << "nodeWithOut_Wells\n";
+		//cout << "nodeWithOut_Wells\n";
 		double Sw,Sw_old,nonvisc,volume;
 		int idx;
 		int nnode = pPPData->getNumNodeFreeWells();
@@ -38,7 +38,7 @@ namespace PRS{
 
 	// Advance time for nodes in production well
 	void EBFV1_hyperbolic::nodeWith_Wells(double delta_T){
-		cout << "nodeWith_Wells\n";
+		//cout << "nodeWith_Wells\n";
 		const int N = pSimPar->getWellTimeDiscretion(); ///  1000;								// magic number :)
 		int i,j, well_idx;
 		double Sw,Sw0,Sw_old,Vt,Qi,Vi,Qwi,Qt,fw,nonvisc,wp,volume, nrc, porosity;

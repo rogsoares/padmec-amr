@@ -246,7 +246,8 @@ namespace PRS{
 		}
 	}
 
-	void PhysicPropData::resetNonvisc(){
+	void PhysicPropData::resetNonvisc(double &alpha_max){
+		alpha_max = .0;
 		for (int i=0; i<nnodes; i++){
 			nonvisc.setValue(i,.0);
 		}

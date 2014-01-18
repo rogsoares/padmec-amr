@@ -11,17 +11,8 @@
 #include "Hyperbolic_equation.h"
 //#include "HighOrderApproximation.h"
 
-namespace PRS
-{
+namespace PRS{
 
-	/**
-	 * EBFV1_hyperbolic class holds all steps needed to solve the saturation e-
-	 * quation including the velocity equation. The main functions implemented
-	 * are:
-	 * 		calculateVelocityField (fluid velocity associated to edges)
-	 * 		calculateIntegralAdvectiveTerm (flux through a control volume)
-	 * 		calculateExplicitAdvanceInTime (performe: S(n+1) = S(n) + advanceTime
-	 */
 	class EBFV1_hyperbolic : public Hyperbolic_equation{
 	public:
 
@@ -32,29 +23,11 @@ namespace PRS
 
 	protected:
 
-		/**
-		 * Main functions related to the advective equation presented in order
-		 * that they must be called.
-		 */
+		// Main functions related to the advective equation presented in order that they must be called.
 		double calculateVelocityField(int,int);
 		double calculateIntegralAdvectiveTerm(int, double&);
 		double calculateExplicitAdvanceInTime(double);
 
-		/*
-		 * For new time step, erase previous nonvisc data
-		 */
-		//void resetNodalNonviscTerms(pMesh);
-
-		/*
-		 * For parallel simulation only. Node on partition boundary have the same value
-		 */
-		//int updateNonViscTerm(pMesh);
-
-		//double getTimeStep();
-
-		/*
-		 * Evaluate Sw_new = Sw_old + DT*nonvisc on node without and with production wells respectively
-		 */
 		int nodeWithOut_Wells(double);
 		void nodeWith_Wells(double);
 		
@@ -87,9 +60,7 @@ namespace PRS
 		GeomData *pGCData;
 		PhysicPropData *pPPData;
 		SimulatorParameters *pSimPar;
-
-		// Define a pointer to handle high order approximations for saturation field.
-		//HighOrderApproximation *pHOApproximation;
+		ErrorAnalysis *pEA;
 
 		// Saturation gradient is calculated for all domains at once. Nodes on boundary domains contains one gradient vector for each domain.
 		double calculateSaturationGradient(pMesh);
