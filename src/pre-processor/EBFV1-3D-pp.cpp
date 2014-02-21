@@ -227,20 +227,33 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 	 * 		scalars.
 	 *
 	 * */
-	AllgatherDomains(setOfDomain);
-	unifyCijAmongProcessors(theMesh,setOfDomain,pGCData);
-	unifyVolumesAmongProcessors(theMesh,setOfDomain,"volume",pGCData);
+//	AllgatherDomains(setOfDomain);
+//	unifyCijAmongProcessors(theMesh,setOfDomain,pGCData);
+//	unifyVolumesAmongProcessors(theMesh,setOfDomain,"volume",pGCData);
 //	setCorrectNumberOfRemoteCopies(pPPP);
 
 
 	// calculate edge length
 	calculateEdgeLength(theMesh,pGCData);
 	calculateCijNorm(theMesh,pGCData,setOfDomain);
-
-//
-//#ifdef _PREPROCESSOR_DEBUG_
-//	validate_EBFV1(pPPP);
-//#endif
+	//	// transfer geometric data from FMDB to Matrix structure
+	i = 0;
+	ndom = (int)setOfDomain.size();
+	int *domlist = new int[ndom];
+	for(iter = setOfDomain.begin(); iter!=setOfDomain.end(); iter++){
+		domlist[i++] =  *iter;
+	}
+//	pGCData->calculateNumEdges(theMesh,ndom,domlist);
+//	pGCData->calculateNumBDRYFaces(theMesh,ndom,domlist);
+//	pGCData->calculateNumNodes(theMesh,ndom,domlist);
+//	pGCData->calculateNumBdryNodes(theMesh,ndom,domlist);
+//	pGCData->allocatePointers(theMesh,ndom);
+//	pGCData->calculateEdgeProperties(theMesh,ndom,domlist);
+//	transferCijData(theMesh,pGCData,ndom,domlist);
+//	transferDijData(theMesh,pGCData,ndom,domlist);
+//	transferVolData(theMesh,pGCData,ndom,domlist);
+//	pGCData->mappingNodesIds(theMesh,ndom,domlist);
+//	delete[] domlist; domlist = 0;
 	PetscPrintf(PETSC_COMM_WORLD,"EBFV1-3D pre-processor has finished.\n\n");
 	return 0;
 }

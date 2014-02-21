@@ -49,8 +49,8 @@ void interpolation(InterpolationDataStruct* pIData, INTERPOLATION_OPTIONS opt){
 void initialize(InterpolationDataStruct* pIData){
 	int dim = pIData->m1->getDim();
 	pIData->theOctree = OctreeCreate2<iterall>(pIData->m2->beginall(dim),pIData->m2->endall(dim),dim);
-	int nrows1 = M_numVertices(pIData->m1) + 1;	// Mesh to
-	int nrows2 = M_numVertices(pIData->m2) + 1; // Mesh from
+	int nrows1 = M_numVertices(pIData->m1) + 1;	// New mesh (to)
+	int nrows2 = M_numVertices(pIData->m2) + 1; // Old mesh (from)
 	pIData->pNodeValue.allocateMemory(nrows2);
 	pIData->pGrad.allocateMemory(nrows2,5);
 	pIData->pGeomCoeff.allocateMemory(nrows1,dim+1);
@@ -62,4 +62,5 @@ void finalize(InterpolationDataStruct* pIData){
 	pIData->pInterpolatedVals.freeMemory();
 	pIData->pGeomCoeff.freeMemory();
 	pIData->pGrad.freeMemory();
+	pIData->theOctree = 0;
 }

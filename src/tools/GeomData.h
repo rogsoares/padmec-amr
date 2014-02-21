@@ -50,20 +50,18 @@ namespace PRS
 		GeomData();
 		~GeomData();
 
-        /*
-         * Geometric coefficients
-         * ----------------------------------------------------------------------------------
-         */
+		void initilize(pMesh);
+		void initilize(pMesh, const std::set<int>&);
+		void dataTransfer(pMesh);
+		void transferCijData(pMesh);
+		void transferDijData(pMesh);
+		void transferVolData(pMesh);
 
 		// get Dij for 3-D meshes (the old one generate memory linking)
 		bool getDij(pEntity face, int dom, double *Dij);
 		void setDij(pEntity face, int dom1, int dom2, double *Dij);
-
-
 		void getCij(pEntity , const int &, DataArray &);
 		void getCij(pEntity edge, const int &dom, double *Cij);
-
-
 		bool getDij(pEntity , const int &, DataArray &);
 		double getVolume(pEntity , const int &);
 		double getWeightedVolume(pEntity);
@@ -72,49 +70,35 @@ namespace PRS
 		void setCij(pEntity , const int &, DataArray );
 		void setCij_norm(pEntity , const int &, double );
 		double getCij_norm(pEntity , const int &);
-//		void setCij_norm(int dom, int row, double norm){
-//			Cij_norm[dom].setValue(row,norm);
-//		}
-//
-//		double getCij_norm(int dom, int row) const{
-//			return Cij_norm[dom].getValue(row);
-//		}
-
 		void setDij(pEntity , const int &, const int &, const DataArray &);
 		void setVolume(pEntity , const int &, const  double &);
 		void setWeightedVolume(pEntity, const  double &);
 		void setFlag(pEntity, int);
-
 		void setEdgeLength(pEntity , double );
 		double getEdgeLength(pEntity );
-
 		void setEdgeVector(pEntity, dblarray);
 		void getEdgeVector(pEntity, dblarray&);
-
 		void setEdgeVec_Unitary(pEntity, dblarray);
 		void getEdgeVec_Unitary(pEntity, dblarray&);
 
-
 		// check if an edge belongs to domain
-		// -------------------------------------------------------------------------------------
 		bool nodeBelongToDomain(pEntity , const int &);
 		bool edgeBelongToDomain(pEntity , const int &);
 		int getDomainFlag(pEntity node);
 
 		// check if an edge belongs to boundary domain (any domain)
-		// -------------------------------------------------------------------------------------
 		void set_belongsToBoundary(pEdge,bool);
 		bool belongsToBoundary(pEdge);
-
-
 		void setTotalReservoirVolume(double );
 		double getReservoirVolume() const;
 
 		static int getNumRemoteCopies(pEntity node){
-			GeomData pGCData;
-			Coefficients* pCoeffnt = pGCData.getAttachedData_pointer<Coefficients>(node);
-			return pCoeffnt->numRemoteCopies;
+//			GeomData pGCData;
+//			Coefficients* pCoeffnt = pGCData.getAttachedData_pointer<Coefficients>(node);
+//			return pCoeffnt->numRemoteCopies;
+			return 0;
 		}
+
 		void setNumRemoteCopies(pEntity node, int nrc);
 
 		// set the number of copies of an entity associated to a domain
@@ -123,7 +107,7 @@ namespace PRS
 		void setNumRC(pEntity, int, int);
 
 		static int getNumRC(pMesh theMesh, pEntity ent){
-			return M_numRemoteCopies(theMesh,ent);
+			return 0;//M_numRemoteCopies(theMesh,ent);
 		}
 
 		void setMeshDim(int mdim) { dim = mdim; }
@@ -148,14 +132,15 @@ namespace PRS
 		void setCij(int dom, int row, double* cij);
 		void getDij(int dom, int row, double* dij);
 		void setDij(int dom, int row, double* dij);
-
-		void calculateNumEdges(pMesh, int, int*);
-		void calculateNumBDRYEdges(pMesh, int, int*);
-		void calculateNumNodes(pMesh, int, int*);
-		void calculateNumBdryNodes(pMesh , int, int*);
-		void calculateEdgeProperties(pMesh theMesh,int ndom, int* domList);
-		void allocatePointers(pMesh, int);
-		void deallocatePointers(int);
+		void calculateNumEdges(pMesh);
+		void calculateNumFaces(pMesh);
+		void calculateNumFacesTmp(pMesh);
+		void calculateNumBDRYEdges(pMesh);
+		void calculateNumNodes(pMesh);
+		void calculateNumBdryNodes(pMesh );
+		void calculateEdgeProperties(pMesh theMesh);
+		void allocatePointers(int);
+		void deallocatePointers();
 
 		int getNumEdgesPerDomain(int i) const{
 			return numDomEdges[i];
@@ -171,7 +156,19 @@ namespace PRS
 
 		void cleanData(pMesh);
 
-		void mappingNodesIds(pMesh theMesh, int ndom, int* domList);
+		void mappingNodesIds(pMesh theMesh);
+
+		// creates a mapping for saturation and pressure solution based in a new mesh (the adapted mesh)
+		void mappingNodesIds_Tmp(pMesh theMesh);
+
+		void getFace(int dom,int row,int& idx0,int& idx1,int& idx2,int& idx0_global,int& idx1_global,int& idx2_global){
+			idx0 = faces[dom].getValue(row,0);
+			idx1 = faces[dom].getValue(row,1);
+			idx2 = faces[dom].getValue(row,2);
+			idx0_global = faces[dom].getValue(row,3);
+			idx1_global = faces[dom].getValue(row,4);
+			idx2_global = faces[dom].getValue(row,5);
+		}
 
 		void getEdge(int dom, int row, int &idx_0, int &idx_1, int &idx0_global, int &idx1_global){
 			idx_0 = edges[dom].getValue(row,0);
@@ -235,6 +232,12 @@ namespace PRS
 			vol = volume_bdry[dom].getValue(idx);
 		}
 
+		void getBdryVolume(int dom, int idx0, int idx1, int idx2, double *vol){
+			vol[0] = volume_bdry[dom].getValue(idx0);
+			vol[1] = volume_bdry[dom].getValue(idx1);
+			vol[2] = volume_bdry[dom].getValue(idx2);
+		}
+
 		void getBdryVolume(int dom, int idx_0, int idx_1, double& volumeI, double& volumeJ){
 			volumeI = volume_bdry[dom].getValue(idx_0);
 			volumeJ = volume_bdry[dom].getValue(idx_1);
@@ -250,7 +253,7 @@ namespace PRS
 		}
 
 		int getDomFlag(int i) const{
-			return domList[i];
+			return domainList[i];
 		}
 
 		void getLength(int dom, int idx, double &length) const{
@@ -296,26 +299,57 @@ namespace PRS
 			n = numGEdges;
 		}
 
+		void setMeshNodes(int n){
+			numNodes = n;
+		}
+
+		void getMeshNodes(int &n) const{
+			n = numNodes;
+		}
+
+		void setNumDomains(int n){
+			_ndom = n;
+		}
+
+		void setDomainList(const int* domlist);
+
+		int getNumDomains() const{
+			return _ndom;
+		}
+
+		const int* getDomainList() const{
+			return domainList;
+		}
+
 	private:
+		int _ndom;
+		int* domainList;
 		double reservoirHeight;
 		double reservoirVolume;
 		int dim;
 		double smallestEdge;
 		int numGEdges;					// number or global edges
 		int* numDomEdges;				// number of edges per domain
+		int* numDomFaces;				// number of face per domain
+		int* numDomFaces_tmp;			// number of face per domain adapted mesh
 		int* numDomBDRYEdges;			// number of edges per domain
+		int* numDomBDRYFaces;			// number of edges per domain
 		int* numNodesPerDomain;			// number of nodes per domain
 		int* numBdryNodesPerDomain;		// number of nodes per domain
 		int numExtBdryEdges;
-		int* domList;
+		int numNodes;
+
 		Matrix<int> *ID;				// node ID per domain
 		Matrix<int> *edges;				// edges id0-id1 per domain, where id0 and id1 are array indices and not node IDs.
+		Matrix<int> *faces;				// stores local (per domain) and global indices for face node's IDs
+		Matrix<int> *faces_tmp;			// (for interpolation):stores local (per domain) and global indices for face node's IDs
 		Matrix<int> *nodes;				// same as edges
 		Matrix<double>* volume;			//node volumes per domain
 		Matrix<double>* volume_global;
 
 		Matrix<int> *ID_bdry;			// node ID per domain
 		Matrix<int> *edges_bdry;		// edges id0-id1 per domain, where id0 and id1 are array indices and not node IDs.
+		Matrix<int> *faces_bdry;
 		Matrix<double>* volume_bdry;	//node volumes per domain
 
 		Matrix<double>* EBE_1;

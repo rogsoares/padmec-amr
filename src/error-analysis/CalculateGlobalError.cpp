@@ -7,7 +7,7 @@
 
 #include "ErrorAnalysis.h"
 
-void ErrorAnalysis::calculate_GlobalError(pMesh theMesh, GetPFuncGrad pGetGradient){
+void ErrorAnalysis::calculate_GlobalError(pMesh theMesh){
 	double error_sum = calculate_ErrorSum(theMesh,false);
 	double smooth_gradNorm = getSmoothedGradNorm();
 	#ifdef __ERROR_ANALYSIS_DEBUG__
@@ -20,13 +20,13 @@ void ErrorAnalysis::calculate_GlobalError(pMesh theMesh, GetPFuncGrad pGetGradie
 	setGlobalError(global_error);
 }
 
-void ErrorAnalysis::calculate_GlobalError_Singularity(pMesh theMesh, GetPFuncGrad pGetGradient){
+void ErrorAnalysis::calculate_GlobalError_Singularity(pMesh theMesh){
 	double error_sum = calculate_ErrorSum(theMesh,true);
 	double smooth_gradNorm = getSmoothedGradNorm_Singularity();
 	setGlobalError_Singularity(sqrt(fabs(error_sum/smooth_gradNorm)));
 }
 
-// Define an average error. It's an distributed error over the mesh. * 	//eq. 4.24 e 3.2.1 (p‡g 32) do algoritmo - tese de Filipe
+// Define an average error. It's an distributed error over the mesh. * 	//eq. 4.24 e 3.2.1 (pï¿½g 32) do algoritmo - tese de Filipe
 void ErrorAnalysis::calculate_AvgError(pMesh theMesh, double tol, bool singularity){
 	double SGN = (singularity)?getSmoothedGradNorm_Singularity():getSmoothedGradNorm();
 	countElements(theMesh,singularity);

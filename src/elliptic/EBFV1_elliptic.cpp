@@ -78,10 +78,6 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 		row = m;
 		for(i=0; i<nLIDs;i++){
 			int ID = pMData->get_PETScToApp_Ordering(IDs_ptr[i]+1);
-//			pVertex node = theMesh->getVertex(ID);
-//			if (!node){
-//				throw Exception(__LINE__,__FILE__,"Node does not exist.\n");
-//			}
 			ierr = MatGetValues(mLSol,1,&row,1,&col,&val);CHKERRQ(ierr);
 			pPPData->setPressure(ID-1,val);
 			row++;
@@ -97,13 +93,6 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 					pPPData->setPressure(i,val);
 				}
 			}
-//			VIter vit = M_vertexIter(theMesh);
-//			while (pEntity node = VIter_next(vit)){
-//				int ID = pMData->get_AppToPETSc_Ordering(EN_id(node));
-//				if ( pMData->getDirichletValue(ID,&val) ){
-//					pPPData->setPressure(node,val);
-//			}
-//			VIter_delete(vit);
 			key = false;
 		}
 		return MPI_Wtime()-startt;
@@ -125,11 +114,11 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 		ierr = VecDestroy(matvec_struct->RHS);CHKERRQ(ierr);
 		ierr = VecDestroy(matvec_struct->z);CHKERRQ(ierr);
 		ierr = VecDestroy(output);CHKERRQ(ierr);
+		delete[] matvec_struct->F;
+		delete[] matvec_struct->E;
+		matvec_struct->F = 0;
+		matvec_struct->E = 0;
 		if (pSimPar->userRequiresAdaptation()){
-			delete[] matvec_struct->F;
-			delete[] matvec_struct->E;
-			matvec_struct->F = 0;
-			matvec_struct->E = 0;
 			delete[] matvec_struct->rows; matvec_struct->rows = 0;
 			delete matvec_struct; matvec_struct = 0;
 		}

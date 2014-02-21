@@ -4,25 +4,58 @@ Matrix<double> *pGrad_dom;	// each pointer is a matrix nx3
 Matrix<double> pressure;
 Matrix<double> SwGrad;			// a unique matrix nnodesx3 for whole mesh
 Matrix<double> Sw;		// for domain
+Matrix<double> Sw_old;		// for domain
+
+Matrix<double> Sw_tmp;
+Matrix<double> p_tmp;
 
 namespace PRS{
 
 	PhysicPropData::PhysicPropData(){
 		setMeshDataId("PP_Data");
 		steady_state = false;
-//		pGetGradArray = new GetPFuncGrad[2];
-//		pGetGradArray[0] = get_pw_Grad;
-//		pGetGradArray[1] = get_Sw_Grad;
+		Allocated = false;
 	}
 
 	PhysicPropData::~PhysicPropData(){
 	}
 
-	void PhysicPropData::initialize(MeshData *pMData, SimulatorParameters *pSimPar, pMesh theMesh, bool isUpdate, GeomData* pGCData){
-		int numNodes = M_numVertices(theMesh);
-		int ndom = pSimPar->getNumDomains();
-		const int* pNumNodesDom = pSimPar->getNumNodesDomain();		// let me know how many nodes belong to ech domain
+	void PhysicPropData::update_Sw_p(int n){
+		allocateTemporaryData(n);
+	}
 
+	void PhysicPropData::allocateTemporaryData(int n){
+		Sw_tmp.allocateMemory(n);
+		Sw_tmp.initialize(0);
+		p_tmp.allocateMemory(n);
+		p_tmp.initialize(0);
+	}
+
+	void PhysicPropData::transferTmpData(){
+		// deallocate Sw and pressure matrices first
+		Sw.freeMemory();
+		pressure.freeMemory();
+		Sw_old.freeMemory();
+		// allocate with new dimension
+		int rows,cols;
+		Sw_tmp.getsize(rows,cols);
+		Sw.allocateMemory(rows);
+		pressure.allocateMemory(rows);
+		Sw_old.allocateMemory(rows);
+		Sw_old.initialize(0);
+		// transfer data
+		for(int i=0;i<rows;i++){
+			Sw.setValue(i,Sw_tmp.getValue(i));
+			pressure.setValue(i,p_tmp.getValue(i));
+		}
+		// deallocate temporary data
+		Sw_tmp.freeMemory();
+		p_tmp.freeMemory();
+	}
+
+	void PhysicPropData::allocateData(SimulatorParameters *pSimPar, GeomData* pGCData, int numnodes){
+		int ndom = pSimPar->getNumDomains();
+		const int* pNumNodesDom = pSimPar->getNumNodesDomain();
 		pGrad_dom = new Matrix<double>[ndom];
 		velocity = new Matrix<double>[ndom];
 		SwGrad_dom = new Matrix<double>[ndom];
@@ -36,17 +69,49 @@ namespace PRS{
 			SwGrad_dom[k].allocateMemory(nrows,3);
 			SwGrad_dom[k].initialize(.0);
 		}
-		nnodes = M_numVertices(theMesh);
+		nnodes = numnodes;
 		SwGrad.allocateMemory(nnodes,3);
 		SwGrad.initialize(.0);
-		Sw.allocateMemory(nnodes);
-		Sw.initialize(0);
-		pressure.allocateMemory(nnodes);
-		pressure.initialize(0);
 		injectionWell.allocateMemory(nnodes);
 		projectedSw_grad.allocateMemory(nnodes);
 		nonvisc.allocateMemory(nnodes);
 
+		// if adaptation used, Sw and pressure will be allocated in transferTmpData. This is for the very first time. Beginning of simulation.
+		if (!Allocated){
+			Sw.allocateMemory(nnodes);
+			Sw.initialize(0);
+			Sw_old.allocateMemory(nnodes);
+			Sw_old.initialize(0);
+			pressure.allocateMemory(nnodes);
+			pressure.initialize(0);
+			Allocated = true;
+		}
+	}
+
+	void PhysicPropData::deallocateData(SimulatorParameters *pSimPar){
+		int ndom = pSimPar->getNumDomains();
+		for (int k=0; k<ndom; k++){
+			pGrad_dom[k].freeMemory();
+			velocity[k].freeMemory();
+			SwGrad_dom[k].freeMemory();
+		}
+		SwGrad.freeMemory();
+		injectionWell.freeMemory();
+		projectedSw_grad.freeMemory();
+		nonvisc.freeMemory();
+		delete[] SwGrad_dom; SwGrad_dom = 0;
+		delete[] pGrad_dom; pGrad_dom = 0;
+		delete[] velocity; velocity = 0;
+
+		if (!Allocated){
+			pressure.freeMemory();
+			Sw.freeMemory();
+			Sw_old.freeMemory();
+		}
+	}
+
+	void PhysicPropData::initialize(MeshData *pMData, SimulatorParameters *pSimPar, pMesh theMesh, bool isUpdate, GeomData* pGCData){
+		allocateData(pSimPar,pGCData,M_numVertices(theMesh));
 		Swr = pSimPar->Swr();				// Irreducible water saturation
 		Sor = pSimPar->Sor();				// Residual oil saturation
 		mi_w = pSimPar->waterViscosity();	// water viscosity
@@ -57,7 +122,7 @@ namespace PRS{
 			setInitialSaturation(theMesh,pSimPar);
 		}
 
-		// TODO: bacalho. saturacoes muito pequenas <E-200
+		double Sw;
 		int idx = 0;
 		int k = 0;
 		nfree = 0, nneumann = 0;
@@ -65,11 +130,11 @@ namespace PRS{
 		VIter vit = M_vertexIter(theMesh);
 		while ( (node = VIter_next(vit)) ){
 			int flag = GEN_tag(node->getClassification());
-			double Sw = this->getSaturation(idx);
+			getSaturation(idx,Sw);
 			if ( Sw < 1e-8 ){
 				Sw = .0;
 			}
-			setSaturation(node,Sw);
+			//setSaturation(node,Sw);
 			this->setSaturation(idx,Sw);
 			// todo: TIRAR ESSE BACALHO DAQUI!!!
 			if ( pSimPar->isProductionWell(flag) ){
@@ -83,7 +148,6 @@ namespace PRS{
 			idx++;
 		}
 		VIter_delete(vit);
-
 
 		pWellsFree_index = new int[nfree];
 		pWellsNeumann_index = new int[nneumann];
@@ -104,30 +168,12 @@ namespace PRS{
 			idx++;
 		}
 		VIter_delete(vit);
-
 		ksModel = pSimPar->ksModel();
 
 #ifdef __SEEKFORBUGS__
 		if (!numNodes || !numEdges || !ndom)
 			throw Exception(__LINE__,__FILE__,"Null value! Exiting....\n");
 #endif
-
-
-	}
-
-	void PhysicPropData::deallocateData(SimulatorParameters *pSimPar){
-		int ndom = pSimPar->getNumDomains();
-		for (int k=0; k<ndom; k++){
-			pGrad_dom[k].freeMemory();
-			velocity[k].freeMemory();
-			SwGrad_dom[k].freeMemory();
-		}
-		SwGrad.freeMemory();
-		pressure.freeMemory();
-		Sw.freeMemory();
-		delete[] SwGrad_dom; SwGrad_dom = 0;
-		delete[] pGrad_dom; pGrad_dom = 0;
-		delete[] velocity; velocity = 0;
 	}
 
 	void PhysicPropData::setInitialSaturation(pMesh theMesh, SimulatorParameters *simPar){
@@ -143,8 +189,8 @@ namespace PRS{
 				printf("Injection well located in node %d Sw = %f flag: %d\n",EN_id(node),Sw,flag);
 				hasInjectionWell = true;
 			}
-			setSaturation(node,Sw);
-			this->setSaturation(idx,Sw);
+//			setSaturation(node,Sw);
+			setSaturation(idx,Sw);
 			idx++;
 		}
 		VIter_delete(vit);
@@ -192,15 +238,15 @@ namespace PRS{
 		//throw 1;
 	}
 
-	double PhysicPropData::getTotalMobility(pEntity vertex){
-		if (steady_state){
-			return 1.0;
-		}
-		double Sw = getSaturation(vertex);
-		double krw = get_ksw(Sw);
-		double kro = get_kso(Sw);
-		return krw/mi_w + kro/mi_o;
-	}
+//	double PhysicPropData::getTotalMobility(pEntity vertex){
+//		if (steady_state){
+//			return 1.0;
+//		}
+//		double Sw = getSaturation(vertex);
+//		double krw = get_ksw(Sw);
+//		double kro = get_kso(Sw);
+//		return krw/mi_w + kro/mi_o;
+//	}
 
 	double PhysicPropData::getTotalMobility(double Sw){
 		double krw = get_ksw(Sw);

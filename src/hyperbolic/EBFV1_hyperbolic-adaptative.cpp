@@ -29,8 +29,7 @@ namespace PRS{
 			char msg[256]; sprintf(msg,"File '%s' could not be opened or it does not exist.\n",filename.c_str());
 			throw Exception(__LINE__,__FILE__,msg);
 		}
-		fid << "PVI   CFL_dt/imp_dt  sum_numSw_dt/sum_nump_dt  vel_norm" << endl;
-		//fid << "0.12    0.123456            0.123456           0.123456" << endl;
+		fid << "PVI CFL_dt/imp_dt sum_numSw_dt/sum_nump_dt vel_norm" << endl;
 		sumNum_p_DT = 0;
 		sumNum_Sw_DT = 0;
 		p_timestepOld = -1.0;
@@ -43,8 +42,8 @@ namespace PRS{
 	double EBFV1_hyperbolic_adaptative::solver(pMesh theMesh, double &timeStep){
 		if (!P_pid()) std::cout << "Adaptative Hyperbolic solver...\n";
 
-		bool go_MIMPES = true;
-		bool go_ImplicitTS = true;						// calculate implicit time step once
+		bool go_MIMPES = true;							// says to keep Sw advance while velocity is hold constant
+		bool go_ImplicitTS = true;						// calculate implicit time step once while Sw advances
 		static int timestep_counter = 0;				// counts number of time steps every new VTK
 		int dim = theMesh->getDim();
 		timeStep = 1.0e+10;								// initialize time step with a very high number
@@ -74,14 +73,13 @@ namespace PRS{
 			}
 
 			calculateImplicitTS(p_timestep,timeStep,DV_norm,go_ImplicitTS,go_MIMPES);
-			Sw_timestep_sum += timeStep;									// CFL timestep summation
-			correct_Sw_TS(Sw_timestep_sum,p_timestep,timeStep,go_MIMPES);	// do not allow Sw_timestep_sum be greater than p_timestep
-			pSimPar->correctTimeStep(timeStep);								// correct time-step value to print out the desired simulation moment
+			correct_Sw_TS(timeStep,go_MIMPES);								// do not allow Sw_timestep_sum be greater than p_timestep
 			pSimPar->setCumulativeSimulationTime(timeStep); 				// AccSimTime = AccSimTime + timeStep
 			calculateExplicitAdvanceInTime(timeStep);						// Calculate saturation field: Sw(n+1)
 			timestep_counter++;
 			sumNum_Sw_DT++;													// for whole simulation
 			numCFL_Steps++;													// for implicit time steps only
+			Sw_timestep_sum += timeStep;									// CFL timestep summation
 
 			// oil production output
 			if (pSimPar->rankHasProductionWell() && pSimPar->timeToPrintVTK()){
@@ -89,15 +87,6 @@ namespace PRS{
 				timestep_counter = 0;
 			}
 			pSimPar->printOutVTK(theMesh,pPPData,pEA,pSimPar,pGCData,exportSolutionToVTK);
-			cout << setprecision(6) << fixed <<
-					pSimPar->getCumulativeSimulationTime() << "\t" <<
-					pSimPar->getSimTime() << "\t" <<
-					timeStep << "\t" <<
-					p_timestep << endl;
-
-			if (timeStep<0){
-				throw Exception(__LINE__,__FILE__,"Negative!!!");
-			}
 		}while ( go_MIMPES );
 		MIMPES_output(Sw_timestep_sum,p_timestep,numCFL_Steps,sumNum_p_DT,sumNum_Sw_DT,DV_norm);
 		if (!P_pid()) cout << "done\n";
@@ -121,29 +110,54 @@ namespace PRS{
 				p_timestep = 0.75*p_timestepOld;
 			}
 			p_timestep /= time_factor;						// gives implicit p_timestep variable dimension of time
-			p_timestepOld = p_timestep;
-			if (p_timestep < timeStep){						// It doesn't make sense p_timestep be less than timeStep
+			if (p_timestep < timeStep || (RT>0.75 && RT<1.25)){						// It doesn't make sense p_timestep be less than timeStep
 				p_timestep = timeStep;
 			}
-			double p = getCumulative_p_TS() + p_timestep;
-			setCumulative_p_TS(p);
 			correct_p_TS(p_timestep,go_MIMPES);						// do not allow p_timestep go beyond total simualtion time
 			go_ImplicitTS = false;
+			p_timestepOld = p_timestep;
 		}
 	}
 
 	void EBFV1_hyperbolic_adaptative::correct_p_TS(double &p_timestep, bool &go_MIMPES){
-		if ( getCumulative_p_TS() > pSimPar->getSimTime() ){
-			p_timestep = p_timestep - (getCumulative_p_TS() - pSimPar->getSimTime());
-			setCumulative_p_TS( pSimPar->getSimTime() );
-			go_MIMPES = false;
+		double p = getCumulative_p_TS() + p_timestep;
+		if ( p > pSimPar->getSimTime() ){
+			p_timestep = pSimPar->getSimTime()-getCumulative_p_TS();
+			p = pSimPar->getSimTime();
+			pSimPar->stopSimulation();
 		}
+		setCumulative_p_TS(p);
 	}
 
-	void EBFV1_hyperbolic_adaptative::correct_Sw_TS(double &Sw_timestep_sum, double p_timestep, double &timeStep, bool &go_MIMPES){
-		if ( Sw_timestep_sum > p_timestep && timeStep < p_timestep){
-			timeStep = timeStep - (Sw_timestep_sum - p_timestep);
+	void EBFV1_hyperbolic_adaptative::correct_Sw_TS(double &timeStep, bool &go_MIMPES){
+		// CFL time step must be corrected to satisfy VTK print out or MIMPES procedure
+		double cum_VTK = pSimPar->getPrintOutVTKFrequency();
+		double cum_p_TS = getCumulative_p_TS();
+		double cum_ST = pSimPar->getCumulativeSimulationTime();
+
+		// fit timeStep to MIMPES timestep
+		if (cum_ST+timeStep > cum_p_TS){
+			timeStep = cum_p_TS - cum_ST;
+			if (timeStep<0){throw Exception(__LINE__,__FILE__,"time step negative!");}
+			// fit timeStep to PVI time for right VTK print out
+			if (cum_ST+timeStep > cum_VTK){
+				timeStep = cum_VTK - cum_ST;
+				cout << setprecision(12) << fixed << timeStep  << "\t" << cum_VTK << "\t" << cum_ST << endl ;
+				if (timeStep<0){throw Exception(__LINE__,__FILE__,"time step negative!");}
+				pSimPar->allowPrintVTK();
+			}
+			else{
+				go_MIMPES = false;
+			}
+		}
+		if (cum_ST+timeStep > cum_VTK){
+			timeStep = cum_VTK - cum_ST;
+			pSimPar->allowPrintVTK();
+		}
+		if (cum_ST+timeStep >= pSimPar->getSimTime()){
+			timeStep = pSimPar->getSimTime() - cum_ST;
 			go_MIMPES = false;
+			pSimPar->allowPrintVTK();
 		}
 	}
 
@@ -180,9 +194,9 @@ namespace PRS{
 
 	void EBFV1_hyperbolic_adaptative::MIMPES_output(double Sw_timestep_sum, double p_timestep, int numCFL_Steps, int sumNum_p_DT, int sumNum_Sw_DT, double DV_norm){
 		fid << setprecision(6) << fixed
-			<< (double)(pSimPar->getCumulativeSimulationTime()/pSimPar->getSimTime()) << "    "
-			<< (double)(Sw_timestep_sum/numCFL_Steps)/p_timestep << "            "
-			<< (double)(sumNum_Sw_DT/sumNum_p_DT) << "           "
+			<< (double)(pSimPar->getCumulativeSimulationTime()/pSimPar->getSimTime()) << " "
+			<< (double)(Sw_timestep_sum/numCFL_Steps)/p_timestep << " "
+			<< (double)(sumNum_Sw_DT/sumNum_p_DT) << " "
 			<< DV_norm << endl;
 	}
 

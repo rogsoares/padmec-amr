@@ -12,7 +12,7 @@ namespace PRS{
 	EBFV1_hyperbolic::EBFV1_hyperbolic(){
 	}
 
-	EBFV1_hyperbolic::EBFV1_hyperbolic(pMesh mesh, PhysicPropData *ppd,SimulatorParameters *sp, GeomData *gcd,MeshData *md, OilProductionManagement *popm, ErrorAnalysis *pEA){
+	EBFV1_hyperbolic::EBFV1_hyperbolic(pMesh mesh, PhysicPropData *ppd,SimulatorParameters *sp, GeomData *gcd,MeshData *md, OilProductionManagement *popm, ErrorAnalysis *pEAna){
 
 		pGCData = gcd;
 		pOPManager = popm;
@@ -20,6 +20,7 @@ namespace PRS{
 		pSimPar = sp;
 		pMData = md;
 		_cumulativeOil = .0;
+		pEA = pEAna;
 	}
 
 	EBFV1_hyperbolic::~EBFV1_hyperbolic(){
@@ -52,8 +53,9 @@ namespace PRS{
 			calculateIntegralAdvectiveTerm(dom,timeStep);
 		}
 		pSimPar->correctTimeStep(timeStep);					// correct time-step value to print out the desired simulation moment
+		pSimPar->saveCurrentSimulationTimes();				// it must be called before cumulative simulation time
 		pSimPar->setCumulativeSimulationTime(timeStep); 	// AccSimTime = AccSimTime + timeStep
-		calculateExplicitAdvanceInTime(timeStep);	// Calculate saturation field: Sw(n+1)
+		calculateExplicitAdvanceInTime(timeStep);			// Calculate saturation field: Sw(n+1)
 
 	#ifdef _SEEKFORBUGS_
 		if (!P_pid()) std::cout << "<_SEEKFORBUGS_>  timeStep = : " << timeStep << endl;
@@ -61,13 +63,12 @@ namespace PRS{
 	#endif
 
 		timestep_counter++;
-
 		// oil production output
 		if (pSimPar->rankHasProductionWell() && pSimPar->timeToPrintVTK()){
 			pOPManager->printOilProduction(timeStep,pSimPar->getCumulativeSimulationTime(),pSimPar->getSimTime(),getRecoveredOil(),getCumulativeOil(),timestep_counter);
 			timestep_counter = 0;
 		}
-
+		pSimPar->printOutVTK(theMesh,pPPData,pEA,pSimPar,pGCData,exportSolutionToVTK);
 		if (!P_pid()) std::cerr << "done.\n\n";
 		return hyp_time;
 	}

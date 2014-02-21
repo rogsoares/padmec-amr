@@ -19,8 +19,9 @@
 /*! \brief: Set of objects needed for interpolation functions. For any other interpolation function added which needs more information,
  * a new pointer, for example, it must be included into the InterpolationDataStruct struct
  */
-typedef double(*GetDblFunction)(pEntity);
-typedef void(*SetDblFunction)(pEntity,double);
+
+typedef void(*GetDblFunction)(int,double&);
+typedef void(*SetDblFunction)(int,double);
 typedef mMeshEntityContainer::iter iterall;
 
 struct InterpolationDataStruct{

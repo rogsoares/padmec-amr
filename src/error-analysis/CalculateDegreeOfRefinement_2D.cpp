@@ -9,11 +9,13 @@
 
 int getLevelToRefine(const double& ratio);
 int getLevelToUnrefine(const double& ratio);
-void ErrorAnalysis_2D::calculate_DegreeOfRefinement(pMesh theMesh, SimulatorParameters* pSimPar, int maxNumSubdivision,
-													int numSubdivision_perStep, bool singularity){
+void ErrorAnalysis_2D::calculate_DegreeOfRefinement(pMesh theMesh, SimulatorParameters* pSimPar, bool singularity){
+
+	int maxNSub = pSimPar->getMax2D();							// maximum number of subdivisions
+	int numSubStep = pSimPar->getNumSubdivision_perStep();		// number of subdivisions per step
 	switch( pSimPar->getRefStrategy() ){
 		case H_REFINEMENT:
-			calculate_DegreeOfRefinement(theMesh,maxNumSubdivision,numSubdivision_perStep,singularity);
+			calculate_DegreeOfRefinement(theMesh,maxNSub,numSubStep,singularity);
 			break;
 		case ADAPTIVE_REMESHING:
 			calculate_NewElementHeight(theMesh,singularity);
@@ -103,7 +105,7 @@ void ErrorAnalysis_2D::weightNewElementHeight(pMesh theMesh, bool singularity, s
 }
 
 // Define degree of refinement for all elements
-void ErrorAnalysis_2D::calculate_DegreeOfRefinement(pMesh theMesh, int maxNumSubdivision, int numSubdivision_perStep, bool singularity){
+void ErrorAnalysis_2D::calculate_DegreeOfRefinement(pMesh theMesh, int maxNSub, int numSubStep, bool singularity){
 	
 	#ifdef __ERROR_ANALYSIS_DEBUG__
 	bool EADebugging = false;
@@ -138,8 +140,8 @@ void ErrorAnalysis_2D::calculate_DegreeOfRefinement(pMesh theMesh, int maxNumSub
 			 * error analysis MUST NOT be performed once more, because tolerance will not be satisfied due the presence of the singularities.
 			 */
 			int rootDepth = theMesh->getRefinementDepth(face->root());
-			if ( rootDepth + refunref_level > maxNumSubdivision ){
-				refunref_level = maxNumSubdivision - rootDepth;
+			if ( rootDepth + refunref_level > maxNSub ){
+				refunref_level = maxNSub - rootDepth;
 			}
 			else{
 				// Before set the new element level or refinement, check if the previous one is less or greater the new level. 
@@ -148,8 +150,8 @@ void ErrorAnalysis_2D::calculate_DegreeOfRefinement(pMesh theMesh, int maxNumSub
 			}
 			
 			// stops element to be refined completely saving memory.
-			if (refunref_level > numSubdivision_perStep){
-				refunref_level = numSubdivision_perStep;
+			if (refunref_level > numSubStep){
+				refunref_level = numSubStep;
 			}
 			setLevelOfRefinement(face,refunref_level);
 			

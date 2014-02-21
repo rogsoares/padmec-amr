@@ -21,7 +21,7 @@ Chosse one of the methods availables above to solve the hyperbolic equation:
 2 -> EBFV1_adaptative
 
 type method ID right above:
-2
+1
 
 Use high order approximation:
 no

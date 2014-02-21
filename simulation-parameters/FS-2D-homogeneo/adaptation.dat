@@ -43,7 +43,7 @@ Obs.: For h-refinement
 Percentages of element height. The first one is for refinement and the second for unrefinement.
 Parameters to decide if an element must be (un)refined or not.
 0.9
-1.5
+1.9
 
 Obs.: For remeshing
 Set n to define a minimum allowed element heigth for remesh adaptation.

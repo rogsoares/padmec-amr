@@ -1,7 +1,7 @@
 #include "exportVTK.h"
 
 void print_pwgrad(ofstream &fid, pMesh theMesh, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData);
-void printNonVisc(ofstream &fid, pMesh theMesh, PRS::PhysicPropData *pPPData);
+//void printNonVisc(ofstream &fid, pMesh theMesh, PRS::PhysicPropData *pPPData);
 
 void exportSolutionToVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3, void *pData4, string filename){
 	// open file
@@ -44,25 +44,25 @@ void exportSolutionToVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3
 	printPressure(fid,theMesh,pPPData);
 	//printSaturation(fid,theMesh,pPPData);
 	printSaturation(fid,theMesh,pPPData,pGCData);
-	print_Swgrad(fid,theMesh,pSimPar,pPPData);
+	//print_Swgrad(fid,theMesh,pSimPar,pPPData);
 	
 #ifndef NOADAPTATION
 	if ( pSimPar->userRequiresAdaptation() ){
 		///	nodal field
-		print_Sw_GradientNorm2(fid,theMesh,pErrorAnalysis,pSimPar,pPPData);
+		//print_Sw_GradientNorm2(fid,theMesh,pErrorAnalysis,pSimPar,pPPData);
 
-		print_pwgrad(fid,theMesh,pSimPar,pPPData);
+		//print_pwgrad(fid,theMesh,pSimPar,pPPData);
 	//	printCharacteristicLentgh(fid,theMesh);
 		print_hNew(fid,theMesh,pErrorAnalysis);
 		
 		/// cell field
-		fid << "\nCELL_DATA " << pErrorAnalysis->getNumElements() << endl;
+		//fid << "\nCELL_DATA " << pErrorAnalysis->getNumElements() << endl;
 	//	printDegreeOfRefinement(fid,theMesh,pErrorAnalysis);
 	//	print_hOld(fid,theMesh,pErrorAnalysis);
 	//	printElementError(fid,theMesh,pErrorAnalysis);
 	//	print_ElementsToBeRemoved(fid,theMesh);
 	//	print_SingularElements(fid,theMesh,pErrorAnalysis);
-		print_hnew_hold_percentual(fid,theMesh,pErrorAnalysis);
+	//	print_hnew_hold_percentual(fid,theMesh,pErrorAnalysis);
 	//	printCharac_Lenth(fid,theMesh,pErrorAnalysis);
 	//	print_pw_GradientNorm(fid,theMesh,pErrorAnalysis,pSimPar,pPPData);
 	//	print_Sw_GradientNorm(fid,theMesh,pErrorAnalysis,pSimPar,pPPData);
@@ -144,39 +144,41 @@ void printPressure(ofstream &fid, pMesh theMesh, PRS::PhysicPropData *pPPData){
 void printSaturation(ofstream &fid, pMesh theMesh, PRS::PhysicPropData* pPPData, PRS::GeomData* pGCData){
 	fid << "SCALARS Saturation float 1\n";
 	fid << "LOOKUP_TABLE default\n";
+	double Sw;
 	int nnodes = M_numVertices(theMesh);
 	for(int i=0; i<nnodes; i++){
-		fid << pPPData->getSaturation(i) << endl;
+		pPPData->getSaturation(i,Sw);
+		fid << Sw << endl;
 	}
 }
 
-void printSaturation(ofstream &fid, pMesh theMesh, PRS::PhysicPropData *pPPData){
-	fid << "SCALARS Saturation float 1\n";
-	fid << "LOOKUP_TABLE default\n";
-	pEntity node;
-	VIter vit = M_vertexIter(theMesh);
-	while( (node = VIter_next(vit)) ){
-		double val = .0;
-		val = pPPData->getSaturation(node);
-		fid << val << endl;
-	}
-	VIter_delete(vit);
-}
+//void printSaturation(ofstream &fid, pMesh theMesh, PRS::PhysicPropData *pPPData){
+//	fid << "SCALARS Saturation float 1\n";
+//	fid << "LOOKUP_TABLE default\n";
+//	pEntity node;
+//	VIter vit = M_vertexIter(theMesh);
+//	while( (node = VIter_next(vit)) ){
+//		double val = .0;
+//		val = pPPData->getSaturation(node);
+//		fid << val << endl;
+//	}
+//	VIter_delete(vit);
+//}
 
-void printNonVisc(ofstream &fid, pMesh theMesh, PRS::PhysicPropData *pPPData){
-	// print saturation
-	// = = = = = = = = = = = = = = = =  = = = = = = = = = = = = = = = = = =
-	fid << "SCALARS nonvisc float 1\n";
-	fid << "LOOKUP_TABLE default\n";
-	pEntity node;
-	VIter vit = M_vertexIter(theMesh);
-	while( (node = VIter_next(vit)) ){
-		double val = .0;
-		val = pPPData->getNonViscTerm(node);
-		fid << val << endl;
-	}
-	VIter_delete(vit);
-}
+//void printNonVisc(ofstream &fid, pMesh theMesh, PRS::PhysicPropData *pPPData){
+//	// print saturation
+//	// = = = = = = = = = = = = = = = =  = = = = = = = = = = = = = = = = = =
+//	fid << "SCALARS nonvisc float 1\n";
+//	fid << "LOOKUP_TABLE default\n";
+//	pEntity node;
+//	VIter vit = M_vertexIter(theMesh);
+//	while( (node = VIter_next(vit)) ){
+//		double val = .0;
+//		val = pPPData->getNonViscTerm(node);
+//		fid << val << endl;
+//	}
+//	VIter_delete(vit);
+//}
 
 void printDegreeOfRefinement(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis){
 	fid << "SCALARS LevelOfRefinement int 1 " << endl;

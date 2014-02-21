@@ -77,9 +77,9 @@ double Assembly_Mat_Vec(InterpolationDataStruct* pIData, int field, Mat M, Vec F
 		double M_values[9] = {At_by_6, At_by_12, At_by_12, At_by_12, At_by_6, At_by_12, At_by_12, At_by_12, At_by_6};
 
 		//get node values
-		value1 = pIData->pGetDblFunctions[field]( vertices[0] ); //pIData->pNodeValue(EN_id(vertice_1));
-		value2 = pIData->pGetDblFunctions[field]( vertices[1] ); //pIData->pNodeValue(EN_id(vertice_2));
-		value3 = pIData->pGetDblFunctions[field]( vertices[2] ); //pIData->pNodeValue(EN_id(vertice_3));
+		pIData->pGetDblFunctions[field](IDs[0]-1,value1);
+		pIData->pGetDblFunctions[field](IDs[1]-1,value2);
+		pIData->pGetDblFunctions[field](IDs[2]-1,value3);
 		double CV[3] = {value1/6., value2/6., value3/6.};
 
 		//calculate the contributions

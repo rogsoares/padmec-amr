@@ -27,8 +27,8 @@ int EBFV1_elliptic::divergence_G(Mat G, double *Cij, int edge, int dom, int dom_
 		const double *Permeability = pSimPar->getPermeability(dom_flag);
 
 		double Sw_I, Sw_J, MobI, MobJ, MobIJ;
-		Sw_I = pPPData->getSaturation(idx0_global);
-		Sw_J = pPPData->getSaturation(idx1_global);
+		pPPData->getSaturation(idx0_global,Sw_I);
+		pPPData->getSaturation(idx1_global,Sw_J);
 		MobI = pPPData->getTotalMobility(Sw_I);
 		MobJ = pPPData->getTotalMobility(Sw_J);
 		MobIJ = 0.5*(MobI + MobJ);

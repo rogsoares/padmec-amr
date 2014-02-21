@@ -3,24 +3,21 @@
 namespace PRS{
 
 	// Euler Foward - time advance:  (compute saturation explicitly). For each new time step compute a new saturation.
-	double EBFV1_hyperbolic::calculateExplicitAdvanceInTime(double delta_T){
-		double startt = MPI_Wtime();
-		//saveSwField(theMesh);			// save Sw field (Sw_t) before calculate Sw_t+1
+	void EBFV1_hyperbolic::calculateExplicitAdvanceInTime(double delta_T){
+		saveSwField();					// save Sw field (Sw_t) before calculate Sw_t+1
 		nodeWithOut_Wells(delta_T);
 		nodeWith_Wells(delta_T);
-		double endt = MPI_Wtime();
-		return endt-startt;
 	}
 
 	// Advance time for all free node not located in wells
-	int EBFV1_hyperbolic::nodeWithOut_Wells(double delta_T){
+	void EBFV1_hyperbolic::nodeWithOut_Wells(double delta_T){
 		//cout << "nodeWithOut_Wells\n";
 		double Sw,Sw_old,nonvisc,volume;
 		int idx;
 		int nnode = pPPData->getNumNodeFreeWells();
 		for(int i=0; i<nnode; i++){
 			pPPData->getFreeIndex(i,idx);
-			Sw_old = pPPData->getSaturation(idx);
+			pPPData->getSaturation(idx,Sw_old);
 			pPPData->getNonvisc(idx,nonvisc);
 			pGCData->getVolume(idx,volume);
 			Sw = Sw_old - (delta_T/(0.2*volume))*nonvisc;
@@ -33,7 +30,6 @@ namespace PRS{
 			}
 	#endif
 		}
-		return 0;
 	}
 
 	// Advance time for nodes in production well
@@ -55,7 +51,7 @@ namespace PRS{
 		for (i=0; i<nnodes; i++){
 			pPPData->getNeumannIndex(i,well_idx);
 			pPPData->getNonvisc(well_idx,nonvisc);
-			Sw_old = pPPData->getSaturation(well_idx);
+			pPPData->getSaturation(well_idx,Sw_old);
 			pGCData->getVolume(well_idx,Vi);
 			Qi = Qt*(Vi/Vt);							// Fluid (water+oil) flow rate through node i
 			wp = 0.2*Vi;
@@ -84,15 +80,13 @@ namespace PRS{
 		setCumulativeOil(cml_oil);
 	}
 
-	void EBFV1_hyperbolic::saveSwField(pMesh theMesh){
-		pEntity node;
-		VIter vit = M_vertexIter(theMesh);
-		while ( (node = VIter_next(vit)) ){
-			int id = EN_id(node);
-			double Sw_old = pPPData->getSaturation(node);
-			pPPData->setSaturation_Old(node,Sw_old);
-			//			cout << "Sw_t = " << pPPData->getSaturation_Old(node) << endl;
+	void EBFV1_hyperbolic::saveSwField(){
+		double Sw;
+		int i, nnodes;
+		pGCData->getMeshNodes(nnodes);
+		for(i=0; i<nnodes; i++){
+			pPPData->getSaturation(i,Sw);
+			pPPData->setSw_old(i,Sw);
 		}
-		VIter_delete(vit);
 	}
 }
