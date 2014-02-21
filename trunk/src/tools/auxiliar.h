@@ -138,13 +138,15 @@ typedef SetPFunction* SetFunctionArray;
  */
 typedef double (*GetPFuncScalar)(pEntity);
 typedef void (*SetPFuncScalar)(pEntity,double);
-typedef void (*GetPFuncGrad)(pVertex,int,int,double*);
-typedef void (*SetPFuncGrad)(pVertex,int,int,double*);
+typedef void (*GetPFuncGrad)(int, int, double*);
+typedef void (*SetPFuncGrad)(int, int, double*);
 
 typedef GetPFuncScalar* GetFuncScalarArray;
 typedef SetPFuncScalar* SetFuncScalarArray;
 typedef GetPFuncGrad* GetFuncGradArray;
 typedef SetPFuncGrad* SetFuncGradArray;
+
+typedef void(*FuncPointer_GetGradient)(FIELD,int,int,int,double*);
 
 /*! \brief: Get leaves of an edge with refinementDepth equal 1 (ONLY two children)
  * \param pEdge edge: edge where to get children from
@@ -184,9 +186,8 @@ void makeMeshCopy(pMesh m1, pMesh m2,
 				  void(*pSetPressure)(pEntity,double), double(*pGetPressure)(pEntity),
 				  void(*pSetSaturation)(pEntity,double), double(*pGetSaturation)(pEntity));
 
-void makeMeshCopy2(pMesh m, PADMEC_mesh *pm, double(*pGetPressure)(pEntity), double(*pGetSaturation)(pEntity));
-
-void makeMeshCopy2(PADMEC_mesh* pm,pMesh m, void(*pSetPressure)(pEntity,double), void(*pSetSaturation)(pEntity,double));
+void makeMeshCopy2(pMesh, PADMEC_mesh*, void(*pGetPressure)(int,double&), void(*pGetSaturation)(int,double&));
+void makeMeshCopy2(PADMEC_mesh*,pMesh , void(*pSetPressure)(int,double), void(*pSetSaturation)(int,double));
 
 /*! \brief: delete elements mesh
  * \param pMesh m

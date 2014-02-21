@@ -31,8 +31,8 @@ int EBFV1_elliptic::divergence_E(Mat E, double *Cij, int edge, int dom, int dom_
 
 	// get mobility for nodes I and J
 	double Sw_I, Sw_J, MobI, MobJ, MobIJ;
-	Sw_I = pPPData->getSaturation(idx0_global);
-	Sw_J = pPPData->getSaturation(idx1_global);
+	pPPData->getSaturation(idx0_global,Sw_I);
+	pPPData->getSaturation(idx1_global,Sw_J);
 	MobI = pPPData->getTotalMobility(Sw_I);
 	MobJ = pPPData->getTotalMobility(Sw_J);
 	MobIJ = 0.5*(MobI + MobJ);
@@ -46,8 +46,6 @@ int EBFV1_elliptic::divergence_E(Mat E, double *Cij, int edge, int dom, int dom_
 	// product between two vectors: versor*versor => matrix 3x3
 	double versor[3];
 	pGCData->getVersor(dom,edge,versor);
-//	printf("versor: %f %f\n",versor[0],versor[1]);
-//	STOP();
 	for (i=0; i<dim; i++){
 		versor[i] *= sign;
 	}

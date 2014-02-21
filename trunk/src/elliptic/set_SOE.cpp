@@ -64,7 +64,7 @@ namespace PRS{
 				divergence_G(G_tmp,Cij,i,dom,dom_flag,idx0_global,idx1_global,id0,id1,dim);
 				gradient_F_edges(F[dom],Cij,dom,idx0,idx1,id0,id1,dim);
 			}
-			gradient_F_bdry(mesh,F[dom],dom_flag,dom);
+			gradient_F_bdry(F[dom],dom);
 			assemblyMatrix(F[dom]);
 			assemblyMatrix(E[dom]);
 		}
@@ -240,7 +240,7 @@ namespace PRS{
 				Vt = pSimPar->getWellVolume(well_flag);
 				#ifdef _SEEKFORBUGS_
 					if ( Vt<1e-12 ){
-						char msg[256]; sprintf(msg,"Well with null volume. Vertex (%d)",node_ID);
+						char msg[256]; sprintf(msg,"Well with null volume V = %.6f. Vertex (%d)",Vt,node_ID);
 						throw Exception(__LINE__,__FILE__,msg);
 					}
 				#endif //_SEEKFORBUGS_

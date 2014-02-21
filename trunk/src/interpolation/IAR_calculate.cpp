@@ -89,26 +89,32 @@ void calculate_GeometricCoefficients(InterpolationDataStruct* pIData, int dim){
 }
 
 void calculate_LinearInterpolation(InterpolationDataStruct* pIData, int dim){
-	double xyz[3], scalar;
+	double xyz[3], scalar, val, geom;
 	pEntity v;
-	int nrows1 = dim + 1;
+	int size = dim + 1;
+	int field, rows[3];
 
-	//Loop over vertices (from the mesh to where the data is being transfered)
+	// Loop over new mesh's vertices. They will receive interpolated data.
 	VIter vit = M_vertexIter(pIData->m1);
 	while ( pEntity vertex = VIter_next(vit) ){
 		int row = EN_id(vertex);
 		V_coord(vertex,xyz);
+
+		// search on old mesh the element that contains vertex of new mesh
 		pEntity element = (pEntity)Octree_Search(xyz,pIData->theOctree);
-		double geo_coeff = .0;
-		for (int field=0; field<pIData->numFields; field++){
-			double val = .0;
-			for(int i=0; i<nrows1; i++){
-				v = (pEntity)element->get(0,i);
-				scalar = pIData->pGetDblFunctions[field]( v );
-				val += (double)scalar*pIData->pGeomCoeff(row,i);
+
+		for (int i=0; i<size; i++){
+			rows[i] = EN_id(element->get(0,i))-1;
+		}
+
+		for (int field=0; field<pIData->numFields; field++){		// for each scalar field: Sw and p
+			val = 0;
+			for(int i=0; i<size; i++){
+				pIData->pGetDblFunctions[field](rows[i],scalar);		// get value from old mesh
+				geom = pIData->pGeomCoeff(row,i);
+				val += scalar*geom;
 			}
-			pIData->pSetDblFunctions[field](vertex,val);
-			val = .0;
+			pIData->pSetDblFunctions[field](row-1,val);				// set value to new mesh
 		}
 	}
 	VIter_delete(vit);
@@ -119,7 +125,7 @@ double calculate_QuadraticInterpolation(InterpolationDataStruct* pIData, int fie
 	pEntity v;
 	double xyz[3];
 	int dim = pIData->m2->getDim();
-
+	int idx = 0;
 	VIter vit = M_vertexIter(pIData->m1);	// m1: mesh to
 	while ( pEntity vertex = VIter_next(vit) ){
 		V_coord(vertex,xyz);
@@ -154,9 +160,10 @@ double calculate_QuadraticInterpolation(InterpolationDataStruct* pIData, int fie
 		}
 
 		//calculate quadratic interpolation
-		linear = pIData->pGetDblFunctions[field]( vertex );
+		pIData->pGetDblFunctions[field](idx,linear);
 		quadratic = linear + residual;
-		pIData->pSetDblFunctions[field](vertex,quadratic);
+		pIData->pSetDblFunctions[field](idx,quadratic);
+		idx++;
 	}
 	VIter_delete(vit);
 	return 0;

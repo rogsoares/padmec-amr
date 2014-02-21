@@ -26,13 +26,13 @@ namespace PRS{
 		// Main functions related to the advective equation presented in order that they must be called.
 		double calculateVelocityField(int,int);
 		double calculateIntegralAdvectiveTerm(int, double&);
-		double calculateExplicitAdvanceInTime(double);
+		void calculateExplicitAdvanceInTime(double);
 
-		int nodeWithOut_Wells(double);
+		void nodeWithOut_Wells(double);
 		void nodeWith_Wells(double);
 		
 		/// For mesh adaptation, saturation field interpolation between old and new mesh over Sw_t, and not Sw_t+1
-		void saveSwField(pMesh);
+		void saveSwField();
 
 		void setRecoveredOil(double val){
 			oilRecovered = val;
@@ -63,7 +63,7 @@ namespace PRS{
 		ErrorAnalysis *pEA;
 
 		// Saturation gradient is calculated for all domains at once. Nodes on boundary domains contains one gradient vector for each domain.
-		double calculateSaturationGradient(pMesh);
+		void calculateSaturationGradient(pMesh);
 
 	private:
 		/// every new time-step, nodal gradient must be set to zero and start a new calculation

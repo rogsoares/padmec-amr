@@ -336,9 +336,7 @@ void LogFiles(LOG_FILES LG, double t1, double t2, double timeStep, double accSim
 		// rank 0 is in charge to print the output CPU-time
 		if (!P_pid()){
 			double h, m, s;
-
 			acc_CPUtime += total;
-
 			fid1.precision(0);
 			fid1 << "          CPU-time[sec]  percentual\n";
 			fid1 << "------------------------------------------------\n";
@@ -469,7 +467,7 @@ void getNeighboursFace(pEntity face, std::vector<pEntity> &neighbousFace, int &s
 	size = k;
 }
 
-void makeMeshCopy2(pMesh m, PADMEC_mesh *pm, double(*pGetPressure)(pEntity), double(*pGetSaturation)(pEntity)){
+void makeMeshCopy2(pMesh m, PADMEC_mesh *pm, void(*pGetPressure)(int,double&), void(*pGetSaturation)(int,double&)){
 	pm->numVertices = M_numVertices(m);
 	pm->numElements = M_numFaces(m);
 	pm->ID = new int[M_numVertices(m)];
@@ -489,13 +487,10 @@ void makeMeshCopy2(pMesh m, PADMEC_mesh *pm, double(*pGetPressure)(pEntity), dou
 		V_coord(ent,coord);
 		for(i=0;i<3;i++){
 			pm->coords[k] = coord[i];
-			//	cout << pm->coords[k] << "\t";
 			k++;
 		}
-		//cout << endl;
-		pm->field1[iter] = pGetPressure(ent);
-		pm->field2[iter] = pGetSaturation(ent);
-		//cout << "Sw = " << pm->field2[iter] << endl;
+		pGetPressure(iter,pm->field1[iter]);
+		pGetSaturation(iter,pm->field2[iter]);
 		iter++;
 	}
 	VIter_delete(vit);
@@ -513,18 +508,16 @@ void makeMeshCopy2(pMesh m, PADMEC_mesh *pm, double(*pGetPressure)(pEntity), dou
 	FIter_delete(fit);
 }
 
-void makeMeshCopy2(PADMEC_mesh* pm,pMesh m, void(*pSetPressure)(pEntity,double), void(*pSetSaturation)(pEntity,double)){
+void makeMeshCopy2(PADMEC_mesh* pm,pMesh m, void(*pSetPressure)(int,double), void(*pSetSaturation)(int,double)){
 	int i,j, k = 0;
 	double x,y,z;
 	for (i=0; i<pm->numVertices; i++){
 		x = pm->coords[k++];
 		y = pm->coords[k++];
 		z = pm->coords[k++];
-		//	cout << "x = " << x << "\ty = " << x << "\tz = " << z << endl;
 		mVertex* v = m->createVertex(pm->ID[i],x,y,z,0);
-		pSetPressure((pEntity)v,pm->field1[i]);
-		pSetSaturation((pEntity)v,pm->field2[i]);
-		//cout << "Set Sw = " << pm->field2[i] << endl;
+		pSetPressure(i,pm->field1[i]);
+		pSetSaturation(i,pm->field2[i]);
 	}
 
 	k = 0;
@@ -533,7 +526,6 @@ void makeMeshCopy2(PADMEC_mesh* pm,pMesh m, void(*pSetPressure)(pEntity,double),
 		vertices[0] = m->getVertex( pm->elements[k++] );
 		vertices[1] = m->getVertex( pm->elements[k++] );
 		vertices[2] = m->getVertex( pm->elements[k++] );
-		//	cout << EN_id(vertices[0]) << "\t" << EN_id(vertices[1]) << "\t" << EN_id(vertices[2]) << endl;
 		m->createFaceWithVertices(vertices[0],vertices[1],vertices[2],0);
 	}
 	m->modifyState(0,2,0);

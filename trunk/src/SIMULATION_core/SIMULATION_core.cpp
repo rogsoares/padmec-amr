@@ -40,12 +40,12 @@ int SIMULATION_core::initialize(int argc, char **argv){
 
 	/*
 	 * If adaptation required, initialize:
-	 * 		1- Adaptation Pointer (h-Refinement or adaptative remeshing)
+	 * 		1- Adaptation Pointer (h-Refinement or adaptive remeshing)
 	 * 		2- Error Analysis Pointer
 	 * 		3- Interpolation Function
 	 */
 	//if (pSimPar->userRequiresAdaptation()){
-		// 1- Adaptation Pointer (h-Refinement or adaptative remeshing)
+		// 1- Adaptation Pointer (h-Refinement or adaptive remeshing)
 		// ----------------------------------------------------------------------------------
 		int dim = pGCData->getMeshDim();
 		if (dim<2 || dim>3){
@@ -63,11 +63,14 @@ int SIMULATION_core::initialize(int argc, char **argv){
 		pIData->numFields = 2;
 		pIData->pGetDblFunctions = new GetDblFunction[2];
 		pIData->pSetDblFunctions = new SetDblFunction[2];
+
+		// get data from old mesh
 		pIData->pGetDblFunctions[0] = pPPData->getPressure;
 		pIData->pGetDblFunctions[1] = pPPData->getSaturation;
-		pIData->pSetDblFunctions[0] = pPPData->setPressure;
-		pIData->pSetDblFunctions[1] = pPPData->setSaturation;
-		pIData->m2 = MS_newMesh(0);
+
+		// set data (interpolated) to new mesh
+		pIData->pSetDblFunctions[0] = pPPData->setPressure_NM;	// set pressure for New Mesh
+		pIData->pSetDblFunctions[1] = pPPData->setSaturation_NM;	// set saturarion for New Mesh
 
 		switch( pSimPar->getRefStrategy() ){
 		case H_REFINEMENT:
@@ -91,9 +94,12 @@ int SIMULATION_core::initialize(int argc, char **argv){
 	 *  	- physical properties
 	 *  	- boundary and initial conditions, mapping
 	 */
+	pGCData->initilize(theMesh,pSimPar->setOfDomains);
+	pGCData->dataTransfer(theMesh);
 	pSimPar->initialize(pGCData,theMesh);
 	pPPData->initialize(pMData,pSimPar,theMesh,false,pGCData);
 	pMData->initialize(theMesh,pGCData);
+
 
 	if (!P_pid()){
 		printf("Number of processes required: %d\n",P_size());
@@ -147,6 +153,8 @@ void SIMULATION_core::updatePointersData(pMesh theMesh){
 	pSimPar->deallocateData();
 	pPPData->deallocateData(pSimPar);
 	pMData->deallocateData();
+
+
 	// initialize them once more
 	pSimPar->initialize(pGCData,theMesh);
 	pPPData->initialize(pMData,pSimPar,theMesh,true,pGCData);
@@ -154,7 +162,6 @@ void SIMULATION_core::updatePointersData(pMesh theMesh){
 #ifdef TRACKING_PROGRAM_STEPS
 	cout << "TRACKING_PROGRAM_STEPS: updating Pointers\tOUT\n";
 #endif
-	
 }
 
 int SIMULATION_core::finalize(){

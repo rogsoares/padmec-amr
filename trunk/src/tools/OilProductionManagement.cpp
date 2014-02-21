@@ -20,7 +20,7 @@ namespace PRS{
 			char msg[256]; sprintf(msg,"File '%s' could not be opened or it does not exist.\n",fname.c_str());
 			throw Exception(__LINE__,__FILE__,msg);
 		}
-		fid << "PVI   time-step  cumulative-time  Recovered-Oil   Cumulative-Oil  Num.Time-steps" << std::endl;
+		fid << "PVI time-step cumulative-time Recovered-Oil Cumulative-Oil Num.Time-steps" << std::endl;
 	}
 
 	OilProductionManagement::~OilProductionManagement(){
@@ -34,8 +34,7 @@ namespace PRS{
 			                                         double rec_oil,
 			                                         double cml_oil,
 			                                         int timestep_counter){
-		fid << fixed << setprecision(2) << (double)(cml_time/total_SimTime) << "  " << setprecision(7)
-			<< timeStep << "  " << cml_time << "        " << rec_oil << "       " <<  cml_oil/IOV
-			<< "      " << timestep_counter << endl;
+		fid << fixed << setprecision(2) << (double)(cml_time/total_SimTime) << " " << setprecision(7)
+			<< timeStep << " " << cml_time << " " << rec_oil << " " <<  cml_oil/IOV << " " << timestep_counter << endl;
 	}
 }

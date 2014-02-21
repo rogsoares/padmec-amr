@@ -10,7 +10,7 @@ namespace PRS{
 		TimeStepCounter = 0;
 		exportIter = 0;
 		accSimTime = .0;
-		stop_simulation = true;
+		stop_simulation = false;
 		useHOApp = false;
 		restart = false;
 		vtk_step = 0;
@@ -23,6 +23,7 @@ namespace PRS{
 		firstVTKupdate = true;
 		EBFV1_pressureSolver_scheme = false;
 		_doAdaptation = false;
+		vtk_time_frequency = PVI_increment*getSimTime();
 	}
 	
 	SimulatorParameters::~SimulatorParameters(){
@@ -86,7 +87,7 @@ namespace PRS{
 	
 	bool SimulatorParameters::finishSimulation(){
 		std:: cout << setprecision(2) << fixed;
-		if (!stop_simulation || (getCumulativeSimulationTime() >= getSimTime()) ){
+		if (stop_simulation || (getCumulativeSimulationTime() >= getSimTime()) ){
 			if (!P_pid()){
 				std::cout << "#################################\n";
 				std::cout << "Simulation " << (double)100.0*getCumulativeSimulationTime()/getSimTime() << "% concluded.\n";
@@ -160,9 +161,10 @@ namespace PRS{
 				well_info = MWells[flag];
 				well_info.wellVolume = Vt;
 				MWells[flag] = well_info;
-//				cout << "flag = " << flag << endl;
-//				cout << "Vt   = " << Vt << endl;
-//				cout << "ID   = " << id << endl;
+				cout << setprecision(7);
+				cout << "flag = " << flag << endl;
+				cout << "Vt   = " << Vt << endl;
+				cout << "ID   = " << id << endl;
 			}
 		}
 		//STOP();
@@ -329,21 +331,25 @@ namespace PRS{
 		}
 		double timeFrequency = getPrintOutVTKFrequency();
 		double accST = timeStep + getCumulativeSimulationTime();
-		if ( accST > timeFrequency ){
-			timeStep = timeStep - (accST - timeFrequency);
-#ifdef _SEEKFORBUGS_
-			if (timeStep < .0){
-				throw Exception(__LINE__,__FILE__,"Negative timeStep");
-			}
-#endif
+
+		if ( accST > timeFrequency){
+			timeStep = accST - timeFrequency;
 			accST = timeFrequency;
 			allowPrintingVTK = true;
-			#ifdef __PRINTDEBUGGING__
-			if (!P_pid()) std::cout << "VTK file output simulation time: " << accST << endl;
-			#endif
 		}
 	}
 	
+	void SimulatorParameters::allowPrintVTK(){
+		allowPrintingVTK = true;
+	}
+
+	double SimulatorParameters::getPrintOutVTKFrequency(){
+		if (firstVTKupdate){
+			updatePrintOutVTKFrequency();
+		}
+		return vtk_time_frequency;
+	}
+
 	void SimulatorParameters::printOutVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3, void *pData4, pFunc_PrintVTK printVTK){
 		//allowPrintingVTK = true;
 		if (allowPrintingVTK){

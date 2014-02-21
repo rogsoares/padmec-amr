@@ -50,6 +50,11 @@ public:
 		}
 	}
 
+	void getsize(int &m, int&n){
+		m = _rows;
+		n = _cols;
+	}
+
 	void allocateMemory(int rows, int cols){
 		_rows = rows;
 		_cols = cols;
@@ -96,7 +101,20 @@ public:
 		cout << endl;
 		}
 				
-	} 
+	}
+
+	void print(const char* filename) const{
+		ofstream fid;
+		fid.open(filename);
+		fid << setprecision(6) << fixed;
+		for (int i=0; i<_rows; i++){
+			for (int j=0; j<_cols; j++){
+				fid << mat[i][j] << "  ";
+			}
+			fid << endl;
+		}
+		fid.close();
+	}
 
 	T& operator()( int i, int j ) {
 		if ((i<0 && i>=_rows) || (j<0 && j>=_cols))

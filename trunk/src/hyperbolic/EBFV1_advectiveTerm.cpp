@@ -28,8 +28,8 @@ namespace PRS{
 			}
 
 			// considering up-wind approximation for saturation field
-			Sw_I = pPPData->getSaturation(idx0_global);
-			Sw_J = pPPData->getSaturation(idx1_global);
+			pPPData->getSaturation(idx0_global,Sw_I);
+			pPPData->getSaturation(idx1_global,Sw_J);
 
 			// get high order approximation for saturation
 			if ( pSimPar->useHOApproximation() ){

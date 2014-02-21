@@ -59,8 +59,8 @@ namespace PRS{
 			pPPData->setVelocity_old(dom,edge,vel);
 			flag = pGCData->getDomFlag(dom);
 			const double *K = pSimPar->getPermeability(flag);
-			Sw_I = pPPData->getSaturation(idx0_global);
-			Sw_J = pPPData->getSaturation(idx1_global);
+			pPPData->getSaturation(idx0_global,Sw_I);
+			pPPData->getSaturation(idx1_global,Sw_J);
 			MobI = pPPData->getTotalMobility(Sw_I);
 			MobJ = pPPData->getTotalMobility(Sw_J);
 			MobIJ = 0.5*(MobI + MobJ);

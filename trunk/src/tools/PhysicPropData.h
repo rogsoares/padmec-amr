@@ -9,6 +9,11 @@ extern Matrix<double> *pGrad_dom;
 extern Matrix<double> pressure;
 extern Matrix<double> SwGrad;
 extern Matrix<double> Sw;
+extern Matrix<double> Sw_old;
+
+// temporary matrices (nx1) to store interpolated values from old to new mesh
+extern Matrix<double> Sw_tmp;
+extern Matrix<double> p_tmp;
 
 
 namespace PRS{
@@ -26,7 +31,15 @@ public:
 	~PhysicPropData();
 
 	void initialize(MeshData *, SimulatorParameters *, pMesh, bool, GeomData* pGCData);
-	void deallocateData(SimulatorParameters *pSimPar);
+	void allocateTemporaryData(int);
+	void allocateData(SimulatorParameters*, GeomData*, int);
+	void deallocateData(SimulatorParameters*);
+
+	// transfer data from Sw_tmp and p_tmp to Sw and pressure matrices
+	void transferTmpData();
+
+	// update Sw and pressure matrices (nx1) to receive interpolated values from old mesh
+	void update_Sw_p(int);
 
 	/*
 	 *  set/get gradient pressure in new format. As pGrad_matrix is declared outside of class definition, it will not give errors in a static
@@ -54,23 +67,8 @@ public:
 		pressure.setValue(idx,p);
 	}
 
-	static double getPressure(int idx, double& p){
+	static void getPressure(int idx, double& p){
 		p = pressure.getValue(idx);
-		return p;
-	}
-
-	static void set_Sw_Grad(pVertex node, int dom, int row, const double* grad){
-		for(int i=0;i<3;i++){
-			char string[256]; sprintf(string,"Swgrad_%d_%d",dom,i);
-			EN_attachDataDbl(node,MD_lookupMeshDataId(string),grad[i]);
-		}
-	}
-
-	static void get_Sw_Grad(pVertex node, int dom, int row, double* grad){
-		for(int i=0;i<3;i++){
-			char string[256]; sprintf(string,"Swgrad_%d_%d",dom,i);
-			EN_getDataDbl(node,MD_lookupMeshDataId(string),&grad[i]);
-		}
 	}
 
 	static void set_Sw_Grad(int row, const double* grad){
@@ -97,42 +95,46 @@ public:
 		grad[2] = SwGrad_dom[dom].getValue(row,2);
 	}
 
+	static void setPressure_NM(int idx, double v){
+		p_tmp.setValue(idx,v);
+	}
+
+	static void setSaturation_NM(int idx, double v){
+		Sw_tmp.setValue(idx,v);
+	}
+
+	// that's for error analysis
+	static void getGradient(FIELD field, int dom, int idx, int idx_global, double* grad){
+		switch (field){
+		case PRESSURE:
+			grad[0] = pGrad_dom[dom].getValue(idx,0);
+			grad[1] = pGrad_dom[dom].getValue(idx,1);
+			grad[2] = pGrad_dom[dom].getValue(idx,2);
+			break;
+		case SATURATION:
+			grad[0] = SwGrad.getValue(idx_global,0);
+			grad[1] = SwGrad.getValue(idx_global,1);
+			grad[2] = SwGrad.getValue(idx_global,2);
+			break;
+		default:
+			throw Exception(__LINE__,__FILE__,"Unknown field.");
+		}
+	}
+
 	static void setSaturation(int idx, double v){
 		Sw.setValue(idx,v);
 	}
 
-	static double getSaturation(int idx){
-		return Sw.getValue(idx);
+	static void getSaturation(int idx, double& sw){
+		sw = Sw.getValue(idx);
 	}
 
-	static void setNonViscTerm(pEntity node, double nonvisc){
-		EN_attachDataDbl(node,MD_lookupMeshDataId( "NonViscTerm_id" ),nonvisc);
+	void setSw_old(int idx, double v){
+		Sw_old.setValue(idx,v);
 	}
 
-	static double getNonViscTerm(pEntity node){
-		double nonvisc;
-		EN_getDataDbl(node,MD_lookupMeshDataId( "NonViscTerm_id" ),&nonvisc);
-		return nonvisc;
-	}
-
-	static void setSaturation(pEntity node, double sat){
-		EN_attachDataDbl(node,MD_lookupMeshDataId("sat_id"),sat);
-	}
-
-	static void setSaturation_Old(pEntity node, double sat){
-		EN_attachDataDbl(node,MD_lookupMeshDataId("satold_id"),sat);
-	}
-
-	static double getSaturation(pEntity node){
-		double sat;
-		EN_getDataDbl(node,MD_lookupMeshDataId("sat_id"),&sat);
-		return sat;
-	}
-
-	static double getSaturation_Old(pEntity node){
-		double sat;
-		EN_getDataDbl(node,MD_lookupMeshDataId("satold_id"),&sat);
-		return sat;
+	static void getSw_old(int idx, double& sw){
+		sw = Sw_old.getValue(idx);
 	}
 
 	void setInitialSaturation(pMesh, SimulatorParameters*);
@@ -163,10 +165,6 @@ public:
 		vel[2] = velocity[dom].getValue(row,5);
 	}
 
-//	double getSw_max(pEntity);
-//	double getSw_min(pEntity);
-//	double getS_Limit(pEntity);
-
 	// GET Volume/mobility,fractionalflux
 	double getVolume(pEntity, const int&);
 	double getWeightedVolume(pEntity);
@@ -182,7 +180,9 @@ public:
 
 
 	// get set/get pointers to arrays of pointer functions
-	GetPFuncGrad* get_getPFuncArray() { return pGetGradArray; }
+	FuncPointer_GetGradient get_FuncPointer_GetGradient(){
+		return getGradient;
+	}
 
 	/*! brief For steady-state simulations, total mobility must be equal 1, otherwise it must be calculated.
 	 * \param state if true, lambda_total = 1.0;
@@ -241,9 +241,6 @@ private:
 	double mi_o;		// oil viscosity
 	int ksModel;		// rel. permeability model flag
 
-	// pointers to arrays of pointer functions
-	GetPFuncGrad* pGetGradArray;
-
 	Matrix<double>* velocity;
 	Matrix<double> nonvisc;
 	Matrix<double> *SwGrad_dom;
@@ -255,6 +252,7 @@ private:
 	int* pWellsNeumann_index;
 
 	int nnodes;
+	bool Allocated;				// says if Sw and pressure must be allocated
 };
 }
 #endif /*PHYSICALPROPERTIESDATA_H_*/

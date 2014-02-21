@@ -68,6 +68,7 @@ void ErrorAnalysis::countNumFaceAroundNode(pMesh theMesh, bool singularity){
 // set element height per node to zero for all mesh nodes
 void ErrorAnalysis::resetElemHeightPerNode(pMesh theMesh){
 	pEntity node;
+
 	VIter vit = M_vertexIter(theMesh);
 	while ( (node = VIter_next(vit)) ){
 		if (!isSingular(node)){
@@ -120,7 +121,6 @@ void ErrorAnalysis::setElementsAsSingular(std::list<pEntity> &singularElemList){
 
 void ErrorAnalysis::store_h_new(pMesh theMesh){
 	int i = 0;
-	int c = 0;
 	double height;
 	pEntity node;
 	VIter vit = M_vertexIter(theMesh);
@@ -128,7 +128,6 @@ void ErrorAnalysis::store_h_new(pMesh theMesh){
 		if (!isSingular(node)){
 			EN_getDataDbl(node,MD_lookupMeshDataId( "elem_height" ),&height);
 			pStore_h_new[i] = std::min(pStore_h_new[i],height);
-			c++;
 		}
 		i++;
 	}
@@ -178,8 +177,12 @@ void ErrorAnalysis::initializeParameters(pMesh theMesh){
 	}
 
 	int i = 0;
+	int nnodes = M_numVertices(theMesh);
 	pStore_h_new = 0;														// pointer to NULL
-	pStore_h_new = new double[M_numVertices(theMesh)];						// create array of size number of mesh nodes
+	pStore_h_new = new double[nnodes];						// create array of size number of mesh nodes
+	Mat_hNew.allocateMemory(nnodes,4);
+	Mat_hNew.initialize(-1);
+
 	pEntity node, face, tetra;
 	VIter vit = M_vertexIter(theMesh);
 	while ( (node = VIter_next(vit)) ){

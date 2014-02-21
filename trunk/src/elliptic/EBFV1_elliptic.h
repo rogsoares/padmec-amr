@@ -3,8 +3,7 @@
 
 #include "Elliptic_equation.h"
 
-namespace PRS           // PRS: Petroleum Reservoir Simulator
-{
+namespace PRS{           // PRS: Petroleum Reservoir Simulator
 	/**
 	 * For EBFV1 elliptic formulation, a matrix-free procedure is applied to solve pressure field. A pointer-function is used to tell 
 	 * Petsc how to make a matrix-vector product and all matrices and vector are passed to this function as a structure.
@@ -56,7 +55,7 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 		int divergence_E(Mat E, double *Cij, int edge, int dom, int dom_flag, int idx0_global, int idx1_global, int id0, int id1, int dim);
 		int divergence_G(Mat G, double *Cij, int edge, int dom, int dom_flag, int idx0_global, int idx1_global, int id0, int id1, int dim);
 		int gradient_F_edges(Mat F, double *Cij, int dom, int idx0, int idx1, int id0, int id1, int dim);
-		int gradient_F_bdry(pMesh, Mat, const int&, int);
+		int gradient_F_bdry(Mat, int);
 		int F_bdryFaces(pMesh, Mat, const int&);
 		int F_bdryEdges(int,Mat);
 

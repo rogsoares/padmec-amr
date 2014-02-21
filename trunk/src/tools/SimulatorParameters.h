@@ -51,7 +51,7 @@ public:
 	bool finishSimulation();
 
 	// finishes simulation for some specific reason
-	void stopSimulation() { stop_simulation = false; }
+	void stopSimulation() { stop_simulation = true; }
 
 	// called inside loadParameters() to read rock properties on the same file (weird!)
 	void readRockProperties(ifstream &fid, int);
@@ -190,6 +190,17 @@ public:
 	double getCPU_time() const { return cpu_time; }
 	void getSimParFiles();
 
+	// Simulation must start from where it was before mesh adaptation.
+	// Simulation time advance must be done over new adapted mesh
+	// The time step calculated before mesh adaptation must be ignored
+	void saveCurrentSimulationTimes(){
+		currentST = accSimTime;
+	}
+
+	void retrieveSimulationTime(){
+		accSimTime = currentST;
+	}
+
 
 	/*
 	 * Simulation time monitoring
@@ -214,9 +225,10 @@ public:
 	 * if ( sum(dt)>n*PVI ) dt_n = dt_n - (ST - n*PVI)
 	 *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	void allowPrintVTK();
 	void correctTimeStep(double&);
 	void printOutVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3, void *pData4, pFunc_PrintVTK printVTK);
-	double getPrintOutVTKFrequency() const { return vtk_time_frequency; }
+	double getPrintOutVTKFrequency();
 	void setPrintOutVTKFrequency(double vtf) { vtk_time_frequency = vtf; }
 	void updatePrintOutVTKFrequency();
 	string getFilename(string f);
@@ -402,6 +414,7 @@ private:
 	bool restart;
 	string restartFilename;
 	double accSimTime;
+	double currentST;
 	int vtk_step;
 	double cpu_time;
 	int tsnumber;

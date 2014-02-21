@@ -104,7 +104,7 @@ namespace PRS{
 		 * limit imposed by the implicit time advance (vel_ts)
 		 */
 		void correct_p_TS(double &p_timestep, bool &go_MIMPES);
-		void correct_Sw_TS(double &Sw_timestep_sum, double p_timestep, double &timeStep, bool &go_MIMPES);
+		void correct_Sw_TS(double &timeStep, bool &go_MIMPES);
 
 		void setCumulative_p_TS(double ts){
 			cumulative_p_timestep = ts;

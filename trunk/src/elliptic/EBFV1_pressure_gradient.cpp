@@ -46,23 +46,56 @@ namespace PRS{
 	}
 
 	void EBFV1_elliptic::calc_p_grad_2(int dom, int dim){
-		double Dij[3], p_grad_I[3], p_grad_J[3], p_I, p_J;
-		int i,j,nedges, edge, idx0, idx1,idx0_global, idx1_global;
-		nedges = pGCData->getNumBDRYEdgesPerDomain(dom);
-		for (edge=0; edge<nedges; edge++){
-			pGCData->getDij(dom,edge,Dij);
-			pGCData->getBdryEdge(dom,edge,idx0,idx1,idx0_global,idx1_global);
-			pPPData->getPressure(idx0_global,p_I);
-			pPPData->getPressure(idx1_global,p_J);
-			pPPData->get_pw_Grad(dom,idx0,p_grad_I);
-			pPPData->get_pw_Grad(dom,idx1,p_grad_J);
-			for (int i=0; i<dim; i++){
-				p_grad_I[i] += ((5.*p_I + p_J)/6.)*Dij[i];
-				p_grad_J[i] += ((p_I + 5.*p_J)/6.)*Dij[i];
+		double Dij[3], p_grad_I[3], p_grad_J[3], p_grad_K[3], p_I, p_J, p_K;
+		int i,j,nedges, nfaces, edge, idx0, idx1, idx2, idx0_global, idx1_global, idx2_global;
+
+		if (dim==2){
+			nedges = pGCData->getNumBDRYEdgesPerDomain(dom);
+			for (edge=0; edge<nedges; edge++){
+				pGCData->getDij(dom,edge,Dij);
+				pGCData->getBdryEdge(dom,edge,idx0,idx1,idx0_global,idx1_global);
+				pPPData->getPressure(idx0_global,p_I);
+				pPPData->getPressure(idx1_global,p_J);
+				pPPData->get_pw_Grad(dom,idx0,p_grad_I);
+				pPPData->get_pw_Grad(dom,idx1,p_grad_J);
+				for (int i=0; i<dim; i++){
+					p_grad_I[i] += ((5.*p_I + p_J)/6.)*Dij[i];
+					p_grad_J[i] += ((p_I + 5.*p_J)/6.)*Dij[i];
+				}
+				pPPData->set_pw_Grad(dom,idx0,p_grad_I);
+				pPPData->set_pw_Grad(dom,idx1,p_grad_J);
 			}
-			pPPData->set_pw_Grad(dom,idx0,p_grad_I);
-			pPPData->set_pw_Grad(dom,idx1,p_grad_J);
 		}
+		else{
+//			nfaces = pGCData->getNumBDRYFacesPerDomain(dom);
+//			double line1[3] = {6., 1., 1.};
+//			double line2[3] = {1., 6., 1.};
+//			double line3[3] = {1., 1., 6.};
+//			double dot1, dot2, dot3, p_vec[3], aux[3];
+//			for (face=0; face<nface; face++){
+//				pGCData->getDij(dom,face,Dij);
+//				//pGCData->getBdryFace();
+//				pPPData->getPressure(idx0_global,&p_vec[0]);
+//				pPPData->getPressure(idx1_global,&p_vec[1]);
+//				pPPData->getPressure(idx2_global,&p_vec[2]);
+//				pPPData->get_pw_Grad(dom,idx0,p_grad_I);
+//				pPPData->get_pw_Grad(dom,idx1,p_grad_J);
+//				pPPData->get_pw_Grad(dom,idx2,p_grad_K);
+//				dot1 = inner_product(line1,p_vec,dim);
+//				dot2 = inner_product(line2,p_vec,dim);
+//				dot3 = inner_product(line3,p_vec,dim);
+//				for (int i=0; i<3; i++){
+//					aux[i] = Dij[i]/8.0;
+//				}
+//				for (int i=0; i<3; i++){
+//					pw_grad_I[i] += aux[i]*dot1;
+//					pw_grad_J[i] += aux[i]*dot2;
+//					pw_grad_K[i] += aux[i]*dot3;
+//				}
+//				pPPData->set_pw_Grad(dom,idx0,p_grad_I);
+//				pPPData->set_pw_Grad(dom,idx1,p_grad_J);
+//				pPPData->set_pw_Grad(dom,idx2,p_grad_K);
+			}
 	}
 
 	void EBFV1_elliptic::calc_p_grad_3(int dim){

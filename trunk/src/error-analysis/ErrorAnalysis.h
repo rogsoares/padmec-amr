@@ -13,6 +13,8 @@
  */
 
 #include "SimulatorParameters.h"
+#include "GeomData.h"
+#include "Matrix.h"
 using namespace PRS;
 
 class ErrorAnalysis;
@@ -26,7 +28,7 @@ class ErrorAnalysis;
  * \param int size of GetPFuncGrad array
  */
 
-bool calculate_ErrorAnalysis(ErrorAnalysis*, pMesh, SimulatorParameters*, double, double, GetPFuncGrad*, int);
+bool calculate_ErrorAnalysis(ErrorAnalysis*, pMesh, SimulatorParameters*, GeomData*, FuncPointer_GetGradient);
 
 /*! \class ErrorAnalysis
  *  \brief This class does some basic operations to perform error analysis and serves as base class for further implementation for 2-D and 3-D
@@ -63,14 +65,14 @@ public:
 	}
 
 	//calculate functions
-	virtual void calculate_ElementsError(pMesh theMesh, SimulatorParameters *pSimPar, GetPFuncGrad,FIELD) = 0;
-	virtual void calculate_SmoothedGradientNorm(pMesh, SimulatorParameters *pSimPar, GetPFuncGrad,FIELD) = 0;
-	virtual void calculate_SmoothedGradientNorm_Singularity(pMesh, SimulatorParameters *pSimPar, GetPFuncGrad,FIELD) = 0;
+	virtual void calculate_ElementsError(pMesh theMesh, SimulatorParameters *pSimPar, GeomData*, FuncPointer_GetGradient,FIELD) = 0;
+	virtual void calculate_SmoothedGradientNorm(pMesh, SimulatorParameters *pSimPar, GeomData*, FuncPointer_GetGradient, FIELD) = 0;
+	virtual void calculate_SmoothedGradientNorm_Singularity(pMesh, SimulatorParameters *pSimPar, GeomData*, FuncPointer_GetGradient, FIELD) = 0;
 	virtual void calculate_CharacteristicDimensionLength(pMesh) = 0;
-	virtual void calculate_DegreeOfRefinement(pMesh, SimulatorParameters *, int, int, bool) = 0;
+	virtual void calculate_DegreeOfRefinement(pMesh, SimulatorParameters *, bool) = 0;
 
-	void calculate_GlobalError(pMesh, GetPFuncGrad);
-	void calculate_GlobalError_Singularity(pMesh theMesh, GetPFuncGrad pGetGradient);
+	void calculate_GlobalError(pMesh);
+	void calculate_GlobalError_Singularity(pMesh);
 	void calculate_AvgError(pMesh,double,bool);
 	void initializeParameters(pMesh);
 
@@ -233,6 +235,8 @@ public:
 	bool adapt;
 	std::list<pEntity> singularElemList;
 
+	Matrix<double> Mat_hNew;
+
 private:
 
 	int singular;
@@ -259,6 +263,7 @@ private:
 	ofstream fid;		// error analysis output
 	
 	double* pStore_h_new;	// store the smallest h_new for remeshing
+
 };
 
 

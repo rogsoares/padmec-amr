@@ -52,6 +52,8 @@ void initializeParameters(pMesh theMesh, ErrorAnalysis* pErrorAnalysis, AMR* pMe
 		 */
 		int steadyState();
 
+		bool adaptation();
+
 		/*! Free pointers memory, output files
 		 */
 		int finalize();
