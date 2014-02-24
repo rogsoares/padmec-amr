@@ -16,14 +16,8 @@ namespace PRS{
 			// If error is greater than tolerance then mesh will be adapted to improve solution quality
 			adapt = calculate_ErrorAnalysis(pErrorAnalysis,theMesh,pSimPar,pGCData,pPPData->get_FuncPointer_GetGradient());
 			if (adapt){
-
 				// retrieve cumulative simulation time
 				pSimPar->retrieveSimulationTime();
-
-				static int i = 0;
-				char filename[256]; sprintf(filename,"matrix-%d.txt",i++);
-				pErrorAnalysis->Mat_hNew.print(filename);
-				pErrorAnalysis->Mat_hNew.freeMemory();
 
 				pIData->m1 = theMesh;				// auxiliary pointer
 				pIData->m2 = MS_newMesh(0);			// initialize auxiliary pointer
@@ -36,7 +30,6 @@ namespace PRS{
 				pMeshAdapt->rodar(pErrorAnalysis,pIData->m1);
 
 				// delete any trace of FMDB data structure
-				//deleteMesh(pIData->m1); pIData->m1 = 0;
 				deleteMesh(theMesh); theMesh = 0;
 
 				//create a new FMDB data structure with data in file
@@ -74,13 +67,6 @@ namespace PRS{
 
 				// data transfer from FMDB to matrices
 				pGCData->dataTransfer(theMesh);
-
-//	#ifdef __ADAPTATION_DEBUG__
-//				validate_EBFV1(pGCData,pIData->m1,pSimPar->setOfDomains);
-//				if (!pSimPar->setOfDomains.size()){
-//					throw Exception(__LINE__,__FILE__,"Num domains NULL!\n");
-//				}
-//	#endif
 
 				// temporary mesh not necessary any more (goodbye!)
 				deleteMesh(pm);

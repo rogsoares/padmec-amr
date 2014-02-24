@@ -235,8 +235,6 @@ public:
 	bool adapt;
 	std::list<pEntity> singularElemList;
 
-	Matrix<double> Mat_hNew;
-
 private:
 
 	int singular;

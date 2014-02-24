@@ -42,10 +42,10 @@ Interpolation methods:
 Obs.: For h-refinement
 Percentages of element height. The first one is for refinement and the second for unrefinement.
 Parameters to decide if an element must be (un)refined or not.
-0.9
-1.9
+0.6
+2.0
 
 Obs.: For remeshing
 Set n to define a minimum allowed element heigth for remesh adaptation.
 h_min_allowed = h_min/n, where h_min is the minimum element height of the initial mesh.
-5
+4

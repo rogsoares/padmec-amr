@@ -180,8 +180,7 @@ void ErrorAnalysis::initializeParameters(pMesh theMesh){
 	int nnodes = M_numVertices(theMesh);
 	pStore_h_new = 0;														// pointer to NULL
 	pStore_h_new = new double[nnodes];						// create array of size number of mesh nodes
-	Mat_hNew.allocateMemory(nnodes,4);
-	Mat_hNew.initialize(-1);
+
 
 	pEntity node, face, tetra;
 	VIter vit = M_vertexIter(theMesh);
