@@ -331,9 +331,8 @@ namespace PRS{
 		}
 		double timeFrequency = getPrintOutVTKFrequency();
 		double accST = timeStep + getCumulativeSimulationTime();
-
 		if ( accST > timeFrequency){
-			timeStep = accST - timeFrequency;
+			timeStep = timeFrequency-getCumulativeSimulationTime();
 			accST = timeFrequency;
 			allowPrintingVTK = true;
 		}
