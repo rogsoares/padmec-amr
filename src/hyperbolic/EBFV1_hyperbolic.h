@@ -84,6 +84,10 @@ namespace PRS{
 		double _cumulativeOil;
 
 		PetscErrorCode ierr;
+
+		bool PRINT_DEBUG;
+
+		ofstream fid_PRINT_DEBUG;
 	};
 }
 

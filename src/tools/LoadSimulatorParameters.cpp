@@ -68,23 +68,25 @@ namespace PRS{
 	}
 
 	void SimulatorParameters::initialize(GeomData *pGCData, pMesh theMesh){
-	  #ifdef TRACKING_PROGRAM_STEPS
-	  cout << "TRACKING_PROGRAM_STEPS: SimulatorParameters::initialize\tIN\n";
-	  #endif
-	  if (!M_numFaces(theMesh)){
-		  throw Exception(__LINE__,__FILE__,"Number of mesh elements null!");
+#ifdef TRACKING_PROGRAM_STEPS
+		cout << "TRACKING_PROGRAM_STEPS: SimulatorParameters::initialize\tIN\n";
+#endif
+		if (!M_numFaces(theMesh)){
+			throw Exception(__LINE__,__FILE__,"Number of mesh elements null!");
 		}
 
-		setStepOutputFile(0); //cout << __LINE__ << endl;
-		getWells(theMesh,pGCData->getMeshDim()); // cout << __LINE__ << endl;
-		weightWellFlowRateByVolume(theMesh,pGCData);//  cout << __LINE__ << endl;
-		checkIfRankHasProductionWell();  //cout << __LINE__ << endl;
-		setInitialOilVolume(theMesh,pGCData);//  cout << __LINE__ << endl;
-		//FIter fit = M_faceIter( theMesh );
-		setNumElementDomain(theMesh);  //cout << __LINE__ << endl;
-		setLocalNodeIDNumbering(theMesh); // cout << __LINE__ << endl;
-		#ifdef TRACKING_PROGRAM_STEPS
-	cout << "TRACKING_PROGRAM_STEPS: SimulatorParameters::initialize\tOUT\n";
+		if (!this->useRestart()){
+			setStepOutputFile(0);
+		}
+
+		getWells(theMesh,pGCData->getMeshDim());
+		weightWellFlowRateByVolume(theMesh,pGCData);
+		checkIfRankHasProductionWell();
+		setInitialOilVolume(theMesh,pGCData);
+		setNumElementDomain(theMesh);
+		setLocalNodeIDNumbering(theMesh);
+#ifdef TRACKING_PROGRAM_STEPS
+		cout << "TRACKING_PROGRAM_STEPS: SimulatorParameters::initialize\tOUT\n";
 #endif
 	}
 
@@ -170,39 +172,56 @@ namespace PRS{
 		setPositionToRead(fid,"export filename (to VTK format without extension .vtk):");
 		fid >> expofName;
 
-		string strYes, strNo;
+		string strYes;
 		setPositionToRead(fid,"Start simulation from <restart> file?");
 		getline(fid,strYes);
-		getline(fid,strNo);
 
-		// check if simulation starts from the beginning or from where it stopped.
-		string::size_type pos = strYes.find("(x)",0);
+		// RESTART: check if simulation starts from the beginning or from where it stopped.
+		string::size_type pos = strYes.find("yes",0);
 		if (pos != string::npos){
 			restart = true;
-			pos = strYes.find(":",0);
-			char buffer[256];
-			string::size_type length = strYes.copy(buffer,strYes.length() - pos,pos+1);
-			if (!length)
-				throw Exception(__LINE__,__FILE__,"Type vtk file name to start simulation.\n");
-			buffer[length]='\0';
-			string tmp = buffer;
 
+			ifstream rfid;
+			// seek for the last VTK file generated
+			for (int i=1; i<=100; i++){
+				char strtmp[512]; sprintf(strtmp,"%s__0-of-1__step-%d.vtk",expofName.c_str(),i);
+				rfid.open(strtmp);
+				if (rfid.is_open()){
+					cout << strtmp << endl;
+					rfid.close();
+				}
+				else{
+					if (i==1){
+						throw Exception(__LINE__,__FILE__,"Any VTK file has been generated using the provided case file. Please, check carefully for mistypes\n");
+					}
+					lastpvi = i-2;
+					PVI_accumulated = double(lastpvi/100.0);
+					char strtmp2[512]; sprintf(strtmp2,"%s__0-of-1__step-%d.vtk",expofName.c_str(),lastpvi-1);
+					restartFilename = strtmp2;
+					rfid.close();
 
-			// find step
-			pos = tmp.find(",",0);
-			char buffer2[256], buffer3[256], buffer4[256];
-			string::size_type length2 = tmp.copy(buffer2,tmp.length() - pos,pos+1);
-			buffer2[length2]='\0';
-			//printf("step: %d  %s\n",atoi(buffer2),restartFilename.c_str());
-			setStepOutputFile( atoi(buffer2) );
-
-			length = tmp.copy(buffer3,tmp.length() - length2-1,0);
-			buffer3[length]='\0';
-			sprintf(buffer4,"%s__%d-of-%d__step-%d.vtk",buffer3,P_pid(),P_size(),atoi(buffer2));
-			restartFilename = buffer4;
-			//			printf("buffer4: %s\n",restartFilename.c_str());
-			//			/home/rogerio/programacao/projetos/PRS_1.1.4/outputData/MIMPES-parallel/FS-3D-homogeneous-anisotropic__rank-of-size__step-8.vtk
-			//			throw 1;
+					// set cumulative simulation time variable: cumTS = summation of all time steps (from the beginning to PVI i-1
+					string strline;
+					string data[8];
+					char strtmp4[512]; sprintf(strtmp4,"%s_simulation-monitor-%d.csv",expofName.c_str(),P_size());
+					rfid.open(strtmp4);
+					if (!rfid.is_open()){
+						throw Exception(__LINE__,__FILE__,"Simulation monitor file could not be opened.\n");
+					}
+					int pvi = 0;
+					getline(rfid,strline);
+					while(pvi!=lastpvi){
+						rfid >> stepCounter >> data[0] >> pvi  >> cumTS >> data[2] >> data[3] >> data[4] >> data[5] >> data[6] >> data[7];
+						//cout << "PVI = " << pvi << " \tstep#: " << stepCounter << "\tcumulative ST: " << cumTS << endl;
+					}
+					//exit(1);
+					break;
+				}
+			}
+			this->setStepOutputFile(lastpvi+1);
+			cout << "Step counter: "  << stepCounter << setprecision(8) << "\tCumulate simulation time: " << (double)cumTS << endl;
+			cout << "\n\nRestart file name: " << restartFilename << "\n\n";
+			//exit(1);
 		}
 
 		setPositionToRead(fid,"Dirichlet (Specify: flags and respective pressure values):");

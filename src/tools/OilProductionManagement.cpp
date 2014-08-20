@@ -11,16 +11,22 @@ namespace PRS{
 
 	OilProductionManagement::OilProductionManagement(){}
 
-	OilProductionManagement::OilProductionManagement(string fname, double iov,double TotalInjectionFlowRate){
+	OilProductionManagement::OilProductionManagement(string fname, double iov,double TotalInjectionFlowRate, bool restart){
 		IOV = iov;
 		TIFR = TotalInjectionFlowRate;
 		PetscPrintf(PETSC_COMM_WORLD,"IOV = %f   TIFR = %f\n",IOV,TIFR);
-		fid.open(fname.c_str(), ios::ate);
-		if (!fid.is_open()) {
-			char msg[256]; sprintf(msg,"File '%s' could not be opened or it does not exist.\n",fname.c_str());
-			throw Exception(__LINE__,__FILE__,msg);
+
+		if (restart){
+			fid.open(fname.c_str(),ios_base::app);
 		}
-		fid << "PVI time-step cumulative-time Recovered-Oil Cumulative-Oil Num.Time-steps" << std::endl;
+		else{
+			fid.open(fname.c_str());
+			fid << "PVI time-step cumulative-time Recovered-Oil Cumulative-Oil Num.Time-steps" << std::endl;
+		}
+
+		if (!fid.is_open()) {
+			throw Exception(__LINE__,__FILE__,"Oil production file could not be opened or it does not exist.\n");
+		}
 	}
 
 	OilProductionManagement::~OilProductionManagement(){

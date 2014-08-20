@@ -182,23 +182,29 @@ public:
 	 */
 	bool useRestart() const { return restart; }
 	string getRestartFilename() const { return restartFilename; }
-	double getCumulativeSimulationTime() const { return accSimTime; }
-	void setCumulativeSimulationTime(double time_increment) { accSimTime += time_increment; }
+	double getCumulativeSimulationTime() const { return cumTS; }
+	void setCumulativeSimulationTime(double time_increment) { cumTS += time_increment; }
+
 	int getStepOutputFile() const { return vtk_step; }
 	void setStepOutputFile(int s) { vtk_step = s; }
+	void incrementeStepOutputFile() { vtk_step++; }
+
 	void setCPU_time(double cput) { cpu_time=cput; }
 	double getCPU_time() const { return cpu_time; }
 	void getSimParFiles();
+	//int getStepCounter() const { return stepCounter; }
+	int getLastPVI() const { return lastpvi; }
+	void getExportFileName(string &expofn) const { expofn = expofName; }
 
 	// Simulation must start from where it was before mesh adaptation.
 	// Simulation time advance must be done over new adapted mesh
 	// The time step calculated before mesh adaptation must be ignored
 	void saveCurrentSimulationTimes(){
-		currentST = accSimTime;
+		currentST = cumTS;
 	}
 
 	void retrieveSimulationTime(){
-		accSimTime = currentST;
+		cumTS = currentST;
 	}
 
 
@@ -208,8 +214,8 @@ public:
 	 */
 	double getPVIaccumulated() const { return PVI_accumulated; }
 	void setPVIaccumulated(double pviacc) { PVI_accumulated = pviacc; }
-	void setTStepNumber(int tsn) { tsnumber=tsn; }
-	int getTStepNumber() const { return tsnumber; }
+//	void setTStepNumber(int tsn) { tsnumber=tsn; }
+//	int getTStepNumber() const { return tsnumber; }
 	double getSimTime() const { return _ST; }
 	double getPVI() const { return _PVI; }
 
@@ -413,11 +419,12 @@ private:
 	 */
 	bool restart;
 	string restartFilename;
-	double accSimTime;
+	double cumTS;			// cumulative time step: summation of all time steps
 	double currentST;
 	int vtk_step;
 	double cpu_time;
-	int tsnumber;
+	//int tsnumber;
+	int stepCounter;
 
 	/*
 	 * string variable for file name
@@ -433,6 +440,7 @@ private:
 	double PVI_accumulated;
 	bool allowPrintingVTK;
 	bool firstVTKupdate;
+	int lastpvi;
 
 	// map preconditioners
 	void setPreconditionerDataBase();

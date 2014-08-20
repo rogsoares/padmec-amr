@@ -122,6 +122,7 @@ namespace PRS{
 		ID = new Matrix<int>[ndom];
 		volume_bdry = new Matrix<double>[ndom];
 		edges_bdry = new Matrix<int>[ndom];
+		faces_bdry = new Matrix<int>[ndom];
 		ID_bdry = new Matrix<int>[ndom];
 		edge_length = new Matrix<double>[ndom];
 		edge_versor = new Matrix<double>[ndom];

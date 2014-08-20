@@ -13,9 +13,7 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 		pSimPar = sp;
 		pMData = md;
 		theMesh = mesh;
-		Lij.assign(3,.0);
-		pVec = new Vectors;
-		DF_key = true;
+		one_eighth = (double)(1.0/8.0);
 	}
 	
 	EBFV1_elliptic::~EBFV1_elliptic(){
@@ -55,34 +53,34 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 		Mat mSol,mLSol;
 		
 		// create a column matrix to receive output vector values (mSol)
-		ierr = MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,numGN,1,0,PETSC_NULL,0,PETSC_NULL,&mSol);CHKERRQ(ierr);
+		MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,numGN,1,0,PETSC_NULL,0,PETSC_NULL,&mSol);
 		
 		int nLIDs, *IDs_ptr;
 		pMData->getRemoteIDs(nLIDs,&IDs_ptr);
 		
 		// transference process: from vector to column matrix
-		ierr = VecGetArray(output,&sol);CHKERRQ(ierr);
-		ierr = MatSetValues(mSol,matvec_struct->nrows,matvec_struct->rows,1,&col,sol,INSERT_VALUES);CHKERRQ(ierr);
-		ierr = VecRestoreArray(output,&sol);CHKERRQ(ierr);
-		ierr = MatAssemblyBegin(mSol,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-		ierr = MatAssemblyEnd(mSol,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-		//ierr = VecView(output,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr); //throw 1;
+		VecGetArray(output,&sol);
+		MatSetValues(mSol,matvec_struct->nrows,matvec_struct->rows,1,&col,sol,INSERT_VALUES);
+		VecRestoreArray(output,&sol);
+		MatAssemblyBegin(mSol,MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(mSol,MAT_FINAL_ASSEMBLY);
+		//VecView(output,PETSC_VIEWER_STDOUT_WORLD); //throw 1;
 		
 		// remote values cannot be gotten from remote matrix positions. transfer (via MatGetSubMatrixRaw) necessary remote values 
 		// to each process to a second column matrix (mLSol).
-		ierr = MatGetSubMatrixRaw(mSol,nLIDs,IDs_ptr,1,&col,PETSC_DECIDE,MAT_INITIAL_MATRIX,&mLSol);CHKERRQ(ierr);
-		ierr = MatDestroy(mSol);CHKERRQ(ierr);
-		ierr = MatGetOwnershipRange(mLSol,&m,&n);CHKERRQ(ierr);
+		MatGetSubMatrixRaw(mSol,nLIDs,IDs_ptr,1,&col,PETSC_DECIDE,MAT_INITIAL_MATRIX,&mLSol);
+		MatDestroy(mSol);
+		MatGetOwnershipRange(mLSol,&m,&n);
 		
 		// loop over IDs_ptr[i]
 		row = m;
 		for(i=0; i<nLIDs;i++){
 			int ID = pMData->get_PETScToApp_Ordering(IDs_ptr[i]+1);
-			ierr = MatGetValues(mLSol,1,&row,1,&col,&val);CHKERRQ(ierr);
+			MatGetValues(mLSol,1,&row,1,&col,&val);
 			pPPData->setPressure(ID-1,val);
 			row++;
 		}
-		ierr = MatDestroy(mLSol);CHKERRQ(ierr);
+		MatDestroy(mLSol);
 		
 		static bool key = true;
 		if (key){
@@ -95,25 +93,25 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 			}
 			key = false;
 		}
-		return MPI_Wtime()-startt;
+		return 0;
 	}
 	
 	double EBFV1_elliptic::freeMemory(){
 		double startt = MPI_Wtime();
 		// free matrices
 		if (!pSimPar->useDefectCorrection()){
-			ierr = MatDestroy(matrix);CHKERRQ(ierr);
+			MatDestroy(matrix);
 		}
-		ierr = MatDestroy(matvec_struct->G);CHKERRQ(ierr);
+		MatDestroy(matvec_struct->G);
 		for(int i=0; i<pSimPar->getNumDomains(); i++){
-			ierr = MatDestroy(matvec_struct->E[i]);CHKERRQ(ierr);
-			ierr = MatDestroy(matvec_struct->F[i]);CHKERRQ(ierr);
+			MatDestroy(matvec_struct->E[i]);
+			MatDestroy(matvec_struct->F[i]);
 		}
 		
 		/// free vectors
-		ierr = VecDestroy(matvec_struct->RHS);CHKERRQ(ierr);
-		ierr = VecDestroy(matvec_struct->z);CHKERRQ(ierr);
-		ierr = VecDestroy(output);CHKERRQ(ierr);
+		VecDestroy(matvec_struct->RHS);
+		VecDestroy(matvec_struct->z);
+		VecDestroy(output);
 		delete[] matvec_struct->F;
 		delete[] matvec_struct->E;
 		matvec_struct->F = 0;

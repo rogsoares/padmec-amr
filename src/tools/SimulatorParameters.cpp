@@ -9,13 +9,13 @@ namespace PRS{
 	SimulatorParameters::SimulatorParameters(pMesh mesh):theMesh(mesh){
 		TimeStepCounter = 0;
 		exportIter = 0;
-		accSimTime = .0;
+		cumTS = .0;
 		stop_simulation = false;
 		useHOApp = false;
 		restart = false;
 		vtk_step = 0;
 		
-		PVI_increment = 0.01;	// every 5% of total simulation time a new VTK file will be printed
+		PVI_increment = 0.01;	// every 1% of total simulation time a new VTK file will be printed
 		PVI_accumulated = .0;	// summation of all PVI_increments
 		
 		allowPrintingVTK = false;
@@ -318,24 +318,23 @@ namespace PRS{
 	
 	
 	/*
-	 * This function is called every time a new time-step is calculated.
-	 * We want to know how many steps there are within a fraction of PVI or how
-	 * many step there are within every time allowPrintingVTK is set true.
-	 * TSCountingList stores this values.
+	 * This function is called every time a new time-step is calculated. We want to know how many steps there are within a fraction of PVI or how
+	 * many step there are within every time allowPrintingVTK is set true. TSCountingList stores this values.
 	 */
 	void SimulatorParameters::correctTimeStep(double &timeStep){
-		static int TScounter = 0; TScounter++;
-		
 		if (firstVTKupdate){
 			updatePrintOutVTKFrequency();  
 		}
 		double timeFrequency = getPrintOutVTKFrequency();
-		double accST = timeStep + getCumulativeSimulationTime();
-		if ( accST > timeFrequency){
-			timeStep = timeFrequency-getCumulativeSimulationTime();
-			accST = timeFrequency;
+		cout << fixed << setprecision(8) << "timeFrequency : " << timeFrequency << "\ttimeStep: " << timeStep << "\tgetCumulativeSimulationTime(): " << getCumulativeSimulationTime();
+		double cumST = timeStep + getCumulativeSimulationTime();
+		cout << "\tcumST: " << cumST;
+		if ( cumST > timeFrequency ){
+			timeStep = timeFrequency - getCumulativeSimulationTime();
+			cumST = timeFrequency;
 			allowPrintingVTK = true;
 		}
+		cout << "\ttimeStep: " << timeStep << "\tcumST: " << cumST << endl;
 	}
 	
 	void SimulatorParameters::allowPrintVTK(){
@@ -352,9 +351,12 @@ namespace PRS{
 	void SimulatorParameters::printOutVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3, void *pData4, pFunc_PrintVTK printVTK){
 		//allowPrintingVTK = true;
 		if (allowPrintingVTK){
-			static int theStep = getStepOutputFile();
+			//static int theStep = getStepOutputFile();
+			//++theStep;
+			int theStep = getStepOutputFile();
+			incrementeStepOutputFile();
 			char fname[256];
-			++theStep;
+
 			sprintf(fname,"%s__%d-of-%d__step-%d.vtk",expofName.c_str(),P_pid(),P_size(),theStep);
 			PetscPrintf(PETSC_COMM_WORLD,"VTK Output: step file #%d\n",theStep);
 			printVTK(theMesh,pData1,pData2,pData3,pData4,fname);

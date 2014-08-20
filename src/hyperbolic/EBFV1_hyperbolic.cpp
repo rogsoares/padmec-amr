@@ -21,6 +21,25 @@ namespace PRS{
 		pMData = md;
 		_cumulativeOil = .0;
 		pEA = pEAna;
+
+		// set cumulative oil production
+		if (pSimPar->useRestart()){
+			string expofn;
+			pSimPar->getExportFileName(expofn);
+			char str[512]; sprintf(str,"%s_oil-production-%d.csv",expofn.c_str(),P_size());
+			ifstream fid;
+			fid.open(str);
+
+			string strline;
+			for (int i=0; i<pSimPar->getLastPVI(); i++){
+				getline(fid,strline);
+				cout << strline << endl;
+			}
+			string data[5];
+			fid >> data[0] >> data[1] >> data[2] >> data[3] >> _cumulativeOil >> data[4];
+			_cumulativeOil *= pOPManager->getInitialOilVolume();
+			fid.close();
+		}
 	}
 
 	EBFV1_hyperbolic::~EBFV1_hyperbolic(){
@@ -33,7 +52,7 @@ namespace PRS{
 			throw Exception(__LINE__,__FILE__,"Number of edges: 0!\n");
 		}
 	#endif
-		double hyp_time = .0;
+		double hyp_time = MPI_Wtime();
 		static int timestep_counter = 0;			// counts number of time steps every new VTK
 
 		int dim = theMesh->getDim();
@@ -52,6 +71,7 @@ namespace PRS{
 		for (int dom=0; dom<ndom; dom++){
 			calculateIntegralAdvectiveTerm(dom,timeStep);
 		}
+
 		pSimPar->correctTimeStep(timeStep);					// correct time-step value to print out the desired simulation moment
 		pSimPar->saveCurrentSimulationTimes();				// it must be called before cumulative simulation time
 		pSimPar->setCumulativeSimulationTime(timeStep); 	// AccSimTime = AccSimTime + timeStep
@@ -70,6 +90,6 @@ namespace PRS{
 		}
 		pSimPar->printOutVTK(theMesh,pPPData,pEA,pSimPar,pGCData,exportSolutionToVTK);
 		if (!P_pid()) std::cerr << "done.\n\n";
-		return hyp_time;
+		return MPI_Wtime() - hyp_time;
 	}
 }
