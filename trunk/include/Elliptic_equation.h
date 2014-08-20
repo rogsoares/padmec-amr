@@ -1,7 +1,6 @@
 #ifndef _ELLIPTIC_EQUATION_H_
 #define _ELLIPTIC_EQUATION_H_
 
-#include "Restart.h"
 #include "exportVTK.h"
 
 /**
@@ -15,30 +14,30 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 		Elliptic_equation(){}
 		virtual ~Elliptic_equation(){}
 		virtual double solver(pMesh)=0;
-		double calculatePressureGradient();
+		virtual void getCPUtime(double &assembly, double &solver, double &gradient, int &KSPiter)=0;
 
 	protected:
-
-		PetscErrorCode ierr;
 		Vec output;
+
+		double calculatePressureGradient();
 
 		// solve system of equations: Ax=y
 		double KSP_solver(Mat A, Mat pcMatrix, Vec y, Vec x, SimulatorParameters *pSimPar, PetscTruth guessNonZero, KSPType ksptype, PCType pctype,PetscInt &its){
 			double startt = MPI_Wtime();
 			KSP ksp;
 			PC preconditioner;
-			ierr = KSPCreate(PETSC_COMM_WORLD,&ksp); CHKERRQ(ierr);
-			ierr = KSPSetOperators(ksp,A,pcMatrix,DIFFERENT_NONZERO_PATTERN);CHKERRQ(ierr);
-			ierr = KSPSetType(ksp,ksptype);CHKERRQ(ierr);
-			ierr = KSPGetPC(ksp,&preconditioner);CHKERRQ(ierr);
-			ierr = PCSetType(preconditioner,pctype);CHKERRQ(ierr);
-			ierr = KSPSetInitialGuessNonzero(ksp,guessNonZero);CHKERRQ(ierr);
-			ierr = KSPGMRESSetRestart(ksp,pSimPar->getKrylov_restart()); CHKERRQ(ierr);
-			ierr = KSPSetTolerances(ksp,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);CHKERRQ(ierr);
-			ierr = KSPSetFromOptions(ksp);CHKERRQ(ierr);
-			ierr = KSPSolve(ksp,y,x);CHKERRQ(ierr);
-			ierr = KSPGetIterationNumber(ksp,&its); CHKERRQ(ierr);
-			ierr = KSPDestroy(ksp); CHKERRQ(ierr);
+			KSPCreate(PETSC_COMM_WORLD,&ksp);
+			KSPSetOperators(ksp,A,pcMatrix,DIFFERENT_NONZERO_PATTERN);
+			KSPSetType(ksp,ksptype);
+			KSPGetPC(ksp,&preconditioner);
+			PCSetType(preconditioner,pctype);
+			KSPSetInitialGuessNonzero(ksp,guessNonZero);
+			KSPGMRESSetRestart(ksp,pSimPar->getKrylov_restart());
+			KSPSetTolerances(ksp,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
+			KSPSetFromOptions(ksp);
+			KSPSolve(ksp,y,x);
+			KSPGetIterationNumber(ksp,&its);
+			KSPDestroy(ksp);
 			double endt = MPI_Wtime();
 			return endt-startt;
 		}

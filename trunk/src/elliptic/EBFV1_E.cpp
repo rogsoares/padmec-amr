@@ -123,8 +123,8 @@ int EBFV1_elliptic::divergence_E(Mat E, double *Cij, int edge, int dom, int dom_
 		idxn[dim+i] = pos2+i;
 	}
 
-	ierr = MatSetValues(E,1,&idxm[0],2*dim,idxn,Eij_row1,ADD_VALUES); CHKERRQ(ierr);
-	ierr = MatSetValues(E,1,&idxm[1],2*dim,idxn,Eij_row2,ADD_VALUES); CHKERRQ(ierr);
+	MatSetValues(E,1,&idxm[0],2*dim,idxn,Eij_row1,ADD_VALUES);
+	MatSetValues(E,1,&idxm[1],2*dim,idxn,Eij_row2,ADD_VALUES);
 	K = 0;
 
 	return 0;

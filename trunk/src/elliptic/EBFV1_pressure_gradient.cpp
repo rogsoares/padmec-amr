@@ -9,6 +9,7 @@
 
 namespace PRS{
 	void EBFV1_elliptic::calculatePressureGradient(){
+		double start = MPI_Wtime();
 		int dim = pGCData->getMeshDim();
 		resetPressureGradient();
 		int ndom = (int)pSimPar->setOfDomains.size();
@@ -17,6 +18,7 @@ namespace PRS{
 			calc_p_grad_2(dom,dim);
 		}
 		calc_p_grad_3(dim);
+		_gradientT = MPI_Wtime()-start;
 	}
 
 	void EBFV1_elliptic::calc_p_grad_1(int dom, int dim){

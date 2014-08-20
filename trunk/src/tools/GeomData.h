@@ -228,6 +228,12 @@ namespace PRS
 			idx1_global = edges_bdry[dom].getValue(row,5);
 		}
 
+		void getBdryFace(int dom, int row, int &idx_0, int &idx_1, int &idx_2){
+			idx_0 = faces_bdry[dom].getValue(row,0);
+			idx_1 = faces_bdry[dom].getValue(row,1);
+			idx_2 = faces_bdry[dom].getValue(row,2);
+		}
+
 		void getBdryVolume(int dom, int idx, double& vol){
 			vol = volume_bdry[dom].getValue(idx);
 		}
@@ -238,6 +244,12 @@ namespace PRS
 			vol[2] = volume_bdry[dom].getValue(idx2);
 		}
 
+		void getBdryVolume(int dom, int idx0, int idx1, int idx2, double& volumeI, double& volumeJ, double& volumeK){
+//			volumeI[0] = volume_bdry[dom].getValue(idx0);
+//			volumeJ[1] = volume_bdry[dom].getValue(idx1);
+//			volumeK[2] = volume_bdry[dom].getValue(idx2);
+		}
+
 		void getBdryVolume(int dom, int idx_0, int idx_1, double& volumeI, double& volumeJ){
 			volumeI = volume_bdry[dom].getValue(idx_0);
 			volumeJ = volume_bdry[dom].getValue(idx_1);
@@ -246,6 +258,12 @@ namespace PRS
 		void getBdryID(int dom, int idx_0, int idx_1, int& id0, int &id1){
 			id0 = ID_bdry[dom].getValue(idx_0);
 			id1 = ID_bdry[dom].getValue(idx_1);
+		}
+
+		void getBdryID(int dom, int idx_0, int idx_1, int idx_2, int& id0, int &id1, int& id2){
+			id0 = ID_bdry[dom].getValue(idx_0);
+			id1 = ID_bdry[dom].getValue(idx_1);
+			id2 = ID_bdry[dom].getValue(idx_2);
 		}
 
 		void getBdryID(int dom, int idx, int& id){

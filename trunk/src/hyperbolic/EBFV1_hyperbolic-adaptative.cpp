@@ -101,7 +101,7 @@ namespace PRS{
 				p_timestepOld = timeStep;
 			}
 			p_timestepOld *= time_factor;					// make implicit p_timestepOld variable dimensionless
-			p_timestep = (DVTOL/dv_norm)*p_timestepOld;		// Update new implicit time step: p_timestep
+			p_timestep = (DVTOL/DV_norm)*p_timestepOld;		// Update new implicit time step: p_timestep
 			double RT = (double)(p_timestep/p_timestepOld);	// dimensionless DT ratio
 			if (RT>1.25){
 				p_timestep = 1.25*p_timestepOld;
@@ -142,7 +142,6 @@ namespace PRS{
 			// fit timeStep to PVI time for right VTK print out
 			if (cum_ST+timeStep > cum_VTK){
 				timeStep = cum_VTK - cum_ST;
-				cout << setprecision(12) << fixed << timeStep  << "\t" << cum_VTK << "\t" << cum_ST << endl ;
 				if (timeStep<0){throw Exception(__LINE__,__FILE__,"time step negative!");}
 				pSimPar->allowPrintVTK();
 			}
@@ -184,6 +183,7 @@ namespace PRS{
 			}
 			DV_domNorm[dom] /= numGEdges;
 		}
+
 		DV_norm_sum = 0;
 		for (dom=0; dom<ndom; dom++){
 			DV_norm_sum += DV_domNorm[dom];

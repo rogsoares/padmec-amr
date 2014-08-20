@@ -106,9 +106,7 @@ void checklinepassing(int, const char*, std::string);
 
 enum LOG_FILES {OPENLG, UPDATELG, CLOSELG};
 
-void LogFiles(LOG_FILES ,double t1=.0, double t2=.0, double timeStep=.0,
-		double accSimTime=.0, string path="",bool hasRestart=false,
-		int last_step=0, double CPU_time=.0);
+void LogFiles(double timeStep, double assemblyT, double solverT, double gradT, int KSPiter, double hyperbolicCPU,LOG_FILES LG, string path, bool restart, int last_step, double cumulativeSTime_Restart, double CPUTime_Restart);
 
 void failOpeningFile(string, int, const char *);
 

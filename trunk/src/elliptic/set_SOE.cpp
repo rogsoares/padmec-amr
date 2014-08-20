@@ -50,10 +50,10 @@ namespace PRS{
 		// Create matrix G.
 		double Cij[3];
 		int i,j,nedges, dom, idx0, idx1,idx0_global, idx1_global, id0, id1, dom_flag;
-		ierr = MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np,np,80,PETSC_NULL,80,PETSC_NULL,&G_tmp); CHKERRQ(ierr);
+		MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np,np,80,PETSC_NULL,80,PETSC_NULL,&G_tmp);
 		for (dom=0; dom<ndom; dom++){
-			ierr = MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np,np*dim,100,PETSC_NULL,100,PETSC_NULL,&E[dom]);CHKERRQ(ierr);
-			ierr = MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np*dim,np,100,PETSC_NULL,100,PETSC_NULL,&F[dom]);CHKERRQ(ierr);
+			MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np,np*dim,100,PETSC_NULL,100,PETSC_NULL,&E[dom]);
+			MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np*dim,np,100,PETSC_NULL,100,PETSC_NULL,&F[dom]);
 			nedges = pGCData->getNumEdgesPerDomain(dom);
 			dom_flag = pGCData->getDomFlag(dom);
 			for (i=0; i<nedges; i++){
@@ -70,17 +70,6 @@ namespace PRS{
 		}
 		assemblyMatrix(G_tmp);
 
-//		static int step=0;
-//		char file1[256]; sprintf(file1,"G_tmp__%d.txt",step);
-// 		printMatrixToFile(G_tmp,file1);
-//// 		printMatrixToFile(E[0],"E__PA.txt");
-// 		char file2[256]; sprintf(file2,"F__%d.txt",step);
-// 		printMatrixToFile(F[0],file2);
-// 		step++;
-// 		STOP();
-			
-		//int printVectorToFile(Vec& v,const char* filename){
-
 		// Get from matrix G its contribution to RHS. matvec_struct->G correspond to all free nodes
 		set_SOE(mesh,G_tmp,matvec_struct->G,true,matvec_struct->RHS,true,true);
 
@@ -89,7 +78,7 @@ namespace PRS{
 		Vec EF_rhs;
 		//EF_multiDom = new Mat[ndom];
 		for (i=0; i<ndom; i++){
-			ierr = MatMatMult(E[i],F[i],MAT_INITIAL_MATRIX,1.0,&EF); CHKERRQ(ierr);
+			MatMatMult(E[i],F[i],MAT_INITIAL_MATRIX,1.0,&EF);
 			if (pSimPar->useDefectCorrection()){
 				//set_SOE(mesh,EF,EF_multiDom[i],true,EF_rhs,true,false);
 			}
@@ -97,8 +86,8 @@ namespace PRS{
 				// EF matrix is destroyed inside set_SOE function
 				set_SOE(mesh,EF,tmp,false,EF_rhs,true,false);
 			}
-			ierr = VecAXPY(matvec_struct->RHS,1.0,EF_rhs); CHKERRQ(ierr);
-			ierr = VecDestroy(EF_rhs);CHKERRQ(ierr);
+			VecAXPY(matvec_struct->RHS,1.0,EF_rhs);
+			VecDestroy(EF_rhs);
 		}
 
 		// Create E and F matrices related to free nodes only. Note that they were been created using all mesh nodes.
@@ -121,28 +110,25 @@ namespace PRS{
 		}
 
 		for (i=0; i<ndom; i++){
-			ierr = MatGetSubMatrixRaw(F[i],pMData->get_F_nrows(),pMData->get_F_rows_ptr(),numGF,pMData->get_F_cols_ptr(),PETSC_DECIDE,MAT_INITIAL_MATRIX,&matvec_struct->F[i]);CHKERRQ(ierr);
-			ierr = MatGetSubMatrixRaw(E[i],nrows,rows,np*dim,pMData->get_pos_ptr(),PETSC_DECIDE,MAT_INITIAL_MATRIX,&matvec_struct->E[i]);CHKERRQ(ierr);
-			ierr = MatDestroy(E[i]);CHKERRQ(ierr);
-			ierr = MatDestroy(F[i]);CHKERRQ(ierr);
+			MatGetSubMatrixRaw(F[i],pMData->get_F_nrows(),pMData->get_F_rows_ptr(),numGF,pMData->get_F_cols_ptr(),PETSC_DECIDE,MAT_INITIAL_MATRIX,&matvec_struct->F[i]);
+			MatGetSubMatrixRaw(E[i],nrows,rows,np*dim,pMData->get_pos_ptr(),PETSC_DECIDE,MAT_INITIAL_MATRIX,&matvec_struct->E[i]);
+			MatDestroy(E[i]);
+			MatDestroy(F[i]);
 		}
-// 		printMatrixToFile(matvec_struct->G,"matvec_struct_G__PA.txt");
-// 		printMatrixToFile(matvec_struct->E[0],"matvec_struct_E__PA.txt");
-// 		printMatrixToFile(matvec_struct->F[0],"matvec_struct_F__PA.txt");
-// 		printVectorToFile(matvec_struct->RHS,"matvec_struct_RHS__PA.txt");
 
 		// Create the output vector
-		ierr = VecCreate(PETSC_COMM_WORLD,&output);CHKERRQ(ierr);
-		ierr = VecSetSizes(output,PETSC_DECIDE,numGF);CHKERRQ(ierr);
-		ierr = VecSetFromOptions(output);CHKERRQ(ierr);
+		VecCreate(PETSC_COMM_WORLD,&output);
+		VecSetSizes(output,PETSC_DECIDE,numGF);
+		VecSetFromOptions(output);
 
 		//double step2 = MPI_Wtime();
-		return MPI_Wtime() - startt;
+		_assemblyT =  MPI_Wtime() - startt;
+		return 0;
 	}
 
 	int EBFV1_elliptic::assemblyMatrix(Mat A){
-		ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-		ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+		MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
 		return 0;
 	}
 
@@ -178,33 +164,33 @@ namespace PRS{
 			int m,n;
 			MatGetSubMatrixRaw(A,nrows,rows,numGP,pMData->get_idxn_ptr(),PETSC_DECIDE,MAT_INITIAL_MATRIX,&rhs);
 
-			ierr = MatDestroy(A); CHKERRQ(ierr);
+			MatDestroy(A);
 			VecCreate(PETSC_COMM_WORLD,&RHS);
 			VecSetSizes(RHS,PETSC_DECIDE,numGF);
 			VecSetFromOptions(RHS);
 
 			// fill RHS vector with values from rhs matrix. entries from this matrix are multiplied by their corresponding prescribed values
-			ierr = MatGetOwnershipRange(rhs,&m,&n);
+			MatGetOwnershipRange(rhs,&m,&n);
 			for (i=m; i<n; i++){
 				double sum = .0;
 				MIter prescribedIter = pMData->dirichletBegin();
 				for (j=0; j<numGP; j++, prescribedIter++){
 					int col = j;
 					double val=.0;
-					ierr = MatGetValues(rhs,1,&i,1,&col,&val); CHKERRQ(ierr);
+					MatGetValues(rhs,1,&i,1,&col,&val);
 					//printf("sum_old = %f  ",sum);
 					sum += -val*prescribedIter->second;
 					//printf("val: %f  prescVal: %f     sum = %f\n",val,prescribedIter->second,sum);
 				}
-				ierr = VecSetValue(RHS,i,sum,ADD_VALUES); CHKERRQ(ierr);
+				VecSetValue(RHS,i,sum,ADD_VALUES);
 			}
 
 			if ( includeWell ){
 				wellsContributionToRHS(mesh,RHS);
 			}
-			ierr = VecAssemblyBegin(RHS); CHKERRQ(ierr);
-			ierr = VecAssemblyEnd(RHS); CHKERRQ(ierr);
-			ierr = MatDestroy(rhs); CHKERRQ(ierr);
+			VecAssemblyBegin(RHS);
+			VecAssemblyEnd(RHS);
+			MatDestroy(rhs);
 		}
 		return 0;
 	}
@@ -272,7 +258,7 @@ namespace PRS{
 // 										cout << "Vi = " << Vi << endl;
 // 									//	cout << "row = " << row << endl;
 // 										cout << "---------------------------------------------\n";
-					ierr = VecSetValue(RHS,row,Qi,ADD_VALUES); CHKERRQ(ierr);
+					VecSetValue(RHS,row,Qi,ADD_VALUES);
 
 				}
 				//printf("well contribution to RHS: node %d -> row %d\n",node_ID,row);
@@ -311,7 +297,7 @@ namespace PRS{
 				srcsnk = vol1*f_xy1 + vol2*f_xy2;					// source/sink term
 				node_ID = pMData->get_AppToPETSc_Ordering(rows[i]+1);
 				row = pMData->FPArray(node_ID-1);
-				ierr = VecSetValue(RHS,row,-srcsnk,ADD_VALUES); CHKERRQ(ierr);
+				VecSetValue(RHS,row,-srcsnk,ADD_VALUES);
 			}
 		}
 	#endif

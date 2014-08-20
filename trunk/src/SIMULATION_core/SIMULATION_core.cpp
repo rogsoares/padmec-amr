@@ -112,7 +112,7 @@ int SIMULATION_core::initialize(int argc, char **argv){
 		string path = pSimPar->getOutputPathName();
 		char tmp[256]; sprintf(tmp,"%s_oil-production-%d.csv",path.c_str(),P_size());
 		string FileName(tmp);
-		pOilProduction = new OilProductionManagement(FileName,pSimPar->getInitialOilVolume(),pSimPar->getTotalInjectionFlowRate());
+		pOilProduction = new OilProductionManagement(FileName,pSimPar->getInitialOilVolume(),pSimPar->getTotalInjectionFlowRate(),pSimPar->useRestart());
 	}
 
 	/*

@@ -11,7 +11,6 @@ namespace PRS{
 
 	// Advance time for all free node not located in wells
 	void EBFV1_hyperbolic::nodeWithOut_Wells(double delta_T){
-		//cout << "nodeWithOut_Wells\n";
 		double Sw,Sw_old,nonvisc,volume;
 		int idx;
 		int nnode = pPPData->getNumNodeFreeWells();
@@ -37,7 +36,7 @@ namespace PRS{
 		//cout << "nodeWith_Wells\n";
 		const int N = pSimPar->getWellTimeDiscretion(); ///  1000;								// magic number :)
 		int i,j, well_idx;
-		double Sw,Sw0,Sw_old,Vt,Qi,Vi,Qwi,Qt,fw,nonvisc,wp,volume, nrc, porosity;
+		double Sw,Sw0,Sw_old,Vt,Qi,Vi,Qwi,Qt,fw,fo,nonvisc,wp,volume, nrc, porosity;
 		double dt_well = (double)delta_T/N;			// time step for well nodes saturation
 		double cml_oil,Qo,Qw;
 
@@ -69,12 +68,13 @@ namespace PRS{
 	#endif
 
 			pPPData->setSaturation(well_idx,Sw);
-			double fw = pPPData->getFractionalFlux(Sw);	// oil fractional flux
-			double fo = pPPData->getOilFractionalFlux(Sw);	// oil fractional flux
+			fw = pPPData->getFractionalFlux(Sw);	    // oil fractional flux
+			fo = pPPData->getOilFractionalFlux(Sw);	// oil fractional flux
 			Qo += fabs(Qi*fo);
 			Qw += fabs(Qi*fw);
 			cml_oil += Qo;
 		}
+
 		setRecoveredOil(Qo/(Qo+Qw));
 		cml_oil = cml_oil*delta_T + getCumulativeOil();
 		setCumulativeOil(cml_oil);

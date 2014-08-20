@@ -180,73 +180,57 @@ namespace PRS{
 		pVertex node;
 		bool hasInjectionWell = false;
 		double Sw;
-		int idx = 0;
+		int idx = 0, well = 0;
+
 		VIter vit = M_vertexIter(theMesh);
-		while ( (node = VIter_next(vit)) ){
-			int flag = GEN_tag(node->getClassification());
-			Sw = simPar->getInitialSaturation(node);
-			if ( Sw > .0 ){
-				printf("Injection well located in node %d Sw = %f flag: %d\n",EN_id(node),Sw,flag);
-				hasInjectionWell = true;
+		// If restart is required, then load saturation field using the last VTK file generated.
+		if (simPar->useRestart()){
+			ifstream fid;
+			string strline;
+			cout << "restart file name:  " << simPar->getRestartFilename().c_str() << endl;
+			fid.open(simPar->getRestartFilename().c_str());
+
+			if (!fid.is_open()){
+				throw Exception(__LINE__,__FILE__,"File could not be opened!\n");
 			}
-//			setSaturation(node,Sw);
-			setSaturation(idx,Sw);
-			idx++;
+
+			// set position to start reading
+			do{
+				getline(fid,strline);
+			}while( strline.compare("SCALARS Saturation float 1") );
+			getline(fid,strline);
+
+			// load data
+			cout << "Loading initial saturation field using the last VTK file generated.\n";
+			while ( (node = VIter_next(vit)) ){
+				fid >> Sw;
+				setSaturation(idx,Sw);
+				idx++;
+			}
+			well = 1;
+			fid.close();
+		}
+		else{
+			while ( (node = VIter_next(vit)) ){
+				int flag = GEN_tag(node->getClassification());
+				Sw = simPar->getInitialSaturation(node);
+				if ( Sw > .0 ){
+					printf("Injection well located in node %d Sw = %f flag: %d\n",EN_id(node),Sw,flag);
+					well = 1;
+				}
+				setSaturation(idx,Sw);
+				idx++;
+			}
 		}
 		VIter_delete(vit);
 
 		// rank with injection well must say to all other ranks that it's OK, a injection well was being informed!
-		int well = (hasInjectionWell)?1:0;
 		well = P_getMaxInt(well);
 
 		if (!well){
-			//throw Exception(__LINE__,__FILE__,"Injection wells are missing!");
+			throw Exception(__LINE__,__FILE__,"Injection wells are missing!");
 		}
-
-		/*
-		 * IF MESH IS 3-D
-		 * */
-		// search for flagged edges
-		// =========================================================================
-//		pEntity edge;
-//		EIter eit = M_edgeIter( theMesh );
-//		while ( (edge = EIter_next(eit)) ){
-//			int flag = GEN_tag(edge->getClassification());
-//			if (simPar->isInjectionWell(flag)){
-//				setSaturation(edge->get(0,0),1.0);
-//				setSaturation(edge->get(0,1),1.0);
-////				edge->get(0,0)->classify( edge->getClassification() );
-////				edge->get(0,1)->classify( edge->getClassification() );
-//			}
-//		}
-//		EIter_delete(eit);
-//
-//		// search for flagged faces (on boundary only)
-//		// =========================================================================
-//		pEntity face;
-//		FIter fit = M_faceIter( theMesh );
-//		while ( (face = FIter_next(fit)) ){
-//			int flag = GEN_tag(face->getClassification());
-//			if (simPar->isInjectionWell(flag)){
-//				for (int i=0; i<3; i++){
-//					setSaturation(face->get(0,i),1.0);
-//					face->get(0,i)->classify( face->getClassification() );
-//				}
-//			}
-//		}
-//		FIter_delete(fit);
-		//throw 1;
 	}
-
-//	double PhysicPropData::getTotalMobility(pEntity vertex){
-//		if (steady_state){
-//			return 1.0;
-//		}
-//		double Sw = getSaturation(vertex);
-//		double krw = get_ksw(Sw);
-//		double kro = get_kso(Sw);
-//		return krw/mi_w + kro/mi_o;
-//	}
 
 	double PhysicPropData::getTotalMobility(double Sw){
 		double krw = get_ksw(Sw);

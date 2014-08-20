@@ -72,8 +72,8 @@ int EBFV1_elliptic::divergence_G(Mat G, double *Cij, int edge, int dom, int dom_
 		int rows[2] = {id0-1,id1-1};	// where Gij must be assembled in global G
 		int cols[2] = {id0-1,id1-1};	// where Gij must be assembled in global G
 
-		ierr = MatSetValues(G,1,&rows[0],2,cols,Gij_I,ADD_VALUES);CHKERRQ(ierr);
-		ierr = MatSetValues(G,1,&rows[1],2,cols,Gij_J,ADD_VALUES);CHKERRQ(ierr);
+		MatSetValues(G,1,&rows[0],2,cols,Gij_I,ADD_VALUES);
+		MatSetValues(G,1,&rows[1],2,cols,Gij_J,ADD_VALUES);
 		return 0;
 	}
 }

@@ -17,7 +17,9 @@ int main(int argc, char **argv){
 	try{
 		sim.initialize(argc,argv);
 		double t1 = MPI_Wtime();
+		PetscPrintf(PETSC_COMM_WORLD,"\n\nStart simulation:\n-----------------------------------------------\n");
 		sim.solver();
+		PetscPrintf(PETSC_COMM_WORLD,"\n\nEnd of simulation:\n----------------------------------------------\n");
 		double t2 = MPI_Wtime();
 
 		double h,m,s;

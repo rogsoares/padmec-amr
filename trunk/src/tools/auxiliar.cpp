@@ -6,7 +6,6 @@ void failOpeningFile(string filename, int line, const char* cppfile){
 }
 
 double F_area(const double *ptn1, const double *ptn2, const double *ptn3){
-
 	double xyz[3][3], n[3];
 	for (int i=0;i<3;i++){
 		xyz[0][i] = ptn1[i];
@@ -16,14 +15,12 @@ double F_area(const double *ptn1, const double *ptn2, const double *ptn3){
 	double a[3] = { xyz[1][0]-xyz[0][0], xyz[1][1]-xyz[0][1], xyz[1][2]-xyz[0][2] } ;
 	double b[3] = { xyz[2][0]-xyz[0][0], xyz[2][1]-xyz[0][1], xyz[2][2]-xyz[0][2] } ;
 	computeCrossProduct(a,b,n);
-
 	return .5*norm(n);
 }
 
 double norm(const double *n){
 	return sqrt( pow(n[0],2) + pow(n[1],2) + pow(n[2],2) );
 }
-
 
 void getEdgeVector(pEdge edge, dblarray &edgVec){
 	double coord1[3];
@@ -295,76 +292,44 @@ void convertSecToTime(double t, double *h, double *m, double *s){
 }
 
 
-void LogFiles(LOG_FILES LG, double t1, double t2, double timeStep, double accSimTime,
-		string path, bool hasRestart, int last_step, double CPU_time){
+void LogFiles(double timeStep, double assemblyT, double solverT, double gradT, int KSPiter, double hyperbolicCPU,LOG_FILES LG, string path,
+		      bool restart, int last_step, double cumulativeSTime_Restart, double CPUTime_Restart){
 
-	static int count = (hasRestart)?last_step:0;
-	static double acc_CPUtime = (hasRestart)?CPU_time:0;
-	static ofstream fid1;
-	static ofstream fid2;
+	static int step_counter = (restart)?last_step:0;
+	static double cumulativeSTime = (restart)?cumulativeSTime_Restart:0;
+	static double cumulativeCPU = (restart)?CPUTime_Restart:0; // cumulative CPU time.
+	static ofstream fid;
 
 	switch (LG){
 	case OPENLG:{
 		// print results on file
 		if (!P_pid()){
-			char fname1[256]; sprintf(fname1,"%s_simulation-monitor-%d.dat",path.c_str(),P_size());
-			if (hasRestart){
-				fid1.open(fname1,ios_base::app);
-				fid1 << "* * * * * * * * * * * * * * * * * * * * * * * * *\n"
-						"*                Restart required               *\n"
-						"* * * * * * * * * * * * * * * * * * * * * * * * *\n\n\n";
+			char filename[256]; sprintf(filename,"%s_simulation-monitor-%d.csv",path.c_str(),P_size());
+			if (restart){
+				fid.open(filename,ios_base::app);
 			}
 			else{
-				fid1.open(fname1);
-				fid1 << "SIMULATION PROGRESS MONITOR\nNumber of processors: "<<P_size()<<"\n\n\n";
+				fid.open(filename);
+				fid << "#step time-step PVI cumulative-TS assembly-CPU solver-CPU grad-CPU KSP-iter hyperbolic-CPU cumulative-CPU\n";
 			}
-			//	cout << __LINE__ << endl;
-			char fname2[256]; sprintf(fname2,"%s_CPU-process-time-%d.xls",path.c_str(),P_size());
-			fid2.open(fname2);
-			fid2 << "Elliptic Hyperbolic total-step Total(accumulated)\n";
-			//	cout << __LINE__ << endl;
-			std::cout << "\n--------------------------------------------------\n"
-					"Start Simulation\n"
-					"--------------------------------------------------\n\n";
+			std::cout << "\n--------------------------------------------------\nStart Simulation\n--------------------------------------------------\n\n";
 		}
 	}
 	break;
 	case UPDATELG:{
-		// take average time from all processors
-		double total = P_getSumDbl(t1+t2)/((double)P_size());
-
 		// rank 0 is in charge to print the output CPU-time
 		if (!P_pid()){
-			double h, m, s;
-			acc_CPUtime += total;
-			fid1.precision(0);
-			fid1 << "          CPU-time[sec]  percentual\n";
-			fid1 << "------------------------------------------------\n";
-			convertSecToTime(t1,&h,&m,&s);
-			fid1 << "elliptic   : " << fixed << h <<"(h)  "<< m <<"(m)  "<< s <<"(s) " << 100.0*(t1/total) <<"%\n";
-			convertSecToTime(t2,&h,&m,&s);
-			fid1 << "hyperbolic : " << h <<"(h)  "<< m <<"(m)  "<< s <<"(s) " << 100.0*(t2/total) <<"%\n";
-			convertSecToTime(t1+t2,&h,&m,&s);
-			fid1 << "ellip+hyper: " << h <<"(h)  "<< m <<"(m)  "<< s <<"(s)\n";
-			convertSecToTime(acc_CPUtime,&h,&m,&s);
-			fid1 << "accumulated: " << h <<"(h)  "<< m <<"(m)  "<< s <<"(s)\n\n";
-			cout << "Accumulated Simulation time: " << h <<"(h)  "<< m <<"(m)  "<< s <<"(s)\n\n";
-			fid1.precision(5);
-			fid1 << "Step       : " << ++count  <<"\n";
-			fid1 << "timeStep   : " << timeStep <<"\n";
-			fid1 << fixed << "Sum. tSteps: " << accSimTime  <<"\n\n\n";
-
-			char cString[256]; sprintf(cString,"%f %f %f %f\n",t1,t2,t1+t2,acc_CPUtime);
-			string theString(cString);
-			replaceAllOccurencesOnString(theString,1,".",",");
-			fid2 << theString;
+			cumulativeSTime += timeStep;
+			cumulativeCPU += assemblyT + solverT + gradT + hyperbolicCPU;
+			fid << scientific << setprecision(8);
+			fid << ++step_counter << " " << timeStep << " " << (int)(100*cumulativeSTime/0.07) << " " << cumulativeSTime << " " << assemblyT << " " <<  solverT
+				<< " " << gradT << " " << KSPiter << " " << hyperbolicCPU << " " << cumulativeCPU << endl;
 		}
 	}
 	break;
 	case CLOSELG:{
 		if (!P_pid()){
-			fid1.close();
-			fid2.close();
+			fid.close();
 		}
 	}
 	}

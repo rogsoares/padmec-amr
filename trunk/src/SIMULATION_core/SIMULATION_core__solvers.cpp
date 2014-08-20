@@ -11,9 +11,8 @@
 namespace PRS{
 
 	int SIMULATION_core::solver(){
-		PetscPrintf(PETSC_COMM_WORLD,"\n\nStart simulation:\n-----------------------------------------------\n");
-		LogFiles(OPENLG,0,0,0,0,pSimPar->getOutputPathName(),pSimPar->useRestart(),pSimPar->getTStepNumber(),pSimPar->getCPU_time());
-		double timeStep, t1, t2, t3, CPU_cum;
+		LogFiles(0,0,0,0,0,0,OPENLG,pSimPar->getOutputPathName(),pSimPar->useRestart(),pSimPar->getStepOutputFile(),pSimPar->getCumulativeSimulationTime(),pSimPar->getCPU_time());
+		double timeStep, t1, t2, t3, t4, CPU_cum;
 		if (simFlag==STEADY_STATE){
 			bool adapt;
 			int count = 0;
@@ -29,20 +28,19 @@ namespace PRS{
 		}
 		else if (simFlag==TRANSIENT){
 			CPU_cum = .0;
+			double assemblyT,hsolverT,psolverT,gradT;
+			int KSPiter;
 			while ( !pSimPar->finishSimulation() ){
-				t1 = MPI_Wtime();
 				pElliptic_eq->solver(theMesh);
-				pHyperbolic_eq->solver(theMesh,timeStep);
+				pElliptic_eq->getCPUtime(assemblyT,psolverT,gradT,KSPiter);
+				hsolverT = pHyperbolic_eq->solver(theMesh,timeStep);
 				#ifndef NOADAPTATION
 					adaptation();
 				#endif
-				t2 = MPI_Wtime();
-				CPU_cum += t2 - t1;
-				cout << setprecision(2) << fixed << "CPU time (step/cumulated)[s] " << t2 - t1 << "\t" << CPU_cum << endl;
-
+				LogFiles(timeStep,assemblyT,psolverT,gradT,KSPiter,hsolverT,UPDATELG,pSimPar->getOutputPathName(),pSimPar->useRestart(),
+						pSimPar->getStepOutputFile(),pSimPar->getCumulativeSimulationTime(),pSimPar->getCPU_time());
 			}
 		}
-		PetscPrintf(PETSC_COMM_WORLD,"\n\nEnd of simulation:\n-----------------------------------------------\n");
 		return 0;
 	}
 }

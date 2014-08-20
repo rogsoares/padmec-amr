@@ -148,7 +148,7 @@ void printSaturation(ofstream &fid, pMesh theMesh, PRS::PhysicPropData* pPPData,
 	int nnodes = M_numVertices(theMesh);
 	for(int i=0; i<nnodes; i++){
 		pPPData->getSaturation(i,Sw);
-		fid << Sw << endl;
+		fid << setprecision(8) << fixed << Sw << endl;
 	}
 }
 

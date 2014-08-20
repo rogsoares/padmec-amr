@@ -18,7 +18,7 @@
 #	_SEEKFORBUGS_           : Debuggin in general (whole code)
 #    NOADAPTATION			: Compile code without mesh adaptation feature
 #
-CXXFLAGS=-DPARALLEL -O3 -DNOADAPTATION
+CXXFLAGS=-DPARALLEL -g -DNOADAPTATION
 #CXXFLAGS=-DPARALLEL -g -Wall -Wunused -D__ADAPTATION_DEBUG__ -D__ERROR_ANALYSIS_DEBUG__ -D_SEEKFORBUGS_ -DTRACKING_PROGRAM_STEPS -DFVPO
 # scientific_application folder is where libraries are installed 
 APP_DIR=$(HOME)/scientific_applications
@@ -72,7 +72,7 @@ OBJS1=$(OBJ_DIR)/main.o $(OBJ_DIR)/SIMULATION_core.o $(OBJ_DIR)/SIMULATION_core_
 	$(OBJ_DIR)/EBFV1__DefectCorrectionSolver.o $(OBJ_DIR)/EBFV1__MatrixFreeSolver.o $(OBJ_DIR)/EBFV1_pressure_gradient.o $(OBJ_DIR)/EBFV1_velocityField.o \
 	$(OBJ_DIR)/EBFV1_hyperbolic.o $(OBJ_DIR)/EBFV1_hyperbolic-adaptative.o $(OBJ_DIR)/EBFV1_advectiveTerm.o $(OBJ_DIR)/EBFV1_advanceSaturation.o \
 	$(OBJ_DIR)/SaturationGradient.o \
-	$(OBJ_DIR)/MeshData.o $(OBJ_DIR)/Restart.o $(OBJ_DIR)/OilProductionManagement.o \
+	$(OBJ_DIR)/MeshData.o $(OBJ_DIR)/OilProductionManagement.o \
 	$(OBJ_DIR)/EBFV1_preprocessor.o $(OBJ_DIR)/Calculate-Cij-parallel.o $(OBJ_DIR)/Calculate-Vi-parallel.o $(OBJ_DIR)/EBFV1__pre-processors.o \
 	$(OBJ_DIR)/EBFV1-2D-pp.o $(OBJ_DIR)/EBFV1-3D-pp.o $(OBJ_DIR)/setCorrectNumberOfRemoteCopies.o $(OBJ_DIR)/validate-EBFV1.o \
     $(OBJ_DIR)/LoadMeshAdaptationParameters.o  $(OBJ_DIR)/load_EBFV1_PreProcessorData.o $(OBJ_DIR)/auxiliar.o $(OBJ_DIR)/SimulatorParameters.o \

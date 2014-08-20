@@ -40,9 +40,17 @@ namespace PRS{           // PRS: Petroleum Reservoir Simulator
 		EBFV1_elliptic(pMesh, PhysicPropData *, SimulatorParameters *, GeomData *, MeshData *);
 		~EBFV1_elliptic();
 		double solver(pMesh);
-		double pressureGradient(pMesh theMesh);
+
+		void getCPUtime(double &assemblyT, double &solverT, double &gradientT, int &KSPiter){
+			assemblyT = _assemblyT;
+			solverT = _solverT;
+			gradientT = _gradientT;
+			KSPiter = _KSPiter;
+		}
+
 
 	private:
+
 		bool DF_key;
 		dblarray Lij;
 		Vectors* pVec;
@@ -64,9 +72,8 @@ namespace PRS{           // PRS: Petroleum Reservoir Simulator
 		double solveIteratively();
 
 		// Associate to mesh nodes new pressure values computed
+		double pressureGradient(pMesh theMesh);
 		double updatePressure(pMesh theMesh);
-		
-
 		void calculatePressureGradient();
 		void resetPressureGradient();
 		void calc_p_grad_1(int,int);
@@ -86,22 +93,22 @@ namespace PRS{           // PRS: Petroleum Reservoir Simulator
 		/* MatMultUser is called several time by Petsc during KSP solver until convergence be reached. */
 		static int MatMultUser(Mat mat, Vec u, Vec y){
 			void *ctx;
-			PetscErrorCode ierr = MatShellGetContext(mat,&ctx);  CHKERRQ(ierr);
+			MatShellGetContext(mat,&ctx);
 			Data_struct* mats = (Data_struct*)(ctx);
 
 			// the desired multiplication => A*u = y, where A = EF+G
 			// step 1: y = G*u;
-			ierr = MatMult(mats->G,u,y); CHKERRQ(ierr);
+			MatMult(mats->G,u,y);
 
 			// step 2:  y = y + (E*F*u)_dom1 + (E*F*u)_dom2 + ... + (E*F*u)_domN
 			for (int i=0; i<mats->ndom; i++){
 				// z = [F]*u
-				ierr = VecZeroEntries(mats->z); CHKERRQ(ierr);
-				ierr = MatMult(mats->F[i],u,mats->z); CHKERRQ(ierr);
+				VecZeroEntries(mats->z);
+				MatMult(mats->F[i],u,mats->z);
 				// y = y + ([E]*z)_dom_i
-				ierr = MatMultAdd(mats->E[i],mats->z,y,y); CHKERRQ(ierr);
+				MatMultAdd(mats->E[i],mats->z,y,y);
 			}
-			return ierr;
+			return 0;
 		}
 
 		/*set well contribution to right hand side*/
@@ -115,6 +122,14 @@ namespace PRS{           // PRS: Petroleum Reservoir Simulator
 
 		/*Free memory from matrices related to Data_struct*/
 		double freeMemory();
+
+		double one_eighth;
+
+		// CPU time and monitoring
+		int _KSPiter;
+		double _assemblyT;
+		double _solverT;
+		double _gradientT;
 
 
 		PhysicPropData *pPPData;

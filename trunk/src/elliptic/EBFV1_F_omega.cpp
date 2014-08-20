@@ -41,8 +41,8 @@ int EBFV1_elliptic::gradient_F_edges(Mat F, double *Cij, int dom, int idx0, int 
 			idxm[dim+i] = pos2+i;
 		}
 		int idxn[2] = {id0-1,id1-1};	// says on which columns Fij must be assembled into Fg
-		ierr = MatSetValues(F,2*dim,idxm,1,&idxn[0],Fij_column1,ADD_VALUES);CHKERRQ(ierr);
-		ierr = MatSetValues(F,2*dim,idxm,1,&idxn[1],Fij_column2,ADD_VALUES);CHKERRQ(ierr);
+		MatSetValues(F,2*dim,idxm,1,&idxn[0],Fij_column1,ADD_VALUES);
+		MatSetValues(F,2*dim,idxm,1,&idxn[1],Fij_column2,ADD_VALUES);
 		return 0;
 	}
 }
