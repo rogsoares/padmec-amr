@@ -1,11 +1,10 @@
 #include "PhysicPropData.h"
 
-Matrix<double> *pGrad_dom;	// each pointer is a matrix nx3
+Matrix<double> *pGrad_dom;		// each pointer is a matrix nx3
 Matrix<double> pressure;
 Matrix<double> SwGrad;			// a unique matrix nnodesx3 for whole mesh
-Matrix<double> Sw;		// for domain
-Matrix<double> Sw_old;		// for domain
-
+Matrix<double> Sw;				// for domain
+Matrix<double> Sw_old;			// for domain
 Matrix<double> Sw_tmp;
 Matrix<double> p_tmp;
 
@@ -54,13 +53,12 @@ namespace PRS{
 	}
 
 	void PhysicPropData::allocateData(SimulatorParameters *pSimPar, GeomData* pGCData, int numnodes){
-		int ndom = pSimPar->getNumDomains();
-		const int* pNumNodesDom = pSimPar->getNumNodesDomain();
+		int ndom = pGCData->getNumDomains();
 		pGrad_dom = new Matrix<double>[ndom];
 		velocity = new Matrix<double>[ndom];
 		SwGrad_dom = new Matrix<double>[ndom];
 		for (int k=0; k<ndom; k++){
-			int nrows = pNumNodesDom[k];
+			int nrows = pGCData->getNumNodesPerDomain(k);
 			int nedges = pGCData->getNumEdgesPerDomain(k);
 			pGrad_dom[k].allocateMemory(nrows,3);
 			pGrad_dom[k].initialize(.0);

@@ -27,8 +27,9 @@ namespace PRS{
 		// read numeric parameters
 		ifstream fid;
 		fid.open("simulation-parameters/filenameParameters.dat");
-		if ( !fid.is_open() ) throw Exception(__LINE__,__FILE__,"filenameParameters.dat could not be opened or it does not exist\n");
-
+		if ( !fid.is_open() ){
+			throw Exception(__LINE__,__FILE__,"filenameParameters.dat could not be opened or it does not exist\n");
+		}
 
 		setPositionToRead(fid,"path:");
 		fid >> parametersPath;
@@ -83,7 +84,6 @@ namespace PRS{
 		weightWellFlowRateByVolume(theMesh,pGCData);
 		checkIfRankHasProductionWell();
 		setInitialOilVolume(theMesh,pGCData);
-		setNumElementDomain(theMesh);
 		setLocalNodeIDNumbering(theMesh);
 #ifdef TRACKING_PROGRAM_STEPS
 		cout << "TRACKING_PROGRAM_STEPS: SimulatorParameters::initialize\tOUT\n";
@@ -91,15 +91,6 @@ namespace PRS{
 	}
 
 	void SimulatorParameters::deallocateData(){
-		// MWells.clear(); 			WARNING: Cannot be cleaned
-		// setOfDomains.clear(); 	WARNING: Cannot be cleaned
-		// mapSL_edge.clear();		WARNING: Cannot be cleaned
-		// mapSL_node.clear(); 		WARNING: Cannot be cleaned
-		// map_koef.clear();		WARNING: Cannot be cleaned
-		// mapRockProp.clear(); 	WARNING: Cannot be cleaned
-		// mapBC.clear();			WARNING: Cannot be cleaned
-		// mapSaturation.clear();	WARNING: Cannot be cleaned
-		// mapPC.clear();			WARNING: Cannot be cleaned
 		mapNodesOnWell.clear();
 		_mapNodesDomain.clear();
 		delete[] numNodesDom; numNodesDom = 0;
@@ -110,6 +101,15 @@ namespace PRS{
 		case 1:{
 			int ndom;
 			cout << prepFilename().c_str() << endl;
+
+			ifstream fid;
+			fid.open(prepFilename().c_str());
+			if ( !fid.is_open() ){
+				char msg[256]; sprintf(msg,"File: %s \ncould not be opened or it doesn't exist. Verify if path is correct.\n",prepFilename().c_str());
+				throw Exception(__LINE__,__FILE__,msg);
+			}
+			fid.close();
+
 			// load mesh using FMDB
 			M_load(theMesh,prepFilename().c_str());
 			
@@ -195,7 +195,7 @@ namespace PRS{
 						throw Exception(__LINE__,__FILE__,"Any VTK file has been generated using the provided case file. Please, check carefully for mistypes\n");
 					}
 					lastpvi = i-2;
-					PVI_accumulated = double(lastpvi/100.0);
+					PVI_cumulative = double(lastpvi/100.0);
 					char strtmp2[512]; sprintf(strtmp2,"%s__0-of-1__step-%d.vtk",expofName.c_str(),lastpvi-1);
 					restartFilename = strtmp2;
 					rfid.close();
@@ -565,9 +565,6 @@ namespace PRS{
 			mapRockProp[dom] = rockprop;
 			K_tmp.clear();
 			stream1.clear();
-
-			//if (dim==2)
-			//checkPermeabilityTensor();
 		}
 		if (!P_pid()) cout << endl;
 		if (mapRockProp.size()==0)
@@ -582,34 +579,28 @@ namespace PRS{
 		while( 1 ){
 			fid >> str;
 			if (!str.compare("end")) break;
-
 			cout << str << endl;
-
 			int flag = atoi(str.c_str());
-
 			fid >> str;
 			double val = strtod(str.c_str(), 0);
-
 			cout << str << endl;
 
-			// for every flag number create a new BdryConditionType pointer and add
-			// inform type of condition and its value.
+			// for every flag number create a new BdryConditionType pointer and add inform type of condition and its value.
 			bct = new BdryConditionType;
 			bct->type = whatmap;
 			bct->val = val;
 
-			// two map container are used: one for saturation and other to dirichlet/neumann
-			// boundary conditions
+			// two map container are used: one for saturation and other to dirichlet/neumann boundary conditions
 			if (!whatmap.compare("saturation")){
-				//printf("mapSaturation[flag] = %d\n",flag);
+				printf("mapSaturation[flag] = %d\n",flag);
 				mapSaturation[flag] = bct;
-				//printf("val = %f\n",val);
+				printf("val = %f\n",val);
 			}
 			else{
 				mapBC[flag] = bct;
-				//printf("flag: %d has boundary condition: %f\n",flag,bct->val);
+				printf("flag: %d has boundary condition: %f\n",flag,bct->val);
 			}
-		}//throw 1;
+		}
 	}
 
 	void SimulatorParameters::getWells(ifstream &fid){
@@ -636,16 +627,14 @@ namespace PRS{
 				well_info.isProduction = false;
 			}
 			MWells[flag] = well_info;
+			//cout << "Flag: " << flag << "\tFlow: " << val << endl;
 		}
 	}
 
 	string SimulatorParameters::getFilename(string meshName){
-		char s1[256];
+		char s1[256], s4[256];
 		generateFilename(meshName,s1);
-
-		char s4[256];
 		sprintf(s4,"%s_CFL%.2f-%d-of-%d",s1,CFL(),P_pid(),P_size());
-
 		string s5(s4);
 		return s5;
 	}
@@ -655,11 +644,9 @@ namespace PRS{
 		string::size_type start = str.find_last_of("/");
 		start = (start == string::npos)?0:start;
 		string::size_type end = str.find_last_of(".");
-
 		char buffer[256];
 		memset( buffer, '\0', 256 );
 		str.copy(buffer,end-start,start);
-
 		sprintf(filename,"%s",buffer);
 	}
 
@@ -676,90 +663,48 @@ namespace PRS{
 		mapPC["(x) ASM"]       = PCASM;
 	}
 
-
-	void SimulatorParameters::setNumElementDomain(pMesh theMesh){
-		pEntity elem;
-		bool check = true;
-		
-		if (!setOfDomains.size()){
-		  throw Exception(__LINE__,__FILE__,"Number of domains null!");
-		}
-		
-		if (!M_numFaces(theMesh)){
-		  throw Exception(__LINE__,__FILE__,"Number of mesh elements null!");
-		}
-
-		numNodesDom = new int[setOfDomains.size()];
-		int k = 0; //numNodesDom counter
-		//AOMD::AOMD_Util::Instance()->exportGmshFile("setNumElementDomain.msh",theMesh);
-		std::set<int> setIDs;
-		std::set<int>::iterator iter = setOfDomains.begin();
-
-		// loop over domains flags
-		for (; iter!=setOfDomains.end();iter++){
-			// loop over triangles
-			FIter fit = M_faceIter( theMesh );
-			while ( (elem = FIter_next(fit)) ) {
-				if ( !theMesh->getRefinementDepth(elem) ){
-					// check if element flag is the same as domain flag
-					// if true, store all element nodes IDs into a container
-					// at the end, the container size correspond to the number of nodes to domain dom.
-					int flag = EN_getFlag(elem);
-					if ( flag==*iter ){
-						for (int i=0;i<3;i++){
-							int nodeID = EN_id(elem->get(0,i));
-							setIDs.insert(nodeID);
-						}
-					}
-				}
-			}
-			FIter_delete(fit);
-			numNodesDom[k] = setIDs.size();
-			_mapNodesDomain[k] = setIDs;
-			k++;
-
-			if (check){
-				if (!setIDs.size()){
-					throw Exception(__LINE__,__FILE__,"Num nodes per domain null!");
-				}
-				else{
-					check = false;
-				}
-			}
-			setIDs.clear();
-		}
-	}
-
 	void SimulatorParameters::setLocalNodeIDNumbering(pMesh theMesh){
-		int k = 0;
-		pEntity elem;
-		std::set<pEntity> nodesDomain;
-		std::set<int>::iterator iter = setOfDomains.begin();
-		for(;iter!=setOfDomains.end();iter++){
-			FIter fit = M_faceIter( theMesh );
-			while ( (elem = FIter_next(fit)) ) {
-				if ( !theMesh->getRefinementDepth(elem) ){
-//					if (!elem->getClassification()){
-//						throw Exception(__LINE__,__FILE__,"Error!");
+//		int k = 0;
+//		pEntity elem;
+//		std::set<pEntity> nodesDomain;
+//		std::set<int>::iterator iter = setOfDomains.begin();
+//		for(;iter!=setOfDomains.end();iter++){
+//			if (theMesh->getDim()==2){
+//			FIter fit = M_faceIter( theMesh );
+//			while ( (elem = FIter_next(fit)) ) {
+//				if ( !theMesh->getRefinementDepth(elem) ){
+//					int flag = EN_getFlag(elem);
+//					if ( flag==*iter ){
+//						for (int i=0;i<3;i++){
+//							nodesDomain.insert(elem->get(0,i));
+//						}
 //					}
-					int flag = EN_getFlag(elem);
-					if ( flag==*iter ){
-						for (int i=0;i<3;i++){
-							nodesDomain.insert(elem->get(0,i));
-						}
-					}
-				}
-			}
-			FIter_delete(fit);
-
-			int i = 0;
-			char tag[4]; sprintf(tag,"%d",k++);	// flag node with as k-th domain
-			std::set<pEntity>::iterator iter_global = nodesDomain.begin();
-			for(;iter_global!=nodesDomain.end();iter_global++){
-				EN_attachDataInt(*iter_global,MD_lookupMeshDataId(tag),i++);
-			}
-			nodesDomain.clear();
-		}
+//				}
+//			}
+//			FIter_delete(fit);}
+//			else{
+//				RIter rit = M_regionIter( theMesh );
+//				while ( (elem = RIter_next(rit)) ) {
+//					if ( !theMesh->getRefinementDepth(elem) ){
+//						int flag = EN_getFlag(elem);
+//						if ( flag==*iter ){
+//							for (int i=0;i<4;i++){
+//								nodesDomain.insert(elem->get(0,i));
+//							}
+//						}
+//					}
+//				}
+//				RIter_delete(rit);
+//			}
+//
+//			int i = 0;
+//			char tag[4]; sprintf(tag,"%d",k++);	// flag node with as k-th domain
+//			std::set<pEntity>::iterator iter_global = nodesDomain.begin();
+//			for(;iter_global!=nodesDomain.end();iter_global++){
+//				EN_attachDataInt(*iter_global,MD_lookupMeshDataId(tag),i++);
+//			}
+//			nodesDomain.clear();
+//		}
 	}
 
 }

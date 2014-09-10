@@ -38,22 +38,35 @@ void DijVector(pFace face, pVertex &oppositeVertex, std::vector<double> &Dij){
 	v.clear();
 }
 
-
+// calcuates Dij vector: It points outer of domain
 void DijVector(pFace face, pVertex &oppositeVertex, double *Dij){
 	int i;
 	double xyz[3][3], xyzOV[3];
-	for (i=0 ;i<3; i++) V_coord( (pVertex)face->get(0,i), xyz[i] );
+
+	// get all vertices coordinates
+	for (i=0 ;i<3; i++){
+		V_coord( (pVertex)face->get(0,i), xyz[i] );
+	}
+	// get opposite vertex to boundary face coordinates
 	V_coord( oppositeVertex, xyzOV );
-	double a[3] = { xyz[1][0]-xyz[0][0], xyz[1][1]-xyz[0][1], xyz[1][2]-xyz[0][2] } ;
-	double b[3] = { xyz[2][0]-xyz[0][0], xyz[2][1]-xyz[0][1], xyz[2][2]-xyz[0][2] } ;
-	double c[3] = { xyzOV[0]-xyz[0][0], xyzOV[1]-xyz[0][1], xyzOV[2]-xyz[0][2] } ;
+
+	double a[3] = { xyz[1][0]-xyz[0][0], xyz[1][1]-xyz[0][1], xyz[1][2]-xyz[0][2] } ;	// vector over face's edge
+	double b[3] = { xyz[2][0]-xyz[0][0], xyz[2][1]-xyz[0][1], xyz[2][2]-xyz[0][2] } ;	// vector over another face's edge
+	double c[3] = { xyzOV[0]-xyz[0][0], xyzOV[1]-xyz[0][1], xyzOV[2]-xyz[0][2] } ;		// vector from opposite vertex to outer face
+
+	// Dij: Dij = a x b
 	double _Dij[3]={.0,.0,.0};
 	computeCrossProduct(a,b,_Dij);
-	if ( computeDotProduct( c, _Dij ) > .0 ){
-		for (i=0;i<3;i++)
+
+	// if inner product between Dij and c vector is negative, it means Dij points inside domain
+	if ( computeDotProduct( c, _Dij ) < .0 ){
+		for (i=0;i<3;i++){
 			_Dij[i] = -_Dij[i];
+		}
 	}
-	for (i=0;i<3;i++) Dij[i] = _Dij[i]/6.0;
+	for (i=0;i<3;i++){
+		Dij[i] = _Dij[i]/6.0;
+	}
 }
 
 void getFCenter(pFace face, double *center){

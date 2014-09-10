@@ -9,6 +9,10 @@
 
 namespace PRS{
 	void GeomData::calculateNumFaces(pMesh theMesh){
+		if (theMesh->getDim()==3){
+			return;
+		}
+
 		int ndom = getNumDomains();
 		const int* domlist = getDomainList();
 		int dim = theMesh->getDim();
@@ -27,26 +31,35 @@ namespace PRS{
 			}
 			FIter_delete(fit);
 			numDomFaces[i] = counter;
+			if (!numDomFaces[i]){
+				throw Exception(__LINE__,__FILE__,"Number of faces: 0.");
+			}
 		}
 	}
 
-	void GeomData::calculateNumFacesTmp(pMesh theMesh){
+	void GeomData::calculateNumTetras(pMesh theMesh){
+		if (theMesh->getDim()==2){
+			return;
+		}
+
 		int ndom = getNumDomains();
 		const int* domlist = getDomainList();
 		int dim = theMesh->getDim();
-		numDomFaces_tmp = new int[ndom];
-		pEntity face;
+		numDomTetras = new int[ndom];
+		pEntity tetra;
 
 		for (int i=0; i<ndom; i++){
 			int counter = 0;
-			FIter fit = M_faceIter(theMesh);
-			while ( (face = FIter_next(fit)) ){
-				if (getFaceFlag(face)==domainList[i]){
+			RIter rit = M_regionIter(theMesh);
+			while ( (tetra = RIter_next(rit)) ){
+				int flag1 = getTetraFlag(tetra);
+				int flag2 = domainList[i];
+				if (flag1==flag2){
 					counter++;
 				}
 			}
-			FIter_delete(fit);
-			numDomFaces_tmp[i] = counter;
+			RIter_delete(rit);
+			numDomTetras[i] = counter;
 		}
 	}
 
@@ -83,6 +96,9 @@ namespace PRS{
 				RIter_delete(rit);
 			}
 			numNodesPerDomain[i] = (int)nodeSet.size();
+			if (!numNodesPerDomain[i]){
+				throw Exception(__LINE__,__FILE__,"Number of nodes: 0.");
+			}
 			nodeSet.clear();
 		}
 	}
@@ -124,6 +140,10 @@ namespace PRS{
 				RIter_delete(rit);
 			}
 			numBdryNodesPerDomain[i] = (int)nodeSet.size();
+			if (!numBdryNodesPerDomain[i]){
+				throw Exception(__LINE__,__FILE__,"Number of boundary nodes 0!");
+			}
+			//			cout << "numBdryNodesPerDomain: " << numBdryNodesPerDomain[i] << endl;exit(1);
 			nodeSet.clear();
 		}
 	}
@@ -135,8 +155,8 @@ namespace PRS{
 		numDomEdges = new int[ndom];
 		//this->domainList = new int[ndom];
 		//		for (int i=0; i<ndom; i++){
-			//			this->domainList[i] = domainList[i];
-			//		}
+		//			this->domainList[i] = domainList[i];
+		//		}
 		pEntity face, tetra;
 		std::set<pEntity> edgeList;
 		for (int i=0; i<ndom; i++){
@@ -156,7 +176,7 @@ namespace PRS{
 				while ( (tetra = RIter_next(rit)) ){
 					int tetra_flag = getTetraFlag(tetra);
 					if (tetra_flag==domainList[i]){
-						for (int j = 0; j<4; j++){
+						for (int j = 0; j<6; j++){
 							edgeList.insert(tetra->get(1,j));
 						}
 					}
@@ -164,11 +184,18 @@ namespace PRS{
 				RIter_delete(rit);
 			}
 			numDomEdges[i] = (int)edgeList.size();
+			if (!numDomEdges[i]){
+				throw Exception(__LINE__,__FILE__,"Number of boundary faces: 0.");
+			}
 			edgeList.clear();
 		}
 	}
 
 	void GeomData::calculateNumBDRYEdges(pMesh theMesh){
+		if (theMesh->getDim()==3){
+			return;
+		}
+
 		int ndom = getNumDomains();
 		const int* domlist = getDomainList();
 		numDomBDRYEdges = new int[ndom];
@@ -188,6 +215,9 @@ namespace PRS{
 			}
 			FIter_delete(fit);
 			numDomBDRYEdges[i] = (int)edgeList.size();
+			if (!numDomBDRYEdges[i]){
+				throw Exception(__LINE__,__FILE__,"Number of boundary faces: 0.");
+			}
 			edgeList.clear();
 		}
 		numExtBdryEdges = 0;
@@ -199,6 +229,53 @@ namespace PRS{
 		}
 		EIter_delete(eit);
 	}
+
+	void GeomData::calculateNumBDRYFaces(pMesh theMesh){
+		if (theMesh->getDim()==2){
+			return;
+		}
+
+		int ndom = getNumDomains();
+		const int* domlist = getDomainList();
+		numDomBDRYFaces = new int[ndom];
+		pEntity tetra, face;
+		std::set<pEntity> faceList;
+		for (int i=0; i<ndom; i++){
+			RIter rit = M_regionIter(theMesh);
+			while ( (tetra = RIter_next(rit)) ){
+				if (getTetraFlag(tetra)==domainList[i]){
+					for (int j = 0; j<4; j++){
+						face = (pEntity)tetra->get(2,j);
+						int faceflag = getFaceFlag(face);
+						if ( faceflag!= domainList[i]){
+							faceList.insert(face);
+						}
+					}
+				}
+			}
+			RIter_delete(rit);
+			numDomBDRYFaces[i] = (int)faceList.size();
+			//cout << "numDomBDRYFaces = " << numDomBDRYFaces[0] << endl;
+			if (!numDomBDRYFaces[i]){
+				throw Exception(__LINE__,__FILE__,"Number of boundary faces: 0.");
+			}
+			faceList.clear();
+		}
+
+		// Calculate number of external boundary faces (triangles)
+		numExtBdryFaces = 0;
+		FIter fit = M_faceIter(theMesh);
+		while ( (face=FIter_next(fit)) ){
+			if (F_numRegions(face)==1){
+				numExtBdryFaces++;
+			}
+		}
+		FIter_delete(fit);
+		if (!numExtBdryFaces){
+			throw Exception(__LINE__,__FILE__,"Any external face detected!");
+		}
+	}
+
 	void GeomData::calculateEdgeProperties(pMesh theMesh){
 		int ndom = getNumDomains();
 		const int* domlist = getDomainList();
@@ -209,6 +286,8 @@ namespace PRS{
 		int i,j;
 		int dim = theMesh->getDim();
 		pEntity edge;
+
+		cout << "Num. Edges: " << M_numEdges(theMesh) << endl;
 		for (int dom = 0; dom<ndom; dom++){
 			int row = 0;
 			int dom_flag = domainList[dom];
@@ -248,38 +327,43 @@ namespace PRS{
 			EIter_delete(eit);
 		}
 		setSmallestEdgeLength(P_getMinDbl(delta_x));
-		cout << setprecision(7) << "smalest = " << delta_x << endl;
 
+		// Calculate versor for external boundary edges
 		int tnedges = 0;
 		int row = 0;
-		EIter eit = M_edgeIter(theMesh);
-		while ( (edge = EIter_next(eit)) ){
-			tnedges++;
-			if (E_numFaces(edge)==1){
-				E_getVerticesCoord(edge,Icoord,Jcoord);
-				for (j=0; j<dim; j++){
-					Lij[j] = .0;
-				}
-				makeVector(Jcoord,Icoord,Lij);
-				for (i=0; i<dim; i++){
-					vec[i] = Lij[i];
-				}
-				elength = .0;
-				for (i=0; i<dim; i++){
-					elength += vec[i]*vec[i];
-				}
-				elength = sqrt(elength);
 
-				for (i=0; i<dim; i++){
-					vec[i] /= elength;
+		if (dim==2){
+			EIter eit = M_edgeIter(theMesh);
+			while ( (edge = EIter_next(eit)) ){
+				tnedges++;
+				if (E_numFaces(edge)==1){
+					E_getVerticesCoord(edge,Icoord,Jcoord);
+					for (j=0; j<dim; j++){
+						Lij[j] = .0;
+					}
+					makeVector(Jcoord,Icoord,Lij);
+					for (i=0; i<dim; i++){
+						vec[i] = Lij[i];
+					}
+					elength = .0;
+					for (i=0; i<dim; i++){
+						elength += vec[i]*vec[i];
+					}
+					elength = sqrt(elength);
+
+					for (i=0; i<dim; i++){
+						vec[i] /= elength;
+					}
+					versor_ExtBdryElem[0].setValue(row,0,vec[0]);
+					versor_ExtBdryElem[0].setValue(row,1,vec[1]);
+					versor_ExtBdryElem[0].setValue(row,2,vec[2]);
+					row++;
 				}
-				EBE_1[0].setValue(row,0,vec[0]);
-				EBE_1[0].setValue(row,1,vec[1]);
-				EBE_1[0].setValue(row,2,vec[2]);
-				row++;
 			}
+			EIter_delete(eit);
+			this->setTotalNumberOfEdges(tnedges);
 		}
-		EIter_delete(eit);
-		this->setTotalNumberOfEdges(tnedges);
+		else{
+		}
 	}
 }

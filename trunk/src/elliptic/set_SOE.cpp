@@ -60,15 +60,57 @@ namespace PRS{
 				pGCData->getCij(dom,i,Cij);
 				pGCData->getEdge(dom,i,idx0,idx1,idx0_global,idx1_global);
 				pGCData->getID(dom,idx0,idx1,id0,id1);
+
+
+//				cout << "id: " << id0 << "  " << id1 << endl;
+//				cout << "idx: " << idx0 << "  " << idx1 << endl;
+//				cout << "idx_global: " << idx0_global << "  " << idx1_global << endl;
+//				cout << setprecision(8) << "Cij: " << Cij[0] << "  " << Cij[1] << " " << Cij[2] << endl;
+
+
 				divergence_E(E[dom],Cij,i,dom,dom_flag,idx0_global,idx1_global,id0,id1,dim);
 				divergence_G(G_tmp,Cij,i,dom,dom_flag,idx0_global,idx1_global,id0,id1,dim);
 				gradient_F_edges(F[dom],Cij,dom,idx0,idx1,id0,id1,dim);
+
+				//break;
 			}
 			gradient_F_bdry(F[dom],dom);
 			assemblyMatrix(F[dom]);
 			assemblyMatrix(E[dom]);
 		}
 		assemblyMatrix(G_tmp);
+
+//		printMatrixToFile(G_tmp,"Matrix_G.txt");
+//		printMatrixToFile(F[0],"Matrix_F.txt");
+//		printMatrixToFile(E[0],"Matrix_E.txt");
+
+//		Vec solvec;
+//		VecCreate(PETSC_COMM_WORLD,&solvec);
+//		VecSetSizes(solvec,PETSC_DECIDE,np);
+//		VecSetFromOptions(solvec);
+//
+//		pEntity e;
+//		double coord[3];
+//		int idx = 0;
+//		VIter vit = M_vertexIter(theMesh);
+//		while( (e = VIter_next(vit)) ) {
+//			V_coord(e,coord);
+//			double sol = coord[1];
+//			VecSetValues(solvec,1,&idx,&sol,INSERT_VALUES);
+//			idx++;
+//		}
+//		VIter_delete(vit);
+//		VecAssemblyBegin(solvec);
+//		VecAssemblyEnd(solvec);
+//
+//		Vec grad;
+//		VecCreate(PETSC_COMM_WORLD,&grad);
+//		VecSetSizes(grad,PETSC_DECIDE,dim*np);
+//		VecSetFromOptions(grad);
+//		MatMult(F[0],solvec,grad);
+//		printVectorToFile(grad,"grad.txt");
+//
+//		exit(1);
 
 		// Get from matrix G its contribution to RHS. matvec_struct->G correspond to all free nodes
 		set_SOE(mesh,G_tmp,matvec_struct->G,true,matvec_struct->RHS,true,true);
@@ -216,6 +258,7 @@ namespace PRS{
 				throw Exception(__LINE__,__FILE__,"Flow rate NULL!");
 			}
 
+			cout << "well-flag: " << well_flag << endl;
 
 			// get all flagged node IDs for that well
 			if (!mit->second.size()){
@@ -251,6 +294,7 @@ namespace PRS{
 				 */
 				if (pSimPar->isNodeFree(well_flag)){
 // 										cout << "---------------------------------------------\n";
+// 										cout << setprecision(8);
 // 										cout << "Node = " << node_ID << endl;
 // 										cout << "Qt = " << Qt << endl;
 // 										cout << "Qi = " << Qi << endl;

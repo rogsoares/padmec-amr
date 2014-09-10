@@ -51,9 +51,9 @@ int SIMULATION_core::initialize(int argc, char **argv){
 		if (dim<2 || dim>3){
 		  throw Exception(__LINE__,__FILE__,"Mesh dimension unknown.");
 		}
-		if (dim==3){
-			throw Exception(__LINE__,__FILE__,"Only 2-D adaptation allowed for while.");
-		}
+//		if (dim==3){
+//			throw Exception(__LINE__,__FILE__,"Only 2-D adaptation allowed for while.");
+//		}
 
 		// 2- Error Analysis Pointer
 #ifndef NOADAPTATION
@@ -95,7 +95,6 @@ int SIMULATION_core::initialize(int argc, char **argv){
 	 *  	- boundary and initial conditions, mapping
 	 */
 	pGCData->initilize(theMesh,pSimPar->setOfDomains);
-	pGCData->dataTransfer(theMesh);
 	pSimPar->initialize(pGCData,theMesh);
 	pPPData->initialize(pMData,pSimPar,theMesh,false,pGCData);
 	pMData->initialize(theMesh,pGCData);

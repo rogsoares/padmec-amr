@@ -84,6 +84,7 @@ namespace PRS
 		// check if an edge belongs to domain
 		bool nodeBelongToDomain(pEntity , const int &);
 		bool edgeBelongToDomain(pEntity , const int &);
+		bool faceBelongToDomain(pEntity , const int &);
 		int getDomainFlag(pEntity node);
 
 		// check if an edge belongs to boundary domain (any domain)
@@ -136,11 +137,16 @@ namespace PRS
 		void calculateNumFaces(pMesh);
 		void calculateNumFacesTmp(pMesh);
 		void calculateNumBDRYEdges(pMesh);
+		void calculateNumTetras(pMesh);
+		void calculateNumBDRYFaces(pMesh);
+
 		void calculateNumNodes(pMesh);
 		void calculateNumBdryNodes(pMesh );
+
+		// calculate: edges length, edges versor (domain and boundary)
 		void calculateEdgeProperties(pMesh theMesh);
-		void allocatePointers(int);
-		void deallocatePointers();
+		void allocatePointers(int,int);
+		void deallocatePointers(int);
 
 		int getNumEdgesPerDomain(int i) const{
 			return numDomEdges[i];
@@ -150,25 +156,21 @@ namespace PRS
 			return numDomBDRYEdges[i];
 		}
 
+		int getNumBdryFacesPerDomain(int i) const{
+			return numDomBDRYFaces[i];
+		}
+
 		int getNumNodesPerDomain(int i) const{
 			return numNodesPerDomain[i];
 		}
 
 		void cleanData(pMesh);
 
+		// needed to create an indexed data structured and though get fast access (direct access, O(1)) to any data.
 		void mappingNodesIds(pMesh theMesh);
 
 		// creates a mapping for saturation and pressure solution based in a new mesh (the adapted mesh)
 		void mappingNodesIds_Tmp(pMesh theMesh);
-
-		void getFace(int dom,int row,int& idx0,int& idx1,int& idx2,int& idx0_global,int& idx1_global,int& idx2_global){
-			idx0 = faces[dom].getValue(row,0);
-			idx1 = faces[dom].getValue(row,1);
-			idx2 = faces[dom].getValue(row,2);
-			idx0_global = faces[dom].getValue(row,3);
-			idx1_global = faces[dom].getValue(row,4);
-			idx2_global = faces[dom].getValue(row,5);
-		}
 
 		void getEdge(int dom, int row, int &idx_0, int &idx_1, int &idx0_global, int &idx1_global){
 			idx_0 = edges[dom].getValue(row,0);
@@ -217,67 +219,81 @@ namespace PRS
 		}
 
 		void getBdryEdge(int dom, int row, int &idx_0, int &idx_1){
-			idx_0 = edges_bdry[dom].getValue(row,0);
-			idx_1 = edges_bdry[dom].getValue(row,1);
+			idx_0 = edges_bdry[dom].getValue(row,0);		// index number for boundary vertex ID for domain k
+			idx_1 = edges_bdry[dom].getValue(row,1);		// index number for boundary vertex ID for domain k
 		}
 
 		void getBdryEdge(int dom, int row, int &idx_0, int &idx_1, int &idx0_global, int &idx1_global){
-			idx_0 = edges_bdry[dom].getValue(row,2);
-			idx_1 = edges_bdry[dom].getValue(row,3);
-			idx0_global = edges_bdry[dom].getValue(row,4);
-			idx1_global = edges_bdry[dom].getValue(row,5);
+			idx_0 = edges_bdry[dom].getValue(row,2);		// index number for vertex ID for domain k
+			idx_1 = edges_bdry[dom].getValue(row,3);		// index number for vertex ID for domain k
+			idx0_global = edges_bdry[dom].getValue(row,4);	// global index number for vertex ID
+			idx1_global = edges_bdry[dom].getValue(row,5);	// global index number for vertex ID
 		}
 
-		void getBdryFace(int dom, int row, int &idx_0, int &idx_1, int &idx_2){
-			idx_0 = faces_bdry[dom].getValue(row,0);
-			idx_1 = faces_bdry[dom].getValue(row,1);
-			idx_2 = faces_bdry[dom].getValue(row,2);
+		// return
+		void getBdryFace(int dom, int row, int &idx_0, int &idx_1, int &idx_2, int &idx0_global, int &idx1_global, int &idx2_global){
+			idx_0 = faces_bdry[dom].getValue(row,0);		// index number for vertex ID for domain k
+			idx_1 = faces_bdry[dom].getValue(row,1);		// idem
+			idx_2 = faces_bdry[dom].getValue(row,2);		// idem
+			idx0_global = faces_bdry[dom].getValue(row,3);	// global index number for vertex ID
+			idx1_global = faces_bdry[dom].getValue(row,4);	// idem
+			idx2_global = faces_bdry[dom].getValue(row,5);	// idem
 		}
 
+		// get control volume for one vertex
 		void getBdryVolume(int dom, int idx, double& vol){
 			vol = volume_bdry[dom].getValue(idx);
 		}
 
+		// get control volume for trhee vertices
 		void getBdryVolume(int dom, int idx0, int idx1, int idx2, double *vol){
 			vol[0] = volume_bdry[dom].getValue(idx0);
 			vol[1] = volume_bdry[dom].getValue(idx1);
 			vol[2] = volume_bdry[dom].getValue(idx2);
 		}
 
+		// get control volume for three vertices
 		void getBdryVolume(int dom, int idx0, int idx1, int idx2, double& volumeI, double& volumeJ, double& volumeK){
-//			volumeI[0] = volume_bdry[dom].getValue(idx0);
-//			volumeJ[1] = volume_bdry[dom].getValue(idx1);
-//			volumeK[2] = volume_bdry[dom].getValue(idx2);
+			volumeI = volume_bdry[dom].getValue(idx0);
+			volumeJ = volume_bdry[dom].getValue(idx1);
+			volumeK = volume_bdry[dom].getValue(idx2);
 		}
 
+		// get control volume for two vertices
 		void getBdryVolume(int dom, int idx_0, int idx_1, double& volumeI, double& volumeJ){
 			volumeI = volume_bdry[dom].getValue(idx_0);
 			volumeJ = volume_bdry[dom].getValue(idx_1);
 		}
 
+		// get ID for two vertices on boundary
 		void getBdryID(int dom, int idx_0, int idx_1, int& id0, int &id1){
 			id0 = ID_bdry[dom].getValue(idx_0);
 			id1 = ID_bdry[dom].getValue(idx_1);
 		}
 
+		// get ID for three vertices on boundary
 		void getBdryID(int dom, int idx_0, int idx_1, int idx_2, int& id0, int &id1, int& id2){
 			id0 = ID_bdry[dom].getValue(idx_0);
 			id1 = ID_bdry[dom].getValue(idx_1);
 			id2 = ID_bdry[dom].getValue(idx_2);
 		}
 
+		// get ID for vertex on boundary
 		void getBdryID(int dom, int idx, int& id){
 			id = ID_bdry[dom].getValue(idx);
 		}
 
+		// get flag number defined by user on .geo file for domain i (i=0,1,2,...,n-1), where n is the number of domains
 		int getDomFlag(int i) const{
 			return domainList[i];
 		}
 
+		// return edge length
 		void getLength(int dom, int idx, double &length) const{
 			length = edge_length[dom].getValue(idx);
 		}
 
+		// return versor built over edge pointing from node I to node J, where Node ID I is ALWAYS less than node ID J.
 		void getVersor(int dom, int idx, double *v) const{
 			v[0] = edge_versor[dom].getValue(idx,0);
 			v[1] = edge_versor[dom].getValue(idx,1);
@@ -292,17 +308,18 @@ namespace PRS
 			val = Cij_norm[dom].getValue(idx);
 		}
 
-		void getEBE(int idx, double* versor){
-			versor[0] = EBE_1[0].getValue(idx,0);
-			versor[1] = EBE_1[0].getValue(idx,1);
-			versor[2] = EBE_1[0].getValue(idx,2);
+		void getVersor_ExternalBdryElement(int idx, double* versor){
+			versor[0] = versor_ExtBdryElem[0].getValue(idx,0);
+			versor[1] = versor_ExtBdryElem[0].getValue(idx,1);
+			versor[2] = versor_ExtBdryElem[0].getValue(idx,2);
 		}
 
-		void getEBE(int idx, int &idx0_global, int &idx1_global, int &flag1, int &flag2){
-			idx0_global = EBE_2[0].getValue(idx,0);
-			idx1_global = EBE_2[0].getValue(idx,1);
-			flag1 = EBE_2[0].getValue(idx,2);
-			flag2 = EBE_2[0].getValue(idx,3);
+		// Used by Saturation Gradient
+		void getExternalBdryEdges(int idx, int &idx0_global, int &idx1_global, int &flag1, int &flag2){
+			idx0_global = external_bdry_elem[0].getValue(idx,0);
+			idx1_global = external_bdry_elem[0].getValue(idx,1);
+			flag1 = external_bdry_elem[0].getValue(idx,2);
+			flag2 = external_bdry_elem[0].getValue(idx,3);
 		}
 
 		int getNumEBE() const{
@@ -349,12 +366,14 @@ namespace PRS
 		int numGEdges;					// number or global edges
 		int* numDomEdges;				// number of edges per domain
 		int* numDomFaces;				// number of face per domain
+		int* numDomTetras;				// number of tetrahedra per domain
 		int* numDomFaces_tmp;			// number of face per domain adapted mesh
 		int* numDomBDRYEdges;			// number of edges per domain
 		int* numDomBDRYFaces;			// number of edges per domain
 		int* numNodesPerDomain;			// number of nodes per domain
 		int* numBdryNodesPerDomain;		// number of nodes per domain
 		int numExtBdryEdges;
+		int numExtBdryFaces;
 		int numNodes;
 
 		Matrix<int> *ID;				// node ID per domain
@@ -370,8 +389,8 @@ namespace PRS
 		Matrix<int> *faces_bdry;
 		Matrix<double>* volume_bdry;	//node volumes per domain
 
-		Matrix<double>* EBE_1;
-		Matrix<int>* EBE_2;
+		Matrix<double>* versor_ExtBdryElem;	// versor for external elements (2-D: edges, 3-D: triangles)
+		Matrix<int>* external_bdry_elem;	// external_bdry_elem: idx0_global, idx1_global, idx2_global, flag1, flag2, flag3
 
 		Matrix<double>* Cij;			// Cij vector
 		Matrix<double>* Dij;

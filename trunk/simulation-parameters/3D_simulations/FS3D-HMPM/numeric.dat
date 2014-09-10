@@ -27,7 +27,7 @@ Use high order approximation:
 no
 
 C.F.L (courant-friedilich-lendroff number):
-0.9
+0.7
 
 Discretization time on production well:
 1000
@@ -37,10 +37,10 @@ where i = processor-rank-number and N = number-of-processors
 You MUST provide only filename, i.e, filename = (filename-i-of-N.dat) - (-i-of-N.dat)
 
 mesh filename:
-/home/rogerio/projetos/GOOGLE_CODES/padmec-amr/trunk/simulation-parameters/FS-2D-homogeneo/pp-data-files/test-grad.msh
+/home/rogerio/projetos/GOOGLE_CODES/padmec-amr/trunk/simulation-parameters/3D_simulations/FS3D-HMPM/pp-data-files/FS3D-HMPM.msh
 
 export filename (to VTK format without extension .vtk):
-/home/rogerio/projetos/GOOGLE_CODES/padmec-amr/trunk/simulation-parameters/FS-2D-homogeneo/results/test-grad
+/home/rogerio/projetos/GOOGLE_CODES/padmec-amr/trunk/simulation-parameters/3D_simulations/FS3D-HMPM/results/FS3D-HMPM
 
 Start simulation from <restart> file?
 no
@@ -49,7 +49,6 @@ Initial and Boundary conditions
 ================================================================================
 
 Dirichlet (Specify: flags and respective pressure values):
-10 1
 51 0
 end
 
@@ -80,7 +79,7 @@ Ex.: Q = 1e-2, Vt = 0.05, Vp = 0.01, PVI = 1.0, t = PVI*(Vt*phi)/Q = 1
 
 Provide PVI number to specify simulation time duration
 simulation-time:
-.2
+.08
 
 
 Specify velocity variation tolerance for time adaptative IMPES simulation
@@ -94,6 +93,6 @@ will be the simulation. Oscilation can appear on recovered and accumulated oil p
 
 Define reservoir dimension length and heigth
 Reservoir Dimensions: L - H:
-1.0 1.0
+1.0 0.4
 
 # END OF SIMULATOR PARAMETERS FILE

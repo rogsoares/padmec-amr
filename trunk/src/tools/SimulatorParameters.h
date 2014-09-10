@@ -145,21 +145,6 @@ public:
 	set<int> setOfDomains;
 	int getNumDomains() const { return setOfDomains.size(); }
 
-	/*
-	 * Counts how many nodes belong to each domain.
-	 */
-	void setNumElementDomain(pMesh theMesh);
-
-	const int *getNumNodesDomain()const{
-		return numNodesDom;
-	}
-	void getNumEdgesDomain(std::set<int> &setNumEdgesDom){
-		int numDomains = setOfDomains.size();
-		for(int i=0;i<numDomains;i++){
-			setNumEdgesDom.insert(numEdgesDom[i]);
-		}
-	}
-
 	SIter_const setDomain_begin() const { return setOfDomains.begin(); }
 	SIter_const setDomain_end() const { return setOfDomains.end(); }
 
@@ -212,10 +197,8 @@ public:
 	 * Simulation time monitoring
 	 * --------------------------------------------------------------------
 	 */
-	double getPVIaccumulated() const { return PVI_accumulated; }
-	void setPVIaccumulated(double pviacc) { PVI_accumulated = pviacc; }
-//	void setTStepNumber(int tsn) { tsnumber=tsn; }
-//	int getTStepNumber() const { return tsnumber; }
+	double getPVIaccumulated() const { return PVI_cumulative; }
+	void setPVIaccumulated(double pviacc) { PVI_cumulative = pviacc; }
 	double getSimTime() const { return _ST; }
 	double getPVI() const { return _PVI; }
 
@@ -265,11 +248,6 @@ public:
 
 	// avoid excessive element subdivisions to get a less refined mesh
 	int getNumSubdivision_perStep() const {  return numMaxSubdivisions; }
-
-	// return a set of nodes ID from domain dom
-	void getNodesDomain(int dom, setNodes& setnodes){
-		setnodes = _mapNodesDomain[dom];
-	}
 
 	void setLocalNodeIDNumbering(pMesh);
 
@@ -437,7 +415,7 @@ private:
 	/// Says when the next vtk file must be printed out
 	double vtk_time_frequency;
 	double PVI_increment;
-	double PVI_accumulated;
+	double PVI_cumulative;
 	bool allowPrintingVTK;
 	bool firstVTKupdate;
 	int lastpvi;

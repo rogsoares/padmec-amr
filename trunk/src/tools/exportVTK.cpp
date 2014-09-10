@@ -29,7 +29,7 @@ void exportSolutionToVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3
 	int dim = theMesh->getDim();
 	//pErrorAnalysis->countElements(theMesh,false);
 	//int numElements = pErrorAnalysis->getNumElements();
-	int numElements = M_numFaces(theMesh);
+	int numElements = (dim==2)?M_numFaces(theMesh):M_numRegions(theMesh);
 	
 	if (!numElements){
 	  throw Exception(__LINE__,__FILE__,"Number of elements NULL!");

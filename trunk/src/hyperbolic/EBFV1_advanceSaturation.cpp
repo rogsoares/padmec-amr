@@ -53,6 +53,9 @@ namespace PRS{
 			pPPData->getSaturation(well_idx,Sw_old);
 			pGCData->getVolume(well_idx,Vi);
 			Qi = Qt*(Vi/Vt);							// Fluid (water+oil) flow rate through node i
+			if (fabs(Qi) > fabs(Qt)){
+				throw 1;
+			}
 			wp = 0.2*Vi;
 			for (j=0; j<N; j++){
 				Sw0 = Sw_old - (dt_well/wp)*(nonvisc);
@@ -69,7 +72,7 @@ namespace PRS{
 
 			pPPData->setSaturation(well_idx,Sw);
 			fw = pPPData->getFractionalFlux(Sw);	    // oil fractional flux
-			fo = pPPData->getOilFractionalFlux(Sw);	// oil fractional flux
+			fo = pPPData->getOilFractionalFlux(Sw);		// oil fractional flux
 			Qo += fabs(Qi*fo);
 			Qw += fabs(Qi*fw);
 			cml_oil += Qo;
