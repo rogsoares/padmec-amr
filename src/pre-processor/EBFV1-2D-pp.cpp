@@ -8,12 +8,7 @@
 
 #include "EBFV1__pre-processors.h"
 
-//void transferCijData(pMesh theMesh, GeomData* pGCData, int ndom, int* domlist);
-//void transferDijData(pMesh theMesh, GeomData* pGCData, int ndom, int* domlist);
-//void transferVolData(pMesh theMesh, GeomData* pGCData, int ndom, int* domlist);
-
 // calculates: Cij, Dij and nodal volume
-// ---------------------------------------------------------------------
 int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 #ifdef TRACKING_PROGRAM_STEPS
 	cout << "TRACKING_PROGRAM_STEPS: EBFV1_preprocessor_2D\tIN\n";
@@ -177,46 +172,19 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 						Dij[j] = -Dij[j];
 					}
 				}
-
 				// associate to edge domains flags to wjich it belongs
 				EN_attachDataInt(edge,MD_lookupMeshDataId("dom1"),domains[0]);
 				EN_attachDataInt(edge,MD_lookupMeshDataId("dom1"),domains[1]);
 				pGCData->setDij(edge,domains[0],domains[1],Dij);
-				//cout << "Dij = " << Dij[0] << "\t" << Dij[1] << "\t" << Dij[2] << "\n";
 			}
 		}
 	}
 	EIter_delete(eit);
 	cout << "preprocessor: Number of Boundary edges = " << numBE << endl;
-	/*
-	 * Parallel step:
-	 *
-	 * unifyCijAmongProcessors: for any edge IJ on partition boundary, all ranks
-	 * 		that share it calculate vector CIJ locally from local tetrahedrals.
-	 * 		What is made here consist to sum (unify) all local Cij and retrieve
-	 * 		the result to all processes that share IJ. This procedure is equivalent
-	 * 		to the MPI function "MPI_Allreduce" where all ranks send a specific
-	 * 		value and receive the sum.
-	 *
-	 * unifyVolumesAmongProcessors: the same as unifyCijAmongProcessors but with
-	 * 		scalars.
-	 *
-	 * NOTE: All partitions must be aware of the total number of domains.
-	 *
-	 * */
-//	AllgatherDomains(setOfDomain);
-//	unifyCijAmongProcessors(theMesh,setOfDomain,pGCData);
-//	unifyVolumesAmongProcessors(theMesh,setOfDomain,"volume",pGCData);
-
-
-	// TODO: mudar argumentos de entrada para validacao
-	//validate_EBFV1(pPPP);
-
 	calculateEdgeLength(theMesh,pGCData);
 	calculateCijNorm(theMesh,pGCData,setOfDomain);
 
-	// For 2-D domains, multiply volume by reservoir height (H) for 2D/3D simulations (physics occurs only on 2-D but
-	// reservoir volume is considered)
+	// For 2-D domains, multiply volume by reservoir height (H) for 2D/3D simulations (physics occurs only on 2-D but reservoir volume is considered)
 	double vt = .0;
 	double vol,wvol;
 	std::set<int>::iterator iter = setOfDomain.begin();
@@ -238,99 +206,12 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 	}
 	cout << endl;
 
-
-	// transfer geometric data from FMDB to Matrix structure
-//	i = 0;
-//	ndom = (int)setOfDomain.size();
-//	int *domlist = new int[ndom];
-//	for(iter = setOfDomain.begin(); iter!=setOfDomain.end(); iter++){
-//		domlist[i++] =  *iter;
-//	}
-//	pGCData->setNumDomains(ndom);
-//	pGCData->setDomainList(domlist);
-//	pGCData->calculateNumEdges(theMesh);
-//	pGCData->calculateNumFaces(theMesh);
-//	pGCData->calculateNumBDRYEdges(theMesh);
-//	pGCData->calculateNumNodes(theMesh);
-//	pGCData->calculateNumBdryNodes(theMesh);
-//	pGCData->allocatePointers(M_numVertices(theMesh));
-//	pGCData->calculateEdgeProperties(theMesh);
-//	transferCijData(theMesh,pGCData,ndom,domlist);
-//	transferDijData(theMesh,pGCData,ndom,domlist);
-//	transferVolData(theMesh,pGCData,ndom,domlist);
-//	pGCData->mappingNodesIds(theMesh);
-//	delete[] domlist; domlist = 0;
-
-
 #ifdef TRACKING_PROGRAM_STEPS
 	cout << "TRACKING_PROGRAM_STEPS: EBFV1_preprocessor_2D\tOUT\n";
 #endif
 	return 0;
 }
 
-//void transferCijData(pMesh theMesh, GeomData* pGCData, int ndom, int* domlist){
-//	dblarray Cij(3,.0);
-//	double cij[3], norm;
-//	for (int i=0; i<ndom; i++){
-//		int dom = domlist[i];
-//		int row = 0;
-//		EIter eit = M_edgeIter(theMesh);
-//		while ( pEdge edge = EIter_next(eit) ){
-//			if ( pGCData->edgeBelongToDomain(edge,dom) ){
-//				pGCData->getCij(edge,dom,Cij);
-//				norm = pGCData->getCij_norm(edge,dom);
-//				cij[0] = Cij[0];
-//				cij[1] = Cij[1];
-//				cij[2] = Cij[2];
-//				pGCData->setCij(i,row,cij);
-//				pGCData->setCij_norm(i,row,norm);
-//				row++;
-//			}
-//		}
-//		EIter_delete(eit);
-//	}
-//}
-//
-//void transferDijData(pMesh theMesh, GeomData* pGCData, int ndom, int* domlist){
-//	dblarray Dij(3,.0);
-//	double dij[3];
-//	for (int i=0; i<ndom; i++){
-//		int dom = domlist[i];
-//		int row = 0;
-//		EIter eit = M_edgeIter(theMesh);
-//		while ( pEdge edge = EIter_next(eit) ){
-//			if ( pGCData->edgeBelongToDomain(edge,dom) ){
-//				if (pGCData->belongsToBoundary(edge)){
-//					pGCData->getDij(edge,dom,Dij);
-//					dij[0] = Dij[0];
-//					dij[1] = Dij[1];
-//					dij[2] = Dij[2];
-//					pGCData->setDij(i,row,dij);
-//					row++;
-//				}
-//			}
-//		}
-//		EIter_delete(eit);
-//	}
-//}
-//
-//void transferVolData(pMesh theMesh, GeomData* pGCData, int ndom, int* domlist){
-//	int idx = 0;
-//	pEntity node;
-//	double volume;
-//	VIter vit = M_vertexIter(theMesh);
-//	while ( (node = VIter_next(vit)) ){
-//		int id = EN_id(node);
-//		volume = .0;
-//		for (int i=0; i<ndom; i++){
-//			volume += pGCData->getVolume(node,domlist[i]);
-//		}
-//		pGCData->setVolume(idx,volume);
-//		idx++;
-//	}
-//	VIter_delete(vit);
-//}
-//
 void initializeCoefficients(pMesh theMesh, GeomData *pGCData){
 	VIter vit = M_vertexIter(theMesh);
 	while (pEntity v = VIter_next(vit)){
@@ -348,7 +229,6 @@ void initializeCoefficients(pMesh theMesh, GeomData *pGCData){
 		pGCData->setCij(edge,3300,vec);
 		pGCData->setCij(edge,3301,vec);
 		pGCData->setCij(edge,3302,vec);
-//		pGCData->setCij(edge,3303,vec);
 		if (EN_getFlag(edge)==2000){
 			pGCData->setDij(edge,2000,0,vec);
 		}

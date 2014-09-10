@@ -16,7 +16,7 @@ namespace PRS{
 		vtk_step = 0;
 		
 		PVI_increment = 0.01;	// every 1% of total simulation time a new VTK file will be printed
-		PVI_accumulated = .0;	// summation of all PVI_increments
+		PVI_cumulative = .0;	// summation of all PVI_increments
 		
 		allowPrintingVTK = false;
 		pctype = PCNONE;
@@ -140,9 +140,10 @@ namespace PRS{
 		for (miter=mapNodesOnWell.begin(); miter!=mapNodesOnWell.end(); miter++){
 			int flag = miter->first;
 			// FOR EACH NODE ON PRODUCTION WELL
+			Vt = .0;
+			cout << "Number of nodes on well: " << miter->second.size() << endl;
 			for (siter = miter->second.begin(); siter!=miter->second.end();siter++){
 				int id = *siter;
-				Vt = .0;
 				// to which domain node belongs get its volume
 				for (SIter_const sit=setOfDomains.begin(); sit!=setOfDomains.end(); sit++)	{
 					int dom = *sit;	// domains flag
@@ -157,15 +158,14 @@ namespace PRS{
 					pGCData->getVolume(node,dom,Vi);
 					Vt += Vi;
 				}
-
-				well_info = MWells[flag];
-				well_info.wellVolume = Vt;
-				MWells[flag] = well_info;
-				cout << setprecision(7);
-				cout << "flag = " << flag << endl;
-				cout << "Vt   = " << Vt << endl;
-				cout << "ID   = " << id << endl;
 			}
+			well_info = MWells[flag];
+			well_info.wellVolume = Vt;
+			MWells[flag] = well_info;
+//			cout << setprecision(7);
+//			cout << "flag = " << flag << endl;
+//			cout << "Vt   = " << Vt << endl;
+//			//cout << "ID   = " << id << endl;
 		}
 		//STOP();
 		if (!MWells.size()){
@@ -176,7 +176,6 @@ namespace PRS{
 	// get node ids associated to wells
 	void SimulatorParameters::getWells(pMesh theMesh, int dim){
 		// if user has provided some well, count how many nodes are flagged for each one
-		//cout << __LINE__ << "\t" << __FILE__ << endl;
 		if ( MWells.size() ){
 			pEntity node, edge;
 			
@@ -192,9 +191,8 @@ namespace PRS{
 				setNodesOnWell setNOW;
 				mapNodesOnWell[miter->first] = setNOW;
 			}
-			//cout << __LINE__ << "\t" << __FILE__ << endl;
+
 			int flag;
-			//cout << __LINE__ << "\t" << __FILE__ << endl;
 			// loop over nodes searching for wells
 			VIter vit = M_vertexIter( theMesh );
 			while ( (node = VIter_next(vit)) ){
@@ -210,32 +208,6 @@ namespace PRS{
 				}
 			}
 			VIter_delete(vit);
-			//cout << __LINE__ << "\t" << __FILE__ << endl;
-			// loop edges searching for nodes flagged as wells
-// 			EIter eit = M_edgeIter( theMesh );
-// 			while ( (edge = EIter_next(eit)) ){
-// 				if (!theMesh->getRefinementDepth(edge)){				// get only elements without children
-// 					if (!edge->getClassification()){
-// 						pEdge root = edge->root();
-// 						flag = GEN_tag( root->getClassification());
-// 					}
-// 					else{
-// 						flag = GEN_tag( edge->getClassification());
-// 					}
-// 					
-// 					// check for INJECTION/PRODUCTION wells
-// 					if ( ( flag>=10 && flag<=90) || (flag==2001) || (flag==2002)){
-// 						MNOWIter = mapNodesOnWell.find(flag);
-// 						if ( MNOWIter!=mapNodesOnWell.end() ){
-// 							// insert node ID for flag
-// 							MNOWIter->second.insert( EN_id(edge->get(0,0)) );
-// 							MNOWIter->second.insert( EN_id(edge->get(0,1)) );
-// 						}
-// 					}
-// 				}
-// 			}
-// 			EIter_delete(eit);
-			//cout << __LINE__ << "\t" << __FILE__ << endl;
 		}
 		else{
 			throw Exception(__LINE__,__FILE__,"MWells size = 0");
@@ -296,26 +268,23 @@ namespace PRS{
 	 * or more)
 	 */
 	void SimulatorParameters::setInitialOilVolume(pMesh theMesh, GeomData *pGCData){
-		pVertex node;
-		double TPV = .0;	// Total Porous Volume
-		for (SIter_const dom = setDomain_begin(); dom!=setDomain_end(); dom++){
-			double TPV_tmp = .0;	// Total Porous Volume
-			VIter vit = M_vertexIter(theMesh);
-			while ( (node = VIter_next(vit)) ){
-				if ( pGCData->nodeBelongToDomain(node,*dom) )
-					TPV_tmp += pGCData->getVolume(node,*dom);///(pGCData->getNumRemoteCopies(node) + 1.0);
+		int i, dom, ndom, nnodes, node, idx;
+		double vol_total = .0, vol;
+		ndom = pGCData->getNumDomains();
+		for (dom=0; dom<ndom; dom++){
+			nnodes = pGCData->getNumNodesPerDomain(dom);
+			double vol_domain = .0;
+			for (node=0; node<nnodes; node++){
+				pGCData->getVolume(dom,node,vol);
+				vol_domain += vol;
 			}
-			VIter_delete(vit);
-			TPV_tmp *= getPorosity(*dom);
-			TPV += TPV_tmp;
-			//printf("TPV_tmp: %f TPV: %f\tphi = %5f\n",TPV_tmp,TPV,getPorosity(*dom));
+			vol_total += 0.2*vol_domain;
 		}
-		
-		double Sw = 1.0 - Sw_initial();
-		_IOV = P_getSumDbl(TPV)*Sw;
-		//printf("TPV: %f   TPV*Sw: %f\tIOV = %5f\n",TPV,TPV*Sw,_IOV); throw 1;
+		_IOV = vol_total*(1.0 - Sw_initial());		// initial oil volume (_IOV)
+		if (_IOV < 1e-8){
+			throw Exception(__LINE__,__FILE__,"Initial Oil Volume null!");
+		}
 	}
-	
 	
 	/*
 	 * This function is called every time a new time-step is calculated. We want to know how many steps there are within a fraction of PVI or how
@@ -326,15 +295,16 @@ namespace PRS{
 			updatePrintOutVTKFrequency();  
 		}
 		double timeFrequency = getPrintOutVTKFrequency();
-		cout << fixed << setprecision(8) << "timeFrequency : " << timeFrequency << "\ttimeStep: " << timeStep << "\tgetCumulativeSimulationTime(): " << getCumulativeSimulationTime();
+		//cout << fixed << setprecision(8) << "tFreq : " << timeFrequency << "\ttStep: " << timeStep << "\tCumSTime(): " << getCumulativeSimulationTime();
 		double cumST = timeStep + getCumulativeSimulationTime();
-		cout << "\tcumST: " << cumST;
+		//cout << "\tcumST: " << cumST;
 		if ( cumST > timeFrequency ){
 			timeStep = timeFrequency - getCumulativeSimulationTime();
 			cumST = timeFrequency;
 			allowPrintingVTK = true;
 		}
-		cout << "\ttimeStep: " << timeStep << "\tcumST: " << cumST << endl;
+		//cout << "\tPVI_cum: " << PVI_cumulative << "\tsimST: " << getSimTime();
+		//cout << "\ttStep: " << timeStep << "\tcumST: " << cumST << "\tvtk_tfreq: " << vtk_time_frequency << endl;
 	}
 	
 	void SimulatorParameters::allowPrintVTK(){
@@ -351,8 +321,6 @@ namespace PRS{
 	void SimulatorParameters::printOutVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3, void *pData4, pFunc_PrintVTK printVTK){
 		//allowPrintingVTK = true;
 		if (allowPrintingVTK){
-			//static int theStep = getStepOutputFile();
-			//++theStep;
 			int theStep = getStepOutputFile();
 			incrementeStepOutputFile();
 			char fname[256];
@@ -369,9 +337,9 @@ namespace PRS{
 		firstVTKupdate = false;
 		
 		// a new VTK file will be printed at each 0.05 PVI (5% of total simulation time)
-		PVI_accumulated += getPVIincrement();
+		PVI_cumulative += getPVIincrement();
 		
 		// when next vtk file must be print out
-		vtk_time_frequency = PVI_accumulated*getSimTime();
+		vtk_time_frequency = PVI_cumulative*getSimTime();
 	}
 }

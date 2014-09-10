@@ -5,9 +5,7 @@
 
 #include "EBFV1__pre-processors.h"
 
-// Calculates Cij, Dij(boundary faces) and nodal volume
-// It also works for multi domains meshes
-// = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+// Calculates Cij, Dij(boundary faces) and nodal volume. It also works for multi domains meshes
 int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 	PetscPrintf(PETSC_COMM_WORLD,"Starting EBFV1-3D pre-processor:\n\n");
 
@@ -15,7 +13,10 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 	pGCData->setMeshDim(theMesh->getDim());
 	if (theMesh->getDim() != 3) throw Exception(__LINE__,__FILE__,"Only 3-D meshes are allowed. Exiting...\n");
 
-	pEntity tetra, edge;
+	theMesh->modifyState(3,2);
+	theMesh->modifyState(2,3);
+
+	pEntity tetra, edge, face;
 	int i,j,k,K,m;
 	double tCenter[3], eCenter[3], v[3], *vec[2], val, *tetraFCenter[4];
 	double normal[3], I[3], J[3], IJ[3], proj[3];
@@ -24,10 +25,7 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 	for (i=0; i<4; i++) tetraFCenter[i] = new double[3];
 	for (i=0; i<2; i++) vec[i] = new double[3];
 
-	/*
-	 * Search over all tetrahedra flags set to define domains.
-	 * Store all flags on a list and initialize Cij vector
-	 */
+	// Search over all tetrahedra flags set to define domains. Store all flags on a list and initialize Cij vector
 	std::set<int> setOfDomain;
 	std::vector<double> Cij(3,.0);
 	RIter rit = M_regionIter(theMesh);
@@ -39,7 +37,39 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 			pGCData->setCij(edge,flag,Cij);
 		}
 	}
-	RIter_delete(rit);	
+	RIter_delete(rit);
+
+	// mark faces (boundary)
+	bool detectBdryFaces = false;
+	//int count2 = 0;
+	std::set<int>::iterator iter = setOfDomain.begin();
+	for (; iter != setOfDomain.end(); iter++){
+		int dom = *iter;
+		char dom_string[256]; sprintf(dom_string,"dom_str_%d",dom);
+		RIter rit = M_regionIter(theMesh);
+		while ( (tetra = RIter_next(rit)) ){
+			int tetraflag = GEN_tag(tetra->getClassification());
+			if (tetraflag==dom){
+				for (i=0;i<4;i++){
+					face = (pFace)tetra->get(2,i);
+					int faceflag = GEN_tag(face->getClassification());
+					// if flags are different, then face in on boundary
+					if (faceflag!=tetraflag){
+						detectBdryFaces = true;
+		//				count2++;
+						// set edge belonging to domain 'dom'
+						EN_attachDataInt(face,MD_lookupMeshDataId( dom_string ),1);
+					}
+				}
+			}
+		}
+		RIter_delete(rit);
+	}
+	//cout << "count pp-3D: " << count2 << endl;
+
+	if (!detectBdryFaces){
+		throw Exception(__LINE__,__FILE__,"Any boundary face (triangles) were detected. Boundary elements MUST have different flag of internal elements.");
+	}
 
 	/// initialize weighted volume
 	VIter vit = M_vertexIter(theMesh);
@@ -57,7 +87,9 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 	rit = M_regionIter(theMesh);
 	while ( (tetra = RIter_next(rit)) ){
 		// get all four tetrahedron's vertices
-		for (i=0; i<4; i++) tetraVertex[i] = (pEntity)tetra->get(0,i);
+		for (i=0; i<4; i++){
+			tetraVertex[i] = (pEntity)tetra->get(0,i);
+		}
 
 		int tetraFaces[4][3] = { {EN_id(tetraVertex[0]),EN_id(tetraVertex[1]),EN_id(tetraVertex[2])},
 				{EN_id(tetraVertex[0]),EN_id(tetraVertex[1]),EN_id(tetraVertex[3])},
@@ -79,16 +111,21 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 		double coord4[3]; V_coord(tetraVertex[3],coord4);
 
 		// step #1: Cij
-		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		// identify which domain the current tetrahedron belongs to
 		// edges on domain's partition have differents Cij, one for each domain
 		const int dom = GEN_tag(tetra->getClassification());
+		char dom_string[256]; sprintf(dom_string,"dom_str_%d",dom);
 		markTetraBdryFaces(theMesh,tetra,dom);
 		setOfDomain.insert(dom); // store every new domain
 
 		for (int pos1=0; pos1<3; pos1++){
 			for (int pos2=pos1+1; pos2<4; pos2++){
 				edge = (pEdge)theMesh->getEdge((mVertex*)tetraVertex[pos1],(mVertex*)tetraVertex[pos2]);
+
+				// set edge belonging to domain 'dom'
+				EN_attachDataInt(edge,MD_lookupMeshDataId( dom_string ),1);
+
+
 				//M_GetVertices(edge,edgeVertex);
 				for (i=0; i<2; i++) edgeVertex[i] = (pEntity)edge->get(0,i);
 				// edge's Cij is the sum of two vectors. Both are orthogonals to planes
@@ -104,21 +141,24 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 				V_coord(edgeVertex[1],J);
 
 				double sign = ( EN_id(edgeVertex[0]) > EN_id(edgeVertex[1]) )?-1.0:1.0;
-				for (i=0; i<3; i++) IJ[i] = sign*(J[i] - I[i]);
+				for (i=0; i<3; i++){
+					IJ[i] = sign*(J[i] - I[i]);
+				}
 
 				// get edge center
 				eCenter[0] = eCenter[1] = eCenter[2] = .0;
-				for (i=0; i<3; i++) eCenter[i] = .5*(I[i]+J[i]);
+				for (i=0; i<3; i++){
+					eCenter[i] = .5*(I[i]+J[i]);
+				}
 
 				// create vector v: from edge middle point to tetrahedral centroid
-				for (i=0; i<3; i++) v[i] = tCenter[i] - eCenter[i];
+				for (i=0; i<3; i++){
+					v[i] = tCenter[i] - eCenter[i];
+				}
 
-				// search for tetra faces that share the same edge and get their centers.
-				// Of course, there are only two faces sharing the same edge.
-				// FMDB can do this job easily, but for 3D big meshes a face structure
-				// has a high memory cost.
+				// search for tetra faces that share the same edge and get their centers. Of course, there are only two faces
+				// sharing the same edge. FMDB can do this job easily, but for 3D big meshes a face structure has a high memory cost.
 
-				//int keep;
 				K = 0;
 				// loop over tetra's faces
 				for (i=0; i<4; i++){
@@ -141,26 +181,34 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 				double n = sqrt( IJ[0]*IJ[0] + IJ[1]*IJ[1] + IJ[2]*IJ[2] ) ;
 
 				// Cij calculation n ;
-				for (j=0; j<3; j++) Cij[j] = .0;
+				for (j=0; j<3; j++){
+					Cij[j] = .0;
+				}
 				pGCData->getCij(edge,dom,Cij);
 				double normal1[3], normal2[3];
 				cross(v,vec[0],normal1);
 				cross(vec[1],v,normal2);
 
-				for (j=0; j<3; j++) proj[j] = .0;
-				for (j=0; j<3; j++) normal[j] = .5*(normal1[j]+normal2[j]);
+				for (j=0; j<3; j++){
+					proj[j] = .0;
+				}
+				for (j=0; j<3; j++){
+					normal[j] = .5*(normal1[j]+normal2[j]);
+				}
 				val = dot(normal,IJ)/(n*n);
-				for (j=0; j<3; j++) proj[j] = val*IJ[j];
+				for (j=0; j<3; j++){
+					proj[j] = val*IJ[j];
+				}
 				double sinal = (dot(proj,IJ)<.0)?-1.:1.;
-				for (j=0; j<3; j++) Cij[j] += sinal*normal[j];
+				for (j=0; j<3; j++){
+					Cij[j] += sinal*normal[j];
+				}
 				pGCData->setCij(edge,dom,Cij);
 			}
 		}
 
 		// step #2: volume of control volume
-		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-		const double porosity = .0;//simPar.getPorosity(dom);
-
+		const double porosity = .0;
 		const double tetraVolume = R_Volume(tetra);
 		const double nodalVolume = .25*tetraVolume;
 		vt = +tetraVolume;
@@ -170,7 +218,6 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 			double v1 = pGCData->getVolume(tetraVertex[i],dom);
 			v1 += nodalVolume;
 			pGCData->setVolume(tetraVertex[i],dom,v1);
-
 			double v2 = pGCData->getWeightedVolume(tetraVertex[i]);
 			v2 += nodalVolume*porosity;
 			pGCData->setWeightedVolume(tetraVertex[i],v2);
@@ -185,18 +232,14 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 	for (i=0; i<2; i++) delete[] vec[i];
 
 	/*
-	 * Dij vector calculation. A loop over all boundary (external/internal) faces
-	 * is made. Depending on how FMDB is used, faces on all tetrahedrals may be
-	 * created and they must be filtered. If a face does not belong to boundary
-	 * it will assume the tetrahedral domain flag. This value is greater than 3000
-	 * and is used to filter them from those provided by mesh file.
-	 * */
+	 * Dij vector calculation. A loop over all boundary (external/internal) faces is made. Depending on how FMDB is used, faces on all
+	 * tetrahedrals may be created and they must be filtered. If a face does not belong to boundary it will assume the tetrahedral domain
+	 * flag. This value is greater than 3000 and is used to filter them from those provided by mesh file.
+	 */
 
 	int count = 0;
 	dblarray Dij(3,.0);
-	PetscPrintf(PETSC_COMM_WORLD,"Loop over boundary faces - start... ");MPI_Barrier(MPI_COMM_WORLD);
-	pEntity face;
-	std::set<int>::iterator iter;
+	PetscPrintf(PETSC_COMM_WORLD,"Loop over boundary faces - start... ");///MPI_Barrier(MPI_COMM_WORLD);
 	if ( M_numFaces(theMesh) != 0 ){
 		FIter fit = M_faceIter(theMesh);
 		while ( (face = FIter_next(fit)) ){
@@ -209,57 +252,24 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 			}
 		}
 		FIter_delete(fit);
-		//cout << "End preprocessos\n"; throw 1;
 	}
 	PetscPrintf(PETSC_COMM_WORLD,"Finished\n");MPI_Barrier(MPI_COMM_WORLD);
-
-	/*
-	 * Parallel step:
-	 *
-	 * unifyCijAmongProcessors: for any edge IJ on partition boundary, all ranks
-	 * 		that share it calculate vector CIJ locally from local tetrahedrals.
-	 * 		What is made here consist to sum (unify) all local Cij and retrieve
-	 * 		the result to all processes that share IJ. This procedure is equivalent
-	 * 		to the MPI function "MPI_Allreduce" where all ranks send a specific
-	 * 		value and receive the sum.
-	 *
-	 * unifyVolumesAmongProcessors: the same as unifyCijAmongProcessors but with
-	 * 		scalars.
-	 *
-	 * */
-//	AllgatherDomains(setOfDomain);
-//	unifyCijAmongProcessors(theMesh,setOfDomain,pGCData);
-//	unifyVolumesAmongProcessors(theMesh,setOfDomain,"volume",pGCData);
-//	setCorrectNumberOfRemoteCopies(pPPP);
-
 
 	// calculate edge length
 	calculateEdgeLength(theMesh,pGCData);
 	calculateCijNorm(theMesh,pGCData,setOfDomain);
-	//	// transfer geometric data from FMDB to Matrix structure
+	// transfer geometric data from FMDB to Matrix structure
 	i = 0;
 	ndom = (int)setOfDomain.size();
 	int *domlist = new int[ndom];
 	for(iter = setOfDomain.begin(); iter!=setOfDomain.end(); iter++){
 		domlist[i++] =  *iter;
 	}
-//	pGCData->calculateNumEdges(theMesh,ndom,domlist);
-//	pGCData->calculateNumBDRYFaces(theMesh,ndom,domlist);
-//	pGCData->calculateNumNodes(theMesh,ndom,domlist);
-//	pGCData->calculateNumBdryNodes(theMesh,ndom,domlist);
-//	pGCData->allocatePointers(theMesh,ndom);
-//	pGCData->calculateEdgeProperties(theMesh,ndom,domlist);
-//	transferCijData(theMesh,pGCData,ndom,domlist);
-//	transferDijData(theMesh,pGCData,ndom,domlist);
-//	transferVolData(theMesh,pGCData,ndom,domlist);
-//	pGCData->mappingNodesIds(theMesh,ndom,domlist);
-//	delete[] domlist; domlist = 0;
 	PetscPrintf(PETSC_COMM_WORLD,"EBFV1-3D pre-processor has finished.\n\n");
 	return 0;
 }
 
-// before use computeDij(), faces on boundaries (external/internal) should
-// be marked with markTetraBdryFaces()
+// before use computeDij(), faces on boundaries (external/internal) should be marked with markTetraBdryFaces()
 void computeDij(pMesh theMesh, pEntity face, GeomData *pGCData){
 	int ID1=0, dom1=0,ID2=0, dom2=0;
 	EN_getDataInt((pEntity)face,MD_lookupMeshDataId("ov1"),&ID1);
@@ -270,7 +280,6 @@ void computeDij(pMesh theMesh, pEntity face, GeomData *pGCData){
 	pVertex oppositeVertex = theMesh->getVertex(ID1);
 	// NOTE: Dij points outside to dom1
 	if ( oppositeVertex ){
-		//std::vector<double> Dij(3,.0);
 		double Dij[3] = {.0,.0,.0}, dij[3];
  		DijVector(face,oppositeVertex,Dij);
 		pGCData->setDij(face,dom1,dom2,Dij);

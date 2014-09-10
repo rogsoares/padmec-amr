@@ -138,6 +138,7 @@ namespace PRS{
 		if ( iter != pCoeffnt->volume.end() ) vol = iter->second;
 	}
 
+	// set in preprocessor
 	bool GeomData::edgeBelongToDomain(pEntity edge, const int &dom){
 		//		Coefficients* pCoeffnt = getAttachedData_pointer<Coefficients>(edge);
 		//		MapDataArray::const_iterator MDA_citer = pCoeffnt->Cij.find(dom);
@@ -145,6 +146,14 @@ namespace PRS{
 		int belong = 0;
 		char dom_string[256]; sprintf(dom_string,"dom_str_%d",dom);
 		EN_getDataInt(edge,MD_lookupMeshDataId( dom_string ),&belong);
+		return belong;
+	}
+
+	// set in preprocessor
+	bool GeomData::faceBelongToDomain(pEntity face, const int &dom){
+		int belong = 0;
+		char dom_string[256]; sprintf(dom_string,"dom_str_%d",dom);
+		EN_getDataInt(face,MD_lookupMeshDataId( dom_string ),&belong);
 		return belong;
 	}
 

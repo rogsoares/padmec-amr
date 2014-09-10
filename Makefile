@@ -18,7 +18,7 @@
 #	_SEEKFORBUGS_           : Debuggin in general (whole code)
 #    NOADAPTATION			: Compile code without mesh adaptation feature
 #
-CXXFLAGS=-DPARALLEL -g -DNOADAPTATION
+CXXFLAGS=-DPARALLEL -g -DNOADAPTATION -Wunused-local-typedefs
 #CXXFLAGS=-DPARALLEL -g -Wall -Wunused -D__ADAPTATION_DEBUG__ -D__ERROR_ANALYSIS_DEBUG__ -D_SEEKFORBUGS_ -DTRACKING_PROGRAM_STEPS -DFVPO
 # scientific_application folder is where libraries are installed 
 APP_DIR=$(HOME)/scientific_applications
@@ -77,7 +77,8 @@ OBJS1=$(OBJ_DIR)/main.o $(OBJ_DIR)/SIMULATION_core.o $(OBJ_DIR)/SIMULATION_core_
 	$(OBJ_DIR)/EBFV1-2D-pp.o $(OBJ_DIR)/EBFV1-3D-pp.o $(OBJ_DIR)/setCorrectNumberOfRemoteCopies.o $(OBJ_DIR)/validate-EBFV1.o \
     $(OBJ_DIR)/LoadMeshAdaptationParameters.o  $(OBJ_DIR)/load_EBFV1_PreProcessorData.o $(OBJ_DIR)/auxiliar.o $(OBJ_DIR)/SimulatorParameters.o \
     $(OBJ_DIR)/Exception.o $(OBJ_DIR)/exportVTK.o $(OBJ_DIR)/PhysicPropData.o $(OBJ_DIR)/LoadSimulatorParameters.o \
-    $(OBJ_DIR)/GeomData.o $(OBJ_DIR)/GeomData_initialize.o $(OBJ_DIR)/GeomData_calculate.o
+    $(OBJ_DIR)/GeomData.o $(OBJ_DIR)/GeomData_initialize.o $(OBJ_DIR)/GeomData_calculate.o $(OBJ_DIR)/GeomData_Mapping.o $(OBJ_DIR)/GeomData_AllocateMemory.o \
+    $(OBJ_DIR)/GeomData_TransferData.o
 	
 ifeq (,$(findstring NOADAPTATION,$(CXXFLAGS)))
 OBJS2=$(OBJ_DIR)/CalculateDegreeOfRefinement_2D.o $(OBJ_DIR)/AdaptiveRemeshing.o \

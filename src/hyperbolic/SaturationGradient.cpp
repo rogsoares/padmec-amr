@@ -107,8 +107,8 @@ namespace PRS{
 
 		nedges = pGCData->getNumEBE();
 		for (edge=0; edge<nedges; edge++){
-			pGCData->getEBE(edge,versor);
-			pGCData->getEBE(edge,idx0_global,idx1_global,flag1,flag2);
+			pGCData->getVersor_ExternalBdryElement(edge,versor);
+			pGCData->getExternalBdryEdges(edge,idx0_global,idx1_global,flag1,flag2);
 			pPPData->get_Sw_Grad(idx0_global,Sw_grad_I);
 			pPPData->get_Sw_Grad(idx1_global,Sw_grad_J);
 
