@@ -39,11 +39,13 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 	}
 	RIter_delete(rit);
 
+	cout << "Number of domains: " << setOfDomain.size() << endl;
+
 	// mark faces (boundary)
 	bool detectBdryFaces = false;
-	//int count2 = 0;
 	std::set<int>::iterator iter = setOfDomain.begin();
 	for (; iter != setOfDomain.end(); iter++){
+		int countBDRYFaces = 0;
 		int dom = *iter;
 		char dom_string[256]; sprintf(dom_string,"dom_str_%d",dom);
 		RIter rit = M_regionIter(theMesh);
@@ -56,7 +58,7 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 					// if flags are different, then face in on boundary
 					if (faceflag!=tetraflag){
 						detectBdryFaces = true;
-		//				count2++;
+						countBDRYFaces++;
 						// set edge belonging to domain 'dom'
 						EN_attachDataInt(face,MD_lookupMeshDataId( dom_string ),1);
 					}
@@ -64,8 +66,9 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 			}
 		}
 		RIter_delete(rit);
+		cout << "Number of boundary faces for domain " << dom << ": " << countBDRYFaces << endl;
 	}
-	//cout << "count pp-3D: " << count2 << endl;
+	//throw 1;
 
 	if (!detectBdryFaces){
 		throw Exception(__LINE__,__FILE__,"Any boundary face (triangles) were detected. Boundary elements MUST have different flag of internal elements.");
@@ -254,11 +257,9 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 		FIter_delete(fit);
 	}
 	PetscPrintf(PETSC_COMM_WORLD,"Finished\n");MPI_Barrier(MPI_COMM_WORLD);
-
-	// calculate edge length
 	calculateEdgeLength(theMesh,pGCData);
 	calculateCijNorm(theMesh,pGCData,setOfDomain);
-	// transfer geometric data from FMDB to Matrix structure
+	identifyBoundaryElements(theMesh,pGCData,setOfDomain);
 	i = 0;
 	ndom = (int)setOfDomain.size();
 	int *domlist = new int[ndom];

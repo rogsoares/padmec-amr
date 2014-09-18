@@ -59,7 +59,7 @@ void DijVector(pFace face, pVertex &oppositeVertex, double *Dij){
 	computeCrossProduct(a,b,_Dij);
 
 	// if inner product between Dij and c vector is negative, it means Dij points inside domain
-	if ( computeDotProduct( c, _Dij ) < .0 ){
+	if ( computeDotProduct( c, _Dij ) > .0 ){
 		for (i=0;i<3;i++){
 			_Dij[i] = -_Dij[i];
 		}
@@ -604,13 +604,9 @@ void calculateEdgeLength(pMesh theMesh, GeomData *pGCData){
 	pGCData->setSmallestEdgeLength(P_getMinDbl(delta_x));
 }
 
-/*
- * Calculate Cij Norm
- * =======================================================================================
- */
+// Calculate Cij Norm
 void calculateCijNorm(pMesh theMesh, GeomData *pGCData, std::set<int> setOfDomains){
 	int dim = theMesh->getDim();
-	//std::vector<double> Cij(3);
 	double Cij[3];
 	std::set<int>::iterator iter = setOfDomains.begin();
 	for(;iter!=setOfDomains.end();iter++){
@@ -619,10 +615,7 @@ void calculateCijNorm(pMesh theMesh, GeomData *pGCData, std::set<int> setOfDomai
 		while ( (edge = EIter_next(eit)) ){
 			if (!theMesh->getRefinementDepth(edge)){
 				pGCData->getCij(edge,*iter,Cij);
-				//printf("edge flag: %d Cij: %.6f %.6f\t",GEN_tag( edge->getClassification() ),Cij[0],Cij[1]);
-				//double Cij_norm = sqrt(Cij[0]*Cij[0] + Cij[1]*Cij[1]);
 				double Cij_norm = norm_L2(Cij,dim);
-				//printf("Cij_norm: %.6f\n",Cij_norm);
 				if (Cij_norm > 0.0){
 					pGCData->setCij_norm(edge,*iter,Cij_norm);
 					int flag = EN_getFlag(edge);
@@ -633,3 +626,40 @@ void calculateCijNorm(pMesh theMesh, GeomData *pGCData, std::set<int> setOfDomai
 		EIter_delete(eit);
 	}
 }
+
+void identifyBoundaryElements(pMesh theMesh, GeomData *pGCData, std::set<int> setOfDomains){
+	bool detected=false;
+	pEdge edge,face;
+	std::set<int>::iterator iter;
+	int flag;
+	if (theMesh->getDim()==2){
+		EIter eit = M_edgeIter(theMesh);
+		while ( (edge = EIter_next(eit)) ){
+			pGCData->set_belongsToBoundary(edge, false );
+			iter = setOfDomains.find( EN_getFlag(edge) );
+			if ( iter==setOfDomains.end() ){
+				detected = true;
+				pGCData->set_belongsToBoundary(edge, true );
+			}
+
+		}
+		EIter_delete(eit);
+	}
+	else{
+		FIter fit = M_faceIter(theMesh);
+		while ( (face = FIter_next(fit)) ){
+			pGCData->set_belongsToBoundary(face,false );
+			iter = setOfDomains.find( EN_getFlag(face) );
+			if ( iter==setOfDomains.end() ){
+				detected = true;
+				pGCData->set_belongsToBoundary(face, true );
+			}
+		}
+		FIter_delete(fit);
+	}
+
+	if (!detected){
+		throw Exception(__LINE__,__FILE__,"Any boundary element detected.");
+	}
+}
+

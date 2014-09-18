@@ -14,11 +14,9 @@ enum INTERPOLATION_OPTIONS {h_REFINEMENT,LINEAR, QUADRATIC, ADAPTATIVE, CONSERVA
 namespace PRS{
 
 /**
- * SimulatorParameters class provides all IO data stream during simulation.
- * Numeric, physical, pre-processor data input are made through this class.
- * When a specific class object is not applied to do so within SimulatorPara-
- * meters class, it performs the data reading itself.
- * VTK printing files are also made using SimulatorParameters.
+ * SimulatorParameters class provides all IO data stream during simulation. Numeric, physical, pre-processor data input are made through this
+ * class. When a specific class object is not applied to do so within SimulatorParameters class, it performs the data reading itself. VTK prin-
+ * ting files are also made using SimulatorParameters.
  */
 class SimulatorParameters{
 public:
@@ -37,13 +35,9 @@ public:
 	void loadHighOrderParameter();
 	void loadMeshAdaptationParameters();
 
-	/** load_preprocessor data is based on user decision from numeric.dat.
-	 * This function uses a void pointer object. The main reason is to use a
-	 * pointer to GeomData which has been designed to set/get
-	 * geometric data associated to mesh entities. But it not a rule and any
-	 * kind of object may be passed through load_preprocessorData avoiding
-	 * additional code implementation. Preprocessor file name is defined on
-	 * numeric.dat file.
+	/** load_preprocessor data is based on user decision from numeric.dat. This function uses a void pointer object. The main reason is to use a
+	 *  pointer to GeomData which has been designed to set/get geometric data associated to mesh entities. But it not a rule and any kind of ob-
+	 *  ject may be passed through load_preprocessorData avoiding additional code implementation. Preprocessor file name is defined on numeric.dat file.
 	 */
 	void load_preprocessorData(void*);
 
@@ -62,10 +56,7 @@ public:
 	string getOutputPathName() const { return expofName; }
 	string prepFilename() const { return prepfName; }
 
-	/*
-	 * numeic parameters
-	 * --------------------------------------------------------------------
-	 */
+	// numeic parameters
 	double CFL() const { return _CFL; }
 	double getBC_Value(const int &flag);	// return value associated to flag
 	bool isNodeFree(const int &flag);		// returns false if dirichlet
@@ -127,14 +118,11 @@ public:
 	bool hasNodeWell(const int &flag);	// returns true if node has a flag for well
 	double getWellVolume(int well_flag) const;	// returns the sum of nodal volumes of the nodes well
 	void getWells(pMesh theMesh, int);
-	bool rankHasProductionWell() const { return _rankHasProductionWell; }
-	void checkIfRankHasProductionWell();
 	void weightWellFlowRateByVolume(pMesh theMesh, GeomData *);
 	double getFlowrateValue(int flag) const;
 	double getInitialSaturation(pEntity);
 
 	// reservoir geometric dimension used to make some physical properties dimensionless
-	//void getReservoirGeometricDimensions(double &L, double &H) const;
 	void getReservoirGeometricDimensions(double &L, double &H) const {
 		H = reservoir_Height; L = reservoir_Length;
 	}

@@ -238,8 +238,10 @@ namespace PRS{
 	double SimulatorParameters::getTotalInjectionFlowRate() const{
 		double Q = 0.0;
 		for (MWCIter mwiter=MWells.begin(); mwiter!=MWells.end(); mwiter++){
-			//	printf("well flag %d. Flow rate: %f.  Volume: %f\n",mwiter->first,mwiter->second.flowRate,mwiter->second.wellVolume);
-			if ( isInjectionWell( mwiter->first ) ) Q += mwiter->second.flowRate;
+			printf("well flag %d. Flow rate: %f.  Volume: %f\n",mwiter->first,mwiter->second.flowRate,mwiter->second.wellVolume);
+			if ( isInjectionWell( mwiter->first ) ){
+				Q += mwiter->second.flowRate;
+			}
 		}
 		return Q;
 	}
@@ -248,18 +250,7 @@ namespace PRS{
 		MWCIter mit = MWells.find( well_flag );
 		return mit->second.wellVolume;
 	}
-	
-	void SimulatorParameters::checkIfRankHasProductionWell(){
-		VIter vit = M_vertexIter(theMesh);
-		while (pVertex node = VIter_next(vit)){
-			if ( isProductionWell(node) ){
-				_rankHasProductionWell = true;
-				break;
-			}
-		}
-		VIter_delete(vit);
-	}
-	
+
 	/*
 	 * double GeomData::getReservoirVolume() returns the total reservoir volume.
 	 * To compute the initial oil volume it's necessary to take account rock po-
@@ -286,10 +277,8 @@ namespace PRS{
 		}
 	}
 	
-	/*
-	 * This function is called every time a new time-step is calculated. We want to know how many steps there are within a fraction of PVI or how
-	 * many step there are within every time allowPrintingVTK is set true. TSCountingList stores this values.
-	 */
+	// This function is called every time a new time-step is calculated. We want to know how many steps there are within a fraction of PVI
+	// or how many step there are within every time allowPrintingVTK is set true. TSCountingList stores this values.
 	void SimulatorParameters::correctTimeStep(double &timeStep){
 		if (firstVTKupdate){
 			updatePrintOutVTKFrequency();  
@@ -331,6 +320,7 @@ namespace PRS{
 			updatePrintOutVTKFrequency();
 			allowPrintingVTK = false;
 		}
+		//throw 1;
 	}
 	
 	void SimulatorParameters::updatePrintOutVTKFrequency(){

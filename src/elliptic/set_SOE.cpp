@@ -60,29 +60,22 @@ namespace PRS{
 				pGCData->getCij(dom,i,Cij);
 				pGCData->getEdge(dom,i,idx0,idx1,idx0_global,idx1_global);
 				pGCData->getID(dom,idx0,idx1,id0,id1);
-
-
-//				cout << "id: " << id0 << "  " << id1 << endl;
-//				cout << "idx: " << idx0 << "  " << idx1 << endl;
-//				cout << "idx_global: " << idx0_global << "  " << idx1_global << endl;
-//				cout << setprecision(8) << "Cij: " << Cij[0] << "  " << Cij[1] << " " << Cij[2] << endl;
-
-
 				divergence_E(E[dom],Cij,i,dom,dom_flag,idx0_global,idx1_global,id0,id1,dim);
 				divergence_G(G_tmp,Cij,i,dom,dom_flag,idx0_global,idx1_global,id0,id1,dim);
 				gradient_F_edges(F[dom],Cij,dom,idx0,idx1,id0,id1,dim);
-
-				//break;
 			}
 			gradient_F_bdry(F[dom],dom);
 			assemblyMatrix(F[dom]);
 			assemblyMatrix(E[dom]);
 		}
+		//STOP();
 		assemblyMatrix(G_tmp);
 
 //		printMatrixToFile(G_tmp,"Matrix_G.txt");
 //		printMatrixToFile(F[0],"Matrix_F.txt");
 //		printMatrixToFile(E[0],"Matrix_E.txt");
+///
+	//	STOP();
 
 //		Vec solvec;
 //		VecCreate(PETSC_COMM_WORLD,&solvec);

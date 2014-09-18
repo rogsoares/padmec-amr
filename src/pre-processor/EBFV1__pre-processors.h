@@ -21,6 +21,8 @@ void computeDij(pMesh, pFace, GeomData *);
 
 int unifyCijAmongProcessors(pMesh, const set<int>&, GeomData*);
 
+void identifyBoundaryElements(pMesh theMesh, GeomData *pGCData, std::set<int> setOfDomains);
+
 int unifyVolumesAmongProcessors(pMesh, const set<int>&, const string&, GeomData*);
 
 void getFCenter(pFace face, double *);
