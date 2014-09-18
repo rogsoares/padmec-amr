@@ -225,14 +225,14 @@ namespace PRS{
 		setAttachedData_pointer(e,pCoeffnt);
 	}
 
-	void GeomData::set_belongsToBoundary(pEdge edge, bool k){
-		Coefficients* pCoeffnt = getAttachedData_pointer<Coefficients>(edge);
+	void GeomData::set_belongsToBoundary(pEntity ent, bool k){
+		Coefficients* pCoeffnt = getAttachedData_pointer<Coefficients>(ent);
 		pCoeffnt->isBoundary = k;
-		setAttachedData_pointer(edge,pCoeffnt);
+		setAttachedData_pointer(ent,pCoeffnt);
 	}
 
-	bool GeomData::belongsToBoundary(pEdge edge){
-		Coefficients* pCoeffnt = getAttachedData_pointer<Coefficients>(edge);
+	bool GeomData::belongsToBoundary(pEntity ent){
+		Coefficients* pCoeffnt = getAttachedData_pointer<Coefficients>(ent);
 		return pCoeffnt->isBoundary;
 	}
 

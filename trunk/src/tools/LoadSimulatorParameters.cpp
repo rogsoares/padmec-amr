@@ -80,11 +80,10 @@ namespace PRS{
 			setStepOutputFile(0);
 		}
 
+		getDomains();
 		getWells(theMesh,pGCData->getMeshDim());
 		weightWellFlowRateByVolume(theMesh,pGCData);
-		checkIfRankHasProductionWell();
 		setInitialOilVolume(theMesh,pGCData);
-		setLocalNodeIDNumbering(theMesh);
 #ifdef TRACKING_PROGRAM_STEPS
 		cout << "TRACKING_PROGRAM_STEPS: SimulatorParameters::initialize\tOUT\n";
 #endif
@@ -264,7 +263,6 @@ namespace PRS{
 		if ( !fid.is_open() ) throw Exception(__LINE__,__FILE__,"physical.dat could not be opened or it doesn't exist.\n");
 
 		// start reading file
-		// ---------------------------------------------------------------------
 		setPositionToRead(fid,"Oil density");
 		fid >> str; _oil_density = strtod(str.c_str(), 0);
 
@@ -306,7 +304,6 @@ namespace PRS{
 		if ( !fid.is_open() ) throw Exception(__LINE__,__FILE__,"solver.dat could not be opened or it doesn't exist.\n");
 
 		// start reading file
-		// ---------------------------------------------------------------------
 		setPositionToRead(fid,"absolute convergence tolerance");
 		fid >> _abstol;
 
@@ -333,14 +330,10 @@ namespace PRS{
 			std::cout << "restart : " << _Krylov_restart << endl;
 		}
 
-		/*
-		 * Load a 'database' to set a preconditioner chosen by user. <private>
-		 */
+		// Load a 'database' to set a preconditioner chosen by user. <private>
 		setPreconditionerDataBase();
 
-		/*
-		 * Read solver.dat and check which preconditioner user chose.
-		 */
+		// Read solver.dat and check which preconditioner user chose.
 		string::size_type pos;
 		int numpc = (int)mapPC.size(); // number of preconditioners presented on data base.
 		setPositionToRead(fid,"Define a preconditioner (Default: none)");
@@ -391,19 +384,14 @@ namespace PRS{
 		if ( !fid.is_open() ) throw Exception(__LINE__,__FILE__,"solve-limiters.dat could not be opened or it doesn't exist.\n");
 
 		// start reading file
-		// ---------------------------------------------------------------------
 		const int HOM = 5;
 		std::string theString[HOM];
 
-		/*
-		 * Read from file all slope limiter function options
-		 */
+		// Read from file all slope limiter function options
 		setPositionToRead(fid,"Nodal sloper limiter functions (default: MUSCL):");
 		for (int i=0; i<HOM; i++) getline(fid,theString[i],'\n');
 
-		/*
-		 * Define a "data bank" for node slope limiters function
-		 */
+		// Define a "data bank" for node slope limiters function
 		mapSL_node["(x) - Superbee"] = node_Superbee;
 		mapSL_node["(x) - Minmod"] = node_Minmod;
 		mapSL_node["(x) - Van_Albada"] = node_Van_Albada;
@@ -415,24 +403,18 @@ namespace PRS{
 		// define node SL default as MUSCL
 		slf_method_Node = node_MUSCL;
 
-		/*
-		 * Find which option user has chosen
-		 */
+		// Find which option user has chosen
 		for (int i=0; i<HOM; i++){
 			mit = mapSL_node.find(theString[i]);
 			if ( mit != mapSL_node.end() ) slf_method_Node = mit->second;
 			theString[i].clear();
 		}
 
-		/*
-		 * Read from file all slope limiter function options
-		 */
+		// Read from file all slope limiter function options
 		setPositionToRead(fid,"Edge sloper limiter functions (default: MUSCL):");
 		for (int i=0; i<HOM; i++) getline(fid,theString[i],'\n');
 
-		/*
-		 * Define a "data bank" for edge slope limiters function
-		 */
+		// Define a "data bank" for edge slope limiters function
 		mapSL_edge["(x) - Superbee"] = SUPERBEE;
 		mapSL_edge["(x) - Minmod"] = MINMOD;
 		mapSL_edge["(x) - Van Albada"] = VAN_ALBADA;
@@ -441,20 +423,16 @@ namespace PRS{
 
 		// define edge SL default as MUSCL
 		slf_method_Edge = MUSCL;
-		/*
-		 * Find which option user has chosen
-		 */
+
+		// Find which option user has chosen
 		std::map<string,ESLF>::iterator mite;
 		for (int i=0; i<HOM; i++){
 			mite = mapSL_edge.find(theString[i]);
 			if ( mite != mapSL_edge.end() ) slf_method_Edge = mite->second;
 		}
 
-		/*
-		 * Modified Taylor expansion series extrapolating nodal saturation value on volume
-		 * control interfaces. Mark an 'x' (without quotes) inside the parentheses to define
-		 * the coefficient 'k' for the saturation extrapolation.
-		 */
+		// Modified Taylor expansion series extrapolating nodal saturation value on volume control interfaces. Mark an 'x' (without quotes) inside
+		// the parentheses to define the coefficient 'k' for the saturation extrapolation.
 
 		// define koef as 0 <default>
 		koef = .0;
@@ -462,15 +440,11 @@ namespace PRS{
 		map_koef["(x) - 1/3, método de ponderação a montante de terceira ordem"] = 1./3.;
 		map_koef["(x) -   1,   método de diferenças centradas de três pontos"] = 1.;
 
-		/*
-		 * Read from file the options
-		 */
+		// Read from file the options
 		setPositionToRead(fid,"Taylor expansion coefficient - (default: koef = 0, método de Fromm):");
 		for (int i=0; i<4; i++) getline(fid,theString[i],'\n');
 
-		/*
-		 * Find which option the use has chosen
-		 */
+		// Find which option the use has chosen
 		std::map<string,double>::iterator mit_koef;
 		for (int i=0; i<HOM; i++){
 			mit_koef = map_koef.find(theString[i]);
@@ -479,7 +453,6 @@ namespace PRS{
 				if (!P_pid()) cout << "koef = " << koef << endl;
 			}
 		}
-
 
 		// Delta value for woodfield
 		_WFdelta = 0.2;
@@ -512,10 +485,7 @@ namespace PRS{
 		istringstream stream1;
 		std::list<double> K_tmp;
 
-		/*
-		 * This is a way to use the simulator to evaluate elliptic equation without screw-up
-		 * the input data procedure.
-		 */
+		// This is a way to use the simulator to evaluate elliptic equation without screw-up the input data procedure.
 	#ifdef CRUMPTON_EXAMPLE
 		RockProperties *rockprop1 = new RockProperties;
 		RockProperties *rockprop2 = new RockProperties;
@@ -537,6 +507,7 @@ namespace PRS{
 			rockprop = new RockProperties;
 			const int dom = atoi(str.c_str());	// get domain flag
 			rockprop->K = new double[dim*dim];	// get permeability tensor
+
 			// read permeability tensor
 			getline(fid,str);
 			stream1.str(str);
@@ -662,49 +633,4 @@ namespace PRS{
 		mapPC["(x) ICC"]       = PCICC;
 		mapPC["(x) ASM"]       = PCASM;
 	}
-
-	void SimulatorParameters::setLocalNodeIDNumbering(pMesh theMesh){
-//		int k = 0;
-//		pEntity elem;
-//		std::set<pEntity> nodesDomain;
-//		std::set<int>::iterator iter = setOfDomains.begin();
-//		for(;iter!=setOfDomains.end();iter++){
-//			if (theMesh->getDim()==2){
-//			FIter fit = M_faceIter( theMesh );
-//			while ( (elem = FIter_next(fit)) ) {
-//				if ( !theMesh->getRefinementDepth(elem) ){
-//					int flag = EN_getFlag(elem);
-//					if ( flag==*iter ){
-//						for (int i=0;i<3;i++){
-//							nodesDomain.insert(elem->get(0,i));
-//						}
-//					}
-//				}
-//			}
-//			FIter_delete(fit);}
-//			else{
-//				RIter rit = M_regionIter( theMesh );
-//				while ( (elem = RIter_next(rit)) ) {
-//					if ( !theMesh->getRefinementDepth(elem) ){
-//						int flag = EN_getFlag(elem);
-//						if ( flag==*iter ){
-//							for (int i=0;i<4;i++){
-//								nodesDomain.insert(elem->get(0,i));
-//							}
-//						}
-//					}
-//				}
-//				RIter_delete(rit);
-//			}
-//
-//			int i = 0;
-//			char tag[4]; sprintf(tag,"%d",k++);	// flag node with as k-th domain
-//			std::set<pEntity>::iterator iter_global = nodesDomain.begin();
-//			for(;iter_global!=nodesDomain.end();iter_global++){
-//				EN_attachDataInt(*iter_global,MD_lookupMeshDataId(tag),i++);
-//			}
-//			nodesDomain.clear();
-//		}
-	}
-
 }

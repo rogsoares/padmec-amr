@@ -143,7 +143,6 @@ namespace PRS{
 			if (!numBdryNodesPerDomain[i]){
 				throw Exception(__LINE__,__FILE__,"Number of boundary nodes 0!");
 			}
-			//			cout << "numBdryNodesPerDomain: " << numBdryNodesPerDomain[i] << endl;exit(1);
 			nodeSet.clear();
 		}
 	}
@@ -255,12 +254,13 @@ namespace PRS{
 			}
 			RIter_delete(rit);
 			numDomBDRYFaces[i] = (int)faceList.size();
-			//cout << "numDomBDRYFaces = " << numDomBDRYFaces[0] << endl;
+			cout << "numDomBDRYFaces = " << numDomBDRYFaces[i] << endl;
 			if (!numDomBDRYFaces[i]){
 				throw Exception(__LINE__,__FILE__,"Number of boundary faces: 0.");
 			}
 			faceList.clear();
 		}
+		//throw 1;
 
 		// Calculate number of external boundary faces (triangles)
 		numExtBdryFaces = 0;

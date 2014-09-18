@@ -12,9 +12,8 @@ SIMULATION_core::~SIMULATION_core(){
 }
 
 int SIMULATION_core::initialize(int argc, char **argv){
-	/*
-	 * Initialize parallel libraries
-	 */
+
+	// Initialize parallel libraries
 	ParUtil::Instance()->init(argc,argv);
 	PetscInitialize(&argc,&argv,(char *)0,(char *)0);
 
@@ -25,17 +24,13 @@ int SIMULATION_core::initialize(int argc, char **argv){
 
 	printSimulationHeader();
 
-	/*
-	 * Initialize simulation pointers
-	 */
+	// Initialize simulation pointers
 	pPPData = new PhysicPropData;
 	pGCData = new GeomData;
 	pSimPar = new SimulatorParameters(theMesh);
 	pMData = new MeshData(pSimPar,theMesh);
 
-	/*
-	 * Load data from files
-	 */
+	// Load data from files
 	pSimPar->inputDataFromFiles(pGCData);
 
 	/*
@@ -44,48 +39,43 @@ int SIMULATION_core::initialize(int argc, char **argv){
 	 * 		2- Error Analysis Pointer
 	 * 		3- Interpolation Function
 	 */
-	//if (pSimPar->userRequiresAdaptation()){
-		// 1- Adaptation Pointer (h-Refinement or adaptive remeshing)
-		// ----------------------------------------------------------------------------------
-		int dim = pGCData->getMeshDim();
-		if (dim<2 || dim>3){
-		  throw Exception(__LINE__,__FILE__,"Mesh dimension unknown.");
-		}
-//		if (dim==3){
-//			throw Exception(__LINE__,__FILE__,"Only 2-D adaptation allowed for while.");
-//		}
+	// 1- Adaptation Pointer (h-Refinement or adaptive remeshing)
+	int dim = pGCData->getMeshDim();
+	if (dim<2 || dim>3){
+		throw Exception(__LINE__,__FILE__,"Mesh dimension unknown.");
+	}
 
-		// 2- Error Analysis Pointer
+	// 2- Error Analysis Pointer
 #ifndef NOADAPTATION
-		pErrorAnalysis = new ErrorAnalysis_2D;
-		pIData = new InterpolationDataStruct;
-		pIData->getLevelOfRefinement = ErrorAnalysis::getLevelOfRefinement;
-		pIData->numFields = 2;
-		pIData->pGetDblFunctions = new GetDblFunction[2];
-		pIData->pSetDblFunctions = new SetDblFunction[2];
+	pErrorAnalysis = new ErrorAnalysis_2D;
+	pIData = new InterpolationDataStruct;
+	pIData->getLevelOfRefinement = ErrorAnalysis::getLevelOfRefinement;
+	pIData->numFields = 2;
+	pIData->pGetDblFunctions = new GetDblFunction[2];
+	pIData->pSetDblFunctions = new SetDblFunction[2];
 
-		// get data from old mesh
-		pIData->pGetDblFunctions[0] = pPPData->getPressure;
-		pIData->pGetDblFunctions[1] = pPPData->getSaturation;
+	// get data from old mesh
+	pIData->pGetDblFunctions[0] = pPPData->getPressure;
+	pIData->pGetDblFunctions[1] = pPPData->getSaturation;
 
-		// set data (interpolated) to new mesh
-		pIData->pSetDblFunctions[0] = pPPData->setPressure_NM;	// set pressure for New Mesh
-		pIData->pSetDblFunctions[1] = pPPData->setSaturation_NM;	// set saturarion for New Mesh
+	// set data (interpolated) to new mesh
+	pIData->pSetDblFunctions[0] = pPPData->setPressure_NM;	// set pressure for New Mesh
+	pIData->pSetDblFunctions[1] = pPPData->setSaturation_NM;	// set saturarion for New Mesh
 
-		switch( pSimPar->getRefStrategy() ){
-		case H_REFINEMENT:
-			pMeshAdapt = new H_Refinement_2D;
-			pIData->isElementSpecial = H_Refinement_2D::isElementSpecial;
-			break;
-		case ADAPTIVE_REMESHING:
-			pMeshAdapt = new AdaptiveRemeshing(argc, argv);
-			break;
- 		case RH_REFINEMENT:
- 			//pMeshAdapt = new RH_Refinement(argc, argv);
- 			break;
-		default:
-			throw Exception(__LINE__,__FILE__,"Unknown adaptation strategy.");
-		}
+	switch( pSimPar->getRefStrategy() ){
+	case H_REFINEMENT:
+		pMeshAdapt = new H_Refinement_2D;
+		pIData->isElementSpecial = H_Refinement_2D::isElementSpecial;
+		break;
+	case ADAPTIVE_REMESHING:
+		pMeshAdapt = new AdaptiveRemeshing(argc, argv);
+		break;
+	case RH_REFINEMENT:
+		//pMeshAdapt = new RH_Refinement(argc, argv);
+		break;
+	default:
+		throw Exception(__LINE__,__FILE__,"Unknown adaptation strategy.");
+	}
 #endif
 
 	/*
@@ -99,24 +89,17 @@ int SIMULATION_core::initialize(int argc, char **argv){
 	pPPData->initialize(pMData,pSimPar,theMesh,false,pGCData);
 	pMData->initialize(theMesh,pGCData);
 
-
 	if (!P_pid()){
 		printf("Number of processes required: %d\n",P_size());
 	}
 
-	/*
-	 * Oil production output
-	 */
-	if ( pSimPar->rankHasProductionWell() ) {
-		string path = pSimPar->getOutputPathName();
-		char tmp[256]; sprintf(tmp,"%s_oil-production-%d.csv",path.c_str(),P_size());
-		string FileName(tmp);
-		pOilProduction = new OilProductionManagement(FileName,pSimPar->getInitialOilVolume(),pSimPar->getTotalInjectionFlowRate(),pSimPar->useRestart());
-	}
+	// Oil production output
+	string path = pSimPar->getOutputPathName();
+	char tmp[256]; sprintf(tmp,"%s_oil-production-%d.csv",path.c_str(),P_size());
+	string FileName(tmp);
+	pOilProduction = new OilProductionManagement(FileName,pSimPar->getInitialOilVolume(),pSimPar->getTotalInjectionFlowRate(),pSimPar->useRestart());
 
-	/*
-	 *  Initialize elliptic and hyperbolic solver pointers
-	 */
+	// Initialize elliptic and hyperbolic solver pointers
 	pElliptic_eq = init_EllipticSolverPointer( pSimPar->getEllipticSolver() );
 	pHyperbolic_eq = init_HyperbolicSolverPointer( pSimPar->getHyperbolicSolver() );
 	return 0;

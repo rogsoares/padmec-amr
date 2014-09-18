@@ -39,6 +39,10 @@ namespace PRS{
 				pGCData->getBdryID(dom,idx_0,idx_1,idx_2,id0,id1,id2);
 				pGCData->getBdryVolume(dom,idx_0,idx_1,idx_2,volumeI,volumeJ,volumeK);
 				pGCData->getDij(dom,j,Dij);
+
+//				cout << setprecision(8) << fixed << scientific;
+//				cout << j << "  " << dom << "\t" << id0 << " " << id1 << " " << id2 << "\t" << Dij[0] << " " << Dij[1] << " " << Dij[2] << endl;
+
 				double tmp[3] = {1./(8.*volumeI), 1./(8.*volumeJ), 1./(8.*volumeK)};
 				double aux[3][3] = {{6.*tmp[0],tmp[0],tmp[0]},{tmp[1],6.*tmp[1],tmp[1]},{tmp[2],tmp[2],6.*tmp[2]}};
 
@@ -98,7 +102,7 @@ namespace PRS{
 //				MatSetValues(F,9,idxm,3,idxn,Fij,ADD_VALUES);
 			}
 		}
-//		exit(1);
+		//exit(1);
 		return 0;
 	}
 }

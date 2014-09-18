@@ -84,7 +84,7 @@ namespace PRS{
 
 		timestep_counter++;
 		// oil production output
-		if (pSimPar->rankHasProductionWell() && pSimPar->timeToPrintVTK()){
+		if (pSimPar->timeToPrintVTK()){
 			pOPManager->printOilProduction(timeStep,pSimPar->getCumulativeSimulationTime(),pSimPar->getSimTime(),getRecoveredOil(),getCumulativeOil(),timestep_counter);
 			timestep_counter = 0;
 		}

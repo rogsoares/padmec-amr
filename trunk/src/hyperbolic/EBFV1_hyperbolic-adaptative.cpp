@@ -82,7 +82,7 @@ namespace PRS{
 			Sw_timestep_sum += timeStep;									// CFL timestep summation
 
 			// oil production output
-			if (pSimPar->rankHasProductionWell() && pSimPar->timeToPrintVTK()){
+			if (pSimPar->timeToPrintVTK()){
 				pOPManager->printOilProduction(timeStep,pSimPar->getCumulativeSimulationTime(),pSimPar->getSimTime(),getRecoveredOil(),getCumulativeOil(),timestep_counter);
 				timestep_counter = 0;
 			}
