@@ -2,6 +2,7 @@
 #define _EBFV1_ELLIPTIC_EQUATION_H_
 
 #include "Elliptic_equation.h"
+#include "CPU_Profiling.h"
 
 namespace PRS{           // PRS: Petroleum Reservoir Simulator
 	/**

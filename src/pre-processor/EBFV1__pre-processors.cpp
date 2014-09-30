@@ -7,36 +7,53 @@
 
 #include "EBFV1__pre-processors.h"
 
-void DijVector(pFace face, pVertex &oppositeVertex, std::vector<double> &Dij){
-	int i;
-	double xyz[3][3], xyzOV[3];
+int EBFV1_preprocessor(pMesh theMesh, void *pData){
+	cout<< "EBFV1_preprocessor"<<endl;
+#ifdef TRACKING_PROGRAM_STEPS
+	cout << "TRACKING_PROGRAM_STEPS: Preprocessor\tIN\n";
+#endif
 
-	std::vector<pVertex> v;
-	M_GetVertices(face,v);
-
-	for (i=0 ;i<3; i++) Dij[i] = 0;
-	for (i=0 ;i<3; i++) V_coord( v[i], xyz[i] );
-	V_coord( oppositeVertex, xyzOV );
-
-	double a[3] = { xyz[1][0]-xyz[0][0], xyz[1][1]-xyz[0][1], xyz[1][2]-xyz[0][2] } ;
-	double b[3] = { xyz[2][0]-xyz[0][0], xyz[2][1]-xyz[0][1], xyz[2][2]-xyz[0][2] } ;
-	double c[3] = { xyzOV[0]-xyz[0][0], xyzOV[1]-xyz[0][1], xyzOV[2]-xyz[0][2] } ;
-
-	double _Dij[3]={.0,.0,.0};
-	computeCrossProduct(a,b,_Dij);
-	//	_Dij[0] = a[1]*b[2] - a[2]*b[1];
-	//	_Dij[1] = a[2]*b[0] - a[0]*b[2];
-	//	_Dij[2] = a[0]*b[1] - a[1]*b[0];
-
-	if ( computeDotProduct( c, _Dij ) > .0 ){
-		//	if ( innerProd > .0 ){
-		for (i=0;i<3;i++)
-			_Dij[i] = -_Dij[i];
+	int ndom;
+	if (theMesh->getDim()==2){
+		EBFV1_preprocessor_2D(theMesh,pData,ndom);
+	}
+	else{
+		EBFV1_preprocessor_3D(theMesh,pData,ndom);
 	}
 
-	for (i=0;i<3;i++) Dij[i] = _Dij[i]/6.0;
-	v.clear();
+#ifdef TRACKING_PROGRAM_STEPS
+	cout << "TRACKING_PROGRAM_STEPS: Preprocessor\tOUT\n";
+#endif
+	return 0;
 }
+
+//void DijVector(pFace face, pVertex &oppositeVertex, std::vector<double> &Dij){
+//	int i;
+//	double xyz[3][3], xyzOV[3];
+//
+//	std::vector<pVertex> v;
+//	M_GetVertices(face,v);
+//
+//	for (i=0 ;i<3; i++) Dij[i] = 0;
+//	for (i=0 ;i<3; i++) V_coord( v[i], xyz[i] );
+//	V_coord( oppositeVertex, xyzOV );
+//
+//	double a[3] = { xyz[1][0]-xyz[0][0], xyz[1][1]-xyz[0][1], xyz[1][2]-xyz[0][2] } ;
+//	double b[3] = { xyz[2][0]-xyz[0][0], xyz[2][1]-xyz[0][1], xyz[2][2]-xyz[0][2] } ;
+//	double c[3] = { xyzOV[0]-xyz[0][0], xyzOV[1]-xyz[0][1], xyzOV[2]-xyz[0][2] } ;
+//
+//	double _Dij[3]={.0,.0,.0};
+//	computeCrossProduct(a,b,_Dij);
+//
+//	if ( computeDotProduct( c, _Dij ) > .0 ){
+//		//	if ( innerProd > .0 ){
+//		for (i=0;i<3;i++)
+//			_Dij[i] = -_Dij[i];
+//	}
+//
+//	for (i=0;i<3;i++) Dij[i] = _Dij[i]/6.0;
+//	v.clear();
+//}
 
 // calcuates Dij vector: It points outer of domain
 void DijVector(pFace face, pVertex &oppositeVertex, double *Dij){
@@ -52,7 +69,7 @@ void DijVector(pFace face, pVertex &oppositeVertex, double *Dij){
 
 	double a[3] = { xyz[1][0]-xyz[0][0], xyz[1][1]-xyz[0][1], xyz[1][2]-xyz[0][2] } ;	// vector over face's edge
 	double b[3] = { xyz[2][0]-xyz[0][0], xyz[2][1]-xyz[0][1], xyz[2][2]-xyz[0][2] } ;	// vector over another face's edge
-	double c[3] = { xyzOV[0]-xyz[0][0], xyzOV[1]-xyz[0][1], xyzOV[2]-xyz[0][2] } ;		// vector from opposite vertex to outer face
+	double c[3] = { xyzOV[0]-xyz[0][0], xyzOV[1]-xyz[0][1], xyzOV[2]-xyz[0][2] } ;		// vector from face's center to opposite vertex
 
 	// Dij: Dij = a x b
 	double _Dij[3]={.0,.0,.0};

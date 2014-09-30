@@ -9,7 +9,6 @@ namespace PRS{
 		Dij = new Matrix<double>[ndom];
 		volume = new Matrix<double>[ndom];
 		edges = new Matrix<int>[ndom];
-		//faces = new Matrix<int>[ndom];
 		nodes = new Matrix<int>[ndom];
 		ID = new Matrix<int>[ndom];
 		volume_bdry = new Matrix<double>[ndom];
@@ -27,8 +26,6 @@ namespace PRS{
 			for (int k=0; k<ndom; k++){
 				edges_bdry[k].allocateMemory(numDomBDRYEdges[k],6);
 				edges_bdry[k].initialize(0);
-//				faces[k].allocateMemory(numDomFaces[k],6);
-//				faces[k].initialize(0);
 			}
 		}
 
@@ -36,6 +33,10 @@ namespace PRS{
 		external_bdry_elem[0].allocateMemory((dim==2)?numExtBdryEdges:numExtBdryFaces,2*dim);	// 4 = 2 indices + 2 flags // 6 = 3 indices + 3 flags
 		versor_ExtBdryElem = new Matrix<double>[1];
 		versor_ExtBdryElem[0].allocateMemory((dim==2)?numExtBdryEdges:numExtBdryFaces,3);
+		pConnectivities = new Matrix<int>[1];
+		pConnectivities->allocateMemory(numElem,elemtype);
+		pCoords = new Matrix<double>[1];
+		pCoords->allocateMemory(numNodes,3);
 
 		for (int k=0; k<ndom; k++){
 			int nedges = this->numDomEdges[k];
@@ -92,6 +93,12 @@ namespace PRS{
 
 		versor_ExtBdryElem[0].freeMemory();
 		delete[] versor_ExtBdryElem; versor_ExtBdryElem=0;
+
+		pConnectivities[0].freeMemory();
+		delete[] pConnectivities; pConnectivities = 0;
+
+		pCoords[0].freeMemory();
+		delete[] pCoords; pCoords = 0;
 
 		delete[] volume_global; volume_global = 0;
 		for (int k=0; k<ndom; k++){

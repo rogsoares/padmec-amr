@@ -18,7 +18,9 @@
 #	_SEEKFORBUGS_           : Debuggin in general (whole code)
 #    NOADAPTATION			: Compile code without mesh adaptation feature
 #
-CXXFLAGS=-DPARALLEL -g -DNOADAPTATION -Wunused-local-typedefs -D_SEEKFORBUGS_ -DTRACKING_PROGRAM_STEPS
+
+CXXFLAGS=-O3 -DNOADAPTATION -DPARALLEL
+#CXXFLAGS=-DPARALLEL -g -DNOADAPTATION -Wunused-local-typedefs -D_SEEKFORBUGS_ -DTRACKING_PROGRAM_STEPS
 #CXXFLAGS=-DPARALLEL -g -Wall -Wunused -D__ADAPTATION_DEBUG__ -D__ERROR_ANALYSIS_DEBUG__ -D_SEEKFORBUGS_ -DTRACKING_PROGRAM_STEPS -DFVPO
 # scientific_application folder is where libraries are installed 
 APP_DIR=$(HOME)/scientific_applications

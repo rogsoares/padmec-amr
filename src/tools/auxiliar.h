@@ -202,4 +202,5 @@ void calculateNumFacesAroundVertices(pMesh m, std::map<int,int> &facesAroundVert
 void readmesh(pMesh m,char* filename);
 void getdomains(pMesh m, int &n, int* domlist);
 
+
 #endif /*AUXILIAR_H_*/

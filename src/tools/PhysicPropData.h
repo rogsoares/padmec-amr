@@ -191,6 +191,10 @@ public:
 		steady_state = state;
 	}
 
+	int getNumNodes() const{
+		return nnodes;
+	}
+
 	int getNumNodeFreeWells() const{
 		return nfree;
 	}

@@ -175,54 +175,6 @@ namespace PRS{
 		setPositionToRead(fid,"Start simulation from <restart> file?");
 		getline(fid,strYes);
 
-		// RESTART: check if simulation starts from the beginning or from where it stopped.
-		string::size_type pos = strYes.find("yes",0);
-		if (pos != string::npos){
-			restart = true;
-
-			ifstream rfid;
-			// seek for the last VTK file generated
-			for (int i=1; i<=100; i++){
-				char strtmp[512]; sprintf(strtmp,"%s__0-of-1__step-%d.vtk",expofName.c_str(),i);
-				rfid.open(strtmp);
-				if (rfid.is_open()){
-					cout << strtmp << endl;
-					rfid.close();
-				}
-				else{
-					if (i==1){
-						throw Exception(__LINE__,__FILE__,"Any VTK file has been generated using the provided case file. Please, check carefully for mistypes\n");
-					}
-					lastpvi = i-2;
-					PVI_cumulative = double(lastpvi/100.0);
-					char strtmp2[512]; sprintf(strtmp2,"%s__0-of-1__step-%d.vtk",expofName.c_str(),lastpvi-1);
-					restartFilename = strtmp2;
-					rfid.close();
-
-					// set cumulative simulation time variable: cumTS = summation of all time steps (from the beginning to PVI i-1
-					string strline;
-					string data[8];
-					char strtmp4[512]; sprintf(strtmp4,"%s_simulation-monitor-%d.csv",expofName.c_str(),P_size());
-					rfid.open(strtmp4);
-					if (!rfid.is_open()){
-						throw Exception(__LINE__,__FILE__,"Simulation monitor file could not be opened.\n");
-					}
-					int pvi = 0;
-					getline(rfid,strline);
-					while(pvi!=lastpvi){
-						rfid >> stepCounter >> data[0] >> pvi  >> cumTS >> data[2] >> data[3] >> data[4] >> data[5] >> data[6] >> data[7];
-						//cout << "PVI = " << pvi << " \tstep#: " << stepCounter << "\tcumulative ST: " << cumTS << endl;
-					}
-					//exit(1);
-					break;
-				}
-			}
-			this->setStepOutputFile(lastpvi+1);
-			cout << "Step counter: "  << stepCounter << setprecision(8) << "\tCumulate simulation time: " << (double)cumTS << endl;
-			cout << "\n\nRestart file name: " << restartFilename << "\n\n";
-			//exit(1);
-		}
-
 		setPositionToRead(fid,"Dirichlet (Specify: flags and respective pressure values):");
 		mapFlag(fid,"dirichlet");
 
@@ -250,7 +202,53 @@ namespace PRS{
 		pGCData->setReservoirHeight(reservoir_Height);
 
 		fid.close();
+
+		// RESTART: check if simulation starts from the beginning or from where it stopped.
+		string::size_type pos = strYes.find("yes",0);
+		if (pos != string::npos){
+			restart = true;
+
+			ifstream rfid;
+			// seek for the last VTK file generated
+			for (int i=0; i<100; i++){
+				char strtmp[512]; sprintf(strtmp,"%s__0-of-1__step-%d.vtk",expofName.c_str(),i);
+				rfid.open(strtmp);
+				if (rfid.is_open()){
+					//cout << strtmp << endl;
+					rfid.close();
+				}
+				else{
+					cout << "\nRestart:\n--------------------------------------------------------------------------------------\n";
+					if (!i){
+						throw Exception(__LINE__,__FILE__,"Any VTK file has been generated using the provided case file. Please, check carefully for mistypes\n");
+					}
+					lastpvi = i-1; // lastpvi=i is the VTK file that should be created by simulation was terminated. So the last is i-1.
+					PVI_cumulative = double(lastpvi/100.0);
+					char strtmp2[512]; sprintf(strtmp2,"%s__0-of-1__step-%d.vtk",expofName.c_str(),lastpvi);
+					restartFilename = strtmp2;
+					rfid.close();
+
+					cout << "\nSimulation will be resumed from VTK file:\n" << restartFilename << endl;
+
+					// set cumulative simulation time variable: cumTS = summation of all time steps (from the beginning to PVI i-1
+					string strline;
+					string data[8];
+					char strtmp4[512]; sprintf(strtmp4,"%s_simulation-monitor-%d.csv",expofName.c_str(),P_size());
+					rfid.open(strtmp4);
+					if (!rfid.is_open()){
+						throw Exception(__LINE__,__FILE__,"Simulation monitor file could not be opened.\n");
+					}
+					break;
+				}
+			}
+			this->setStepOutputFile(lastpvi+1);
+			cumTS = PVI_cumulative*this->getSimTime();
+			cout << "Simulation Time           : " << getSimTime();
+			cout << "\nCumulative Simulation Time: " << cumTS << "  [" << setprecision(2) << double(100.*cumTS/getSimTime()) << "% concluded]" << endl;
+			cout << "lastpvi= " << lastpvi << endl;
+		}
 		if (!P_pid()) std::cout << "done.\n";
+		//exit(1);
 	}
 
 	void SimulatorParameters::loadPhysicalParameters(int dim){

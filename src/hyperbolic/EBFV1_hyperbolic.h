@@ -9,7 +9,7 @@
 #define EBFV1HYPERBOLI_H_
 
 #include "Hyperbolic_equation.h"
-//#include "HighOrderApproximation.h"
+#include "CPU_Profiling.h"
 
 namespace PRS{
 

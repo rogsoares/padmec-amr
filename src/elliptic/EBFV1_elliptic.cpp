@@ -1,8 +1,7 @@
 #include "EBFV1_elliptic.h"
 #include <time.h>
 
-namespace PRS           // PRS: Petroleum Reservoir Simulator
-{
+namespace PRS{
 	EBFV1_elliptic::EBFV1_elliptic(){
 	}
 	
@@ -33,11 +32,29 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 		#ifdef TRACKING_PROGRAM_STEPS
 		cout << "TRACKING_PROGRAM_STEPS: pressure solver\tIN\n";
 		#endif
+		//CPU_Profile::Start();
 		assembly_EFG_RHS(theMesh);
+		//CPU_Profile::End("MatricesAssembly");
+
+		//CPU_Profile::Start();
 		setMatrixFreeOperation(theMesh);
+		//CPU_Profile::End("Solver");
+
+		//CPU_Profile::Start();
 		updatePressure(theMesh);
+		//CPU_Profile::End("updatePressure");
+
+		//CPU_Profile::Start();
 		calculatePressureGradient();
+		//CPU_Profile::End("calculatePressureGradient");
+
+		//CPU_Profile::Start();
 		freeMemory();
+		//CPU_Profile::End("freeMemory");
+
+		//CPU_Profile::StatisticOutput("EBFV1_elliptic__solver.txt");
+		//exit(1);
+
 		#ifdef TRACKING_PROGRAM_STEPS
 		cout << "TRACKING_PROGRAM_STEPS: pressure solver\tOUT\n";
 		#endif

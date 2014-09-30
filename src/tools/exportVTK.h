@@ -31,5 +31,14 @@ void print_Sw_GradientNorm(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAn
 void print_Sw_GradientNorm2(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData);
 void print_SingularElements(ofstream& fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis);
 
+// New VTK source file
+// --------------------------------------------------------------
+void print_headers(ofstream&,int);
+void print_coodinates(ofstream&,const GeomData*);
+void print_connectivities(ofstream&, const GeomData*);
+void print_celltype(ofstream&,int,int);
+void print_pressure(ofstream&, const PhysicPropData*);
+void print_saturation(ofstream&, const PhysicPropData*);
+
 
 #endif /*EXPORT_VTK_H_*/

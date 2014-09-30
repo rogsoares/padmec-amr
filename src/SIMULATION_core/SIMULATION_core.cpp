@@ -1,4 +1,8 @@
 #include "SIMULATION_core.h"
+#include "CPU_Profiling.h"
+
+double CPU_Profile::tic;
+std::map< char*, std::list<double> > CPU_Profile::cpumap;
 
 namespace PRS           // PRS: Petroleum Reservoir Simulator
 {
@@ -6,6 +10,9 @@ SIMULATION_core::SIMULATION_core(){
 	pElliptic_eq = 0;
 	pHyperbolic_eq = 0;
 	theMesh = MS_newMesh(0);
+
+
+
 }
 
 SIMULATION_core::~SIMULATION_core(){

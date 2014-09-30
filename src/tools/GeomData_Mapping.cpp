@@ -192,7 +192,7 @@ namespace PRS{
 				FIter fit = M_faceIter(theMesh);
 				while ( (face = FIter_next(fit)) ){
 					if ( faceBelongToDomain(face,domainList[k]) ){
-						if ( F_numRegions(face)==1 ){
+						if ( belongsToBoundary(face) ){
 							bdryElem_detected = true;
 							for (j=0;j<3;j++){
 								id = EN_id( face->get(0,j) );
