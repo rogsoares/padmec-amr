@@ -132,7 +132,7 @@ namespace PRS{
 			if ( Sw < 1e-8 ){
 				Sw = .0;
 			}
-			//setSaturation(node,Sw);
+
 			this->setSaturation(idx,Sw);
 			// todo: TIRAR ESSE BACALHO DAQUI!!!
 			if ( pSimPar->isProductionWell(flag) ){
@@ -233,7 +233,7 @@ namespace PRS{
 	double PhysicPropData::getTotalMobility(double Sw){
 		double krw = get_ksw(Sw);
 		double kro = get_kso(Sw);
-		return krw/mi_w + kro/mi_o;
+		return  krw/mi_w + kro/mi_o;
 	}
 
 	double PhysicPropData::getFractionalFlux(const double &Sw){

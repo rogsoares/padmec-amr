@@ -2,7 +2,6 @@
 
 namespace PRS{
 	double EBFV1_hyperbolic::calculateIntegralAdvectiveTerm(int dom, double &timeStep){
-		//cout << "calculateIntegralAdvectiveTerm\n";
 		int dim = pGCData->getMeshDim();
 		double startt = MPI_Wtime();
 
@@ -20,7 +19,7 @@ namespace PRS{
 			pGCData->getCij_norm(dom,j,Cij_norm);
 			pGCData->getEdge(dom,j,idx0,idx1,idx0_global,idx1_global,flag1,flag2);
 			pGCData->getID(dom,idx0,idx1,id0,id1);
-			// todo: colocar este codigo em algum luar de forma que so seja feito uma unica vez.
+			// todo: colocar este codigo em algum lugar de forma que so seja feito uma unica vez.
 			sign = -1.0;
 			if (id0 > id1){
 				std::swap(idx0_global,idx1_global);
@@ -77,12 +76,16 @@ namespace PRS{
 			// Approximate Eigenvalue (Note that we are using the linearized form of df_dsIJ)
 			n = .0;
 			for (i=0; i<dim; i++){
-				n += pow(vel[i],2);
+				n += vel[i]*vel[i];//pow(vel[i],2);
 			}
 			alpha = sqrt(n)*df_dsIJ;
 
 			// get the maximum alpha to compute the time step
 			alpha_max = std::max(alpha,alpha_max);
+
+//			if (alpha_max>1000){
+//				cout << "vel: " << vel[0] << " " << vel[1] << "\tdf_dsIJ: " << df_dsIJ << endl;
+//			}
 
 			// Central difference Contribution
 			non_visc_fv = .0;
@@ -102,15 +105,17 @@ namespace PRS{
 			// update nonvisc term. it will be set to 0 at the next time iteration
 			pPPData->setNonvisc(idx0_global,nonvisc_I);
 			pPPData->setNonvisc(idx1_global,nonvisc_J);
-			//cout << Cij_norm << " " << nonvisc_I << " " << nonvisc_J << endl;
+			//cout << setprecision(7) << "dom: " << dom << " " << nonvisc_I << " " << nonvisc_J << endl;
 		}
 		//STOP();
-		//alpha_max = P_getMaxDbl(alpha_max);
 		courant = pSimPar->CFL();
 		int flag = pGCData->getDomFlag(dom);
 		phi = pSimPar->getPorosity(flag);
 		length = pGCData->getSmallestEdgeLength();
 		timeStep = std::min(timeStep,(courant*length*phi)/alpha_max);
+
+		//cout << setprecision(7) <<  "\talphamax: " << alpha_max << "\ttimeStep: " << timeStep << endl;
+
 		double endt = MPI_Wtime();
 		return endt-startt;
 	}

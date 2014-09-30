@@ -124,21 +124,25 @@ public:
 	}
 
 	T& operator()( int i) {
-		if ((i<0 && i>=_rows))
+		if ((i<0 && i>=_rows)){
 			throw Exception(__LINE__,__FILE__,"Attempt of getting value out of bound\n");
-		else
+		}
+		else{
 			return mat[i][0];
+		}
 	}
 
 	void setValue(int i, int j, const T &val){
-		if ((i<0 && i>=_rows) || (j<0 && j>=_cols))
+		if ((i<0 && i>=_rows) || (j<0 && j>=_cols)){
 			throw Exception(__LINE__,__FILE__,"Attempt of getting value out of bound\n");
-		else
+		}
+		else{
 			mat[i][j] = val;
+		}
 	}
 
 	void setValue(int i, const T &val){
-			mat[i][0] = val;
+		mat[i][0] = val;
 	}
 
 	void getRow(int row,T **vec){ 
@@ -146,6 +150,10 @@ public:
 	}
 
 	T getValue(int i, int j){
+		if (i>=_rows || j>=_cols){
+			cerr << "ERROR: Index out of bounds!\n";
+			exit(1);
+		}
 		return mat[i][j];
 	}
 
@@ -154,7 +162,9 @@ public:
 	}
 
 	void setRow(int row,const T *vec){ 
-		for (int i=0; i<_cols; i++) mat[row][i] = vec[i];
+		for (int i=0; i<_cols; i++){
+			mat[row][i] = vec[i];
+		}
 	} 
 
 	void printNumRowsCols() const{

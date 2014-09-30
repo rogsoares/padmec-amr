@@ -56,6 +56,7 @@ namespace PRS
 		void transferCijData(pMesh);
 		void transferDijData(pMesh);
 		void transferVolData(pMesh);
+		void transferMesh(pMesh);
 
 		// get Dij for 3-D meshes (the old one generate memory linking)
 		bool getDij(pEntity face, int dom, double *Dij);
@@ -356,6 +357,22 @@ namespace PRS
 			return domainList;
 		}
 
+		int getNumElements() const{
+			return numElem;
+		}
+
+		void getConnectivities(int row, int *connectivities){
+			for(int i=0; i<elemtype; i++){
+				connectivities[i] = pConnectivities->getValue(row,i);
+			}
+		}
+
+		void getCoordinates(int row, int *coords){
+			for(int i=0; i<3; i++){
+				coords[i] = pCoords->getValue(row,i);
+			}
+		}
+
 	private:
 		int _ndom;
 		int* domainList;
@@ -375,6 +392,11 @@ namespace PRS
 		int numExtBdryEdges;
 		int numExtBdryFaces;
 		int numNodes;
+
+		int elemtype;					// elemtype = 3 (2-D triangle: 3 nodes), elemtype = 4 (3-D tetrahedron: 4 nodes)
+		int numElem;					// number of mesh elements (2D/3D)
+		Matrix<int> *pConnectivities;	// matrix for element connectivities
+		Matrix<double>* pCoords;		// Mesh node's coordinates: x, y, z
 
 		Matrix<int> *ID;				// node ID per domain
 		Matrix<int> *edges;				// edges id0-id1 per domain, where id0 and id1 are array indices and not node IDs.

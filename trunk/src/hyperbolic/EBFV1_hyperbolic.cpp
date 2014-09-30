@@ -31,14 +31,18 @@ namespace PRS{
 			fid.open(str);
 
 			string strline;
-			for (int i=0; i<pSimPar->getLastPVI(); i++){
+			for (int i=0; i<=pSimPar->getLastPVI(); i++){
 				getline(fid,strline);
-				cout << strline << endl;
+				//cout << "i = " << i << "  " << strline << endl;
 			}
 			string data[5];
 			fid >> data[0] >> data[1] >> data[2] >> data[3] >> _cumulativeOil >> data[4];
+			cout << "\t" << data[0] << "\t" << data[1] << "\t" << data[2] << "\t" << data[3] << "\t" << _cumulativeOil << "\t" << data[4];
 			_cumulativeOil *= pOPManager->getInitialOilVolume();
+			cout << "\n_cumulativeOil = " << _cumulativeOil << endl;
+			cout << "pSimPar->getLastPVI() = " << pSimPar->getLastPVI() << endl;
 			fid.close();
+			//exit(1);
 		}
 	}
 

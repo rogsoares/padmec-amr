@@ -52,10 +52,13 @@ namespace PRS{
 		int i,j,nedges, dom, idx0, idx1,idx0_global, idx1_global, id0, id1, dom_flag;
 		MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np,np,80,PETSC_NULL,80,PETSC_NULL,&G_tmp);
 		for (dom=0; dom<ndom; dom++){
+			//CPU_Profile::Start();
 			MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np,np*dim,100,PETSC_NULL,100,PETSC_NULL,&E[dom]);
 			MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np*dim,np,100,PETSC_NULL,100,PETSC_NULL,&F[dom]);
+			//CPU_Profile::End("CreateMatricesEF");
 			nedges = pGCData->getNumEdgesPerDomain(dom);
 			dom_flag = pGCData->getDomFlag(dom);
+			//CPU_Profile::Start();
 			for (i=0; i<nedges; i++){
 				pGCData->getCij(dom,i,Cij);
 				pGCData->getEdge(dom,i,idx0,idx1,idx0_global,idx1_global);
@@ -65,49 +68,31 @@ namespace PRS{
 				gradient_F_edges(F[dom],Cij,dom,idx0,idx1,id0,id1,dim);
 			}
 			gradient_F_bdry(F[dom],dom);
+			//CPU_Profile::End("Assembly_EFG");
+
+			//CPU_Profile::Start();
 			assemblyMatrix(F[dom]);
+			//CPU_Profile::End("PETSCAssbly_F");
+
+			//CPU_Profile::Start();
 			assemblyMatrix(E[dom]);
+			//CPU_Profile::End("PETSCAssbly_E");
 		}
-		//STOP();
+//		STOP();
+		//CPU_Profile::Start();
 		assemblyMatrix(G_tmp);
+		//CPU_Profile::End("PETSCAssbly_G");
 
 //		printMatrixToFile(G_tmp,"Matrix_G.txt");
 //		printMatrixToFile(F[0],"Matrix_F.txt");
 //		printMatrixToFile(E[0],"Matrix_E.txt");
-///
-	//	STOP();
 
-//		Vec solvec;
-//		VecCreate(PETSC_COMM_WORLD,&solvec);
-//		VecSetSizes(solvec,PETSC_DECIDE,np);
-//		VecSetFromOptions(solvec);
-//
-//		pEntity e;
-//		double coord[3];
-//		int idx = 0;
-//		VIter vit = M_vertexIter(theMesh);
-//		while( (e = VIter_next(vit)) ) {
-//			V_coord(e,coord);
-//			double sol = coord[1];
-//			VecSetValues(solvec,1,&idx,&sol,INSERT_VALUES);
-//			idx++;
-//		}
-//		VIter_delete(vit);
-//		VecAssemblyBegin(solvec);
-//		VecAssemblyEnd(solvec);
-//
-//		Vec grad;
-//		VecCreate(PETSC_COMM_WORLD,&grad);
-//		VecSetSizes(grad,PETSC_DECIDE,dim*np);
-//		VecSetFromOptions(grad);
-//		MatMult(F[0],solvec,grad);
-//		printVectorToFile(grad,"grad.txt");
-//
-//		exit(1);
-
+		//CPU_Profile::Start();
 		// Get from matrix G its contribution to RHS. matvec_struct->G correspond to all free nodes
 		set_SOE(mesh,G_tmp,matvec_struct->G,true,matvec_struct->RHS,true,true);
+		//CPU_Profile::End("set_SOE_G_tmp");
 
+		//CPU_Profile::Start();
 		// Get from matrices E and F their contribution to RHS. E and F must be handled domain by domain.
 		Mat EF, tmp;
 		Vec EF_rhs;
@@ -124,7 +109,9 @@ namespace PRS{
 			VecAXPY(matvec_struct->RHS,1.0,EF_rhs);
 			VecDestroy(EF_rhs);
 		}
+		//CPU_Profile::End("EF2RHS");
 
+		//CPU_Profile::Start();
 		// Create E and F matrices related to free nodes only. Note that they were been created using all mesh nodes.
 		/* TRANSFER VALUES FROM TEMPORARY E MATRIX TO matvec_struct->E */
 		matvec_struct->F = new Mat[ndom];
@@ -150,11 +137,14 @@ namespace PRS{
 			MatDestroy(E[i]);
 			MatDestroy(F[i]);
 		}
+		//CPU_Profile::End("EFMatGetSubMatRaw");
 
 		// Create the output vector
 		VecCreate(PETSC_COMM_WORLD,&output);
 		VecSetSizes(output,PETSC_DECIDE,numGF);
 		VecSetFromOptions(output);
+
+		//CPU_Profile::StatisticOutput("EBFV1_elliptic__assembly.txt");
 
 		//double step2 = MPI_Wtime();
 		_assemblyT =  MPI_Wtime() - startt;
@@ -251,7 +241,7 @@ namespace PRS{
 				throw Exception(__LINE__,__FILE__,"Flow rate NULL!");
 			}
 
-			cout << "well-flag: " << well_flag << endl;
+			//cout << "well-flag: " << well_flag << endl;
 
 			// get all flagged node IDs for that well
 			if (!mit->second.size()){

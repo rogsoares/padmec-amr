@@ -4,6 +4,8 @@ void print_pwgrad(ofstream &fid, pMesh theMesh, PRS::SimulatorParameters *pSimPa
 //void printNonVisc(ofstream &fid, pMesh theMesh, PRS::PhysicPropData *pPPData);
 
 void exportSolutionToVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3, void *pData4, string filename){
+
+	double t1 = MPI_Wtime();
 	// open file
 	ofstream fid;
 	fid.open(filename.c_str());
@@ -70,6 +72,8 @@ void exportSolutionToVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3
 #endif
 
 	fid.close();
+
+	//cout << setprecision(2) << scientific << "Time to print VTK file: " << MPI_Wtime - t1 << "[s]\n";
 }
 
 // print vertex coordenates and transfer to each one all computed values

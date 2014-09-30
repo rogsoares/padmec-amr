@@ -23,6 +23,16 @@ namespace PRS{
 		setNumDomains(ndom);
 		setDomainList(domainList);
 		delete[] domainList; domainList = 0;
+
+		if (theMesh->getDim()==2){
+			numElem = M_numFaces(theMesh);
+			elemtype = 3;
+		}
+		else{
+			numElem = M_numRegions(theMesh);
+			elemtype = 4;
+		}
+
 		initilize(theMesh);							//every new mesh adaptation, mesh data structure changes
 	}
 

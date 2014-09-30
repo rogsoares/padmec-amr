@@ -19,29 +19,31 @@ namespace PRS{
 			pPPData->getSaturation(idx,Sw_old);
 			pPPData->getNonvisc(idx,nonvisc);
 			pGCData->getVolume(idx,volume);
+
+			// alterar para usar valor de porosidade lido de arquivo
 			Sw = Sw_old - (delta_T/(0.2*volume))*nonvisc;
+
 			if ( Sw<1.0e-6 ) Sw = .0;
 			pPPData->setSaturation(idx,Sw);
-	#ifdef _SEEKFORBUGS_
+	//#ifdef _SEEKFORBUGS_
 			if (Sw > 1.01 || Sw < .0){
 				char msg[256]; sprintf(msg,"Sw[%d/%d] = %.4f. 0.0 <= Sw <-1.0 \n",i,nnode,Sw);
 				throw Exception(__LINE__,__FILE__,msg);
 			}
-	#endif
+	//#endif
 		}
 	}
 
 	// Advance time for nodes in production well
 	void EBFV1_hyperbolic::nodeWith_Wells(double delta_T){
-		//cout << "nodeWith_Wells\n";
-		const int N = pSimPar->getWellTimeDiscretion(); ///  1000;								// magic number :)
+		const int N = pSimPar->getWellTimeDiscretion();
 		int i,j, well_idx;
 		double Sw,Sw0,Sw_old,Vt,Qi,Vi,Qwi,Qt,fw,fo,nonvisc,wp,volume, nrc, porosity;
 		double dt_well = (double)delta_T/N;			// time step for well nodes saturation
 		double cml_oil,Qo,Qw;
 
-		// todo: REMOVER ESSE BACALHO!!!!
-		Qt = pSimPar->getFlowrateValue(51);	// source/sink term
+		// TODO: nao usar constantes para identificar pocos!
+		Qt = pSimPar->getFlowrateValue(51);		// source/sink term
 		Vt = pSimPar->getWellVolume(51);		// for node i, Qi is a fraction of total well flow rate (Qt)
 		cml_oil = .0;
 		Qo = .0;
@@ -53,9 +55,6 @@ namespace PRS{
 			pPPData->getSaturation(well_idx,Sw_old);
 			pGCData->getVolume(well_idx,Vi);
 			Qi = Qt*(Vi/Vt);							// Fluid (water+oil) flow rate through node i
-			if (fabs(Qi) > fabs(Qt)){
-				throw 1;
-			}
 			wp = 0.2*Vi;
 			for (j=0; j<N; j++){
 				Sw0 = Sw_old - (dt_well/wp)*(nonvisc);
@@ -76,6 +75,8 @@ namespace PRS{
 			Qo += fabs(Qi*fo);
 			Qw += fabs(Qi*fw);
 			cml_oil += Qo;
+
+			//cout << setprecision(7) << fw << " " << fo << " " << Qo << " " << Qw << " " << cml_oil << " " << Sw << " " << Qt << " " << delta_T << endl;
 		}
 
 		setRecoveredOil(Qo/(Qo+Qw));
