@@ -13,7 +13,6 @@
  */
 
 #include "OilProductionManagement.h"
-#include "PointerStruct.h"
 #include "exportVTK.h"
 
 namespace PRS

@@ -11,7 +11,7 @@
 
 
 // includes for hyperbolic equation
-#include "EBFV1_hyperbolic_adaptative.h"
+#include "EBFV1_hyperbolic_MIMPES.h"
 
 
 #endif

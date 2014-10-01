@@ -25,6 +25,8 @@ int main(int argc, char **argv){
 		double h,m,s;
 		convertSecToTime(t2-t1,&h,&m,&s);
 		cout << setprecision(0) << fixed << "\n\nCPU time elapsed: " << h << "h " << m << "m " << s << "s\n\n";
+
+		CPU_Profile::StatisticOutput("Simulation_Statistics.txt");
 	}
 	catch (Exception excp) {
 		excp.showExceptionMessage();

@@ -65,21 +65,30 @@ namespace PRS{
 		timeStep = 1.0e+10;
 		int ndom = (int)pSimPar->setOfDomains.size();
 		for (int dom=0; dom<ndom; dom++){
+			CPU_Profile::Start();
 			calculateVelocityField(dom,dim);
+			CPU_Profile::End("VelocityField");
 		}
 		// calculate saturation gradient if adaptation or high order approximation were required
 		if (  pSimPar->userRequiresAdaptation() || pSimPar->useHOApproximation()){
+			CPU_Profile::Start();
 			calculateSaturationGradient(theMesh);
+			CPU_Profile::End("SaturationGradient");
 		}
 		pPPData->resetNonvisc(alpha_max);
 		for (int dom=0; dom<ndom; dom++){
+			CPU_Profile::Start();
 			calculateIntegralAdvectiveTerm(dom,timeStep);
+			CPU_Profile::End("IntegralAdvectiveTerm");
 		}
 
 		pSimPar->correctTimeStep(timeStep);					// correct time-step value to print out the desired simulation moment
 		pSimPar->saveCurrentSimulationTimes();				// it must be called before cumulative simulation time
 		pSimPar->setCumulativeSimulationTime(timeStep); 	// AccSimTime = AccSimTime + timeStep
+
+		CPU_Profile::Start();
 		calculateExplicitAdvanceInTime(timeStep);			// Calculate saturation field: Sw(n+1)
+		CPU_Profile::End("ExplicitAdvanceInTime");
 
 	#ifdef _SEEKFORBUGS_
 		if (!P_pid()) std::cout << "<_SEEKFORBUGS_>  timeStep = : " << timeStep << endl;
@@ -92,7 +101,9 @@ namespace PRS{
 			pOPManager->printOilProduction(timeStep,pSimPar->getCumulativeSimulationTime(),pSimPar->getSimTime(),getRecoveredOil(),getCumulativeOil(),timestep_counter);
 			timestep_counter = 0;
 		}
+		CPU_Profile::Start();
 		pSimPar->printOutVTK(theMesh,pPPData,pEA,pSimPar,pGCData,exportSolutionToVTK);
+		CPU_Profile::End("printOutVTK");
 		if (!P_pid()) std::cerr << "done.\n\n";
 		return MPI_Wtime() - hyp_time;
 	}

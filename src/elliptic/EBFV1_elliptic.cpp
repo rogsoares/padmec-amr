@@ -13,6 +13,7 @@ namespace PRS{
 		pMData = md;
 		theMesh = mesh;
 		one_eighth = (double)(1.0/8.0);
+		firstVTK = true;
 	}
 	
 	EBFV1_elliptic::~EBFV1_elliptic(){
@@ -32,28 +33,36 @@ namespace PRS{
 		#ifdef TRACKING_PROGRAM_STEPS
 		cout << "TRACKING_PROGRAM_STEPS: pressure solver\tIN\n";
 		#endif
-		//CPU_Profile::Start();
+		CPU_Profile::Start();
 		assembly_EFG_RHS(theMesh);
-		//CPU_Profile::End("MatricesAssembly");
+		CPU_Profile::End("MatricesAssembly");
 
-		//CPU_Profile::Start();
+		CPU_Profile::Start();
 		setMatrixFreeOperation(theMesh);
-		//CPU_Profile::End("Solver");
+		CPU_Profile::End("Solver");
 
-		//CPU_Profile::Start();
+		CPU_Profile::Start();
 		updatePressure(theMesh);
-		//CPU_Profile::End("updatePressure");
+		CPU_Profile::End("updatePressure");
 
-		//CPU_Profile::Start();
+		CPU_Profile::Start();
 		calculatePressureGradient();
-		//CPU_Profile::End("calculatePressureGradient");
+		CPU_Profile::End("calculatePressureGradient");
 
-		//CPU_Profile::Start();
+		CPU_Profile::Start();
 		freeMemory();
-		//CPU_Profile::End("freeMemory");
+		CPU_Profile::End("freeMemory");
 
-		//CPU_Profile::StatisticOutput("EBFV1_elliptic__solver.txt");
+		// print VTK only for: Sw = S_initial and p = p(Sw_initial). VTK zero
+		if (firstVTK){
+			if (!pSimPar->timeToPrintVTK()){
+				pSimPar->setTimetoPrintVTK();	// forces VTK to be printed
+				pSimPar->printOutVTK(theMesh,pPPData,0,pSimPar,pGCData,exportSolutionToVTK);
+				firstVTK = false;
+			}
+		}
 		//exit(1);
+		//CPU_Profile::StatisticOutput("EBFV1_elliptic__solver.txt");
 
 		#ifdef TRACKING_PROGRAM_STEPS
 		cout << "TRACKING_PROGRAM_STEPS: pressure solver\tOUT\n";

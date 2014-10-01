@@ -87,6 +87,8 @@ namespace PRS{
 //		printMatrixToFile(F[0],"Matrix_F.txt");
 //		printMatrixToFile(E[0],"Matrix_E.txt");
 
+
+
 		//CPU_Profile::Start();
 		// Get from matrix G its contribution to RHS. matvec_struct->G correspond to all free nodes
 		set_SOE(mesh,G_tmp,matvec_struct->G,true,matvec_struct->RHS,true,true);
@@ -143,6 +145,8 @@ namespace PRS{
 		VecCreate(PETSC_COMM_WORLD,&output);
 		VecSetSizes(output,PETSC_DECIDE,numGF);
 		VecSetFromOptions(output);
+
+		printVectorToFile(matvec_struct->RHS,"RHS.txt");
 
 		//CPU_Profile::StatisticOutput("EBFV1_elliptic__assembly.txt");
 
