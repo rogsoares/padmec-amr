@@ -277,23 +277,19 @@ namespace PRS{
 		}
 	}
 	
-	// This function is called every time a new time-step is calculated. We want to know how many steps there are within a fraction of PVI
-	// or how many step there are within every time allowPrintingVTK is set true. TSCountingList stores this values.
+	// Every N time-steps a new VTK file must be printed. It occurs at every 0.1PVI. If the sum of N time-steps exceeds 0.01PVI,
+	// then the last one must be corrected to guarantee the exactness of all PVI
 	void SimulatorParameters::correctTimeStep(double &timeStep){
 		if (firstVTKupdate){
 			updatePrintOutVTKFrequency();  
 		}
 		double timeFrequency = getPrintOutVTKFrequency();
-		//cout << fixed << setprecision(8) << "tFreq : " << timeFrequency << "\ttStep: " << timeStep << "\tCumSTime(): " << getCumulativeSimulationTime();
 		double cumST = timeStep + getCumulativeSimulationTime();
-		//cout << "\tcumST: " << cumST;
 		if ( cumST > timeFrequency ){
 			timeStep = timeFrequency - getCumulativeSimulationTime();
 			cumST = timeFrequency;
 			allowPrintingVTK = true;
 		}
-		//cout << "\tPVI_cum: " << PVI_cumulative << "\tsimST: " << getSimTime();
-		//cout << "\ttStep: " << timeStep << "\tcumST: " << cumST << "\tvtk_tfreq: " << vtk_time_frequency << endl;
 	}
 	
 	void SimulatorParameters::allowPrintVTK(){

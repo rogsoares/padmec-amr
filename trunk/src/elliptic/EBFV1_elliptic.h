@@ -132,6 +132,8 @@ namespace PRS{           // PRS: Petroleum Reservoir Simulator
 		double _solverT;
 		double _gradientT;
 
+		bool firstVTK;
+
 
 		PhysicPropData *pPPData;
 		SimulatorParameters *pSimPar;

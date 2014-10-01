@@ -210,7 +210,7 @@ namespace PRS{
 
 			ifstream rfid;
 			// seek for the last VTK file generated
-			for (int i=0; i<100; i++){
+			for (int i=0; i<=100; i++){
 				char strtmp[512]; sprintf(strtmp,"%s__0-of-1__step-%d.vtk",expofName.c_str(),i);
 				rfid.open(strtmp);
 				if (rfid.is_open()){

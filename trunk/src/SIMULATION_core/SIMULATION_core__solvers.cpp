@@ -32,7 +32,6 @@ namespace PRS{
 			int KSPiter;
 			while ( !pSimPar->finishSimulation() ){
 				pElliptic_eq->solver(theMesh);
-				pSimPar->printOutVTK(theMesh,pPPData,0,pSimPar,pGCData,exportSolutionToVTK);
 				pElliptic_eq->getCPUtime(assemblyT,psolverT,gradT,KSPiter);
 				hsolverT = pHyperbolic_eq->solver(theMesh,timeStep);
 

@@ -31,13 +31,7 @@ namespace PRS{
 				int idxn[2] = {id0-1,id1-1};
 				MatSetValues(F,4,idxm,1,&idxn[0],Fij_column1,ADD_VALUES);
 				MatSetValues(F,4,idxm,1,&idxn[1],Fij_column2,ADD_VALUES);
-//				sum[0] += Dij[0];
-//				sum[1] += Dij[1];
-//				sum[2] += Dij[2];
-//
-//				if (dom==3) cout << Dij[0] << " " << Dij[1] << " " << Dij[2] << "\n";
 			}
-//			cout << setprecision(8) << scientific <<  "nedges: " << nedges << "\tdom: " << dom << "\t" << sum[0] << " " << sum[1] << " " << sum[2] << "\n";
 		}
 		else{
 			nfaces = pGCData->getNumBdryFacesPerDomain(dom);
@@ -48,8 +42,7 @@ namespace PRS{
 				pGCData->getDij(dom,j,Dij);
 
 //				cout << setprecision(8) << fixed << scientific;
-				//cout << j << "  " << dom << "\t" << id0 << " " << id1 << " " << id2 << "\t" << Dij[0] << " " << Dij[1] << " " << Dij[2] << endl;
-
+//				cout << j << "  " << dom << "\t" << id0 << " " << id1 << " " << id2 << "\t" << Dij[0] << " " << Dij[1] << " " << Dij[2] << endl;
 //				cout << sum[0] << " " << sum[1] << " " << sum[2] << " | ";
 //				sum[0] += Dij[0];
 //				sum[1] += Dij[1];
@@ -62,7 +55,7 @@ namespace PRS{
 				// fill edge matrix
 				double Fij_column1[9], Fij_column2[9], Fij_column3[9];
 				for (i=0; i<3; i++){
-					Fij_column1[3*i] = aux[i][0]*Dij[0];
+					Fij_column1[3*i] =   aux[i][0]*Dij[0];
 					Fij_column1[3*i+1] = aux[i][0]*Dij[1];
 					Fij_column1[3*i+2] = aux[i][0]*Dij[2];
 
@@ -115,7 +108,6 @@ namespace PRS{
 //				MatSetValues(F,9,idxm,3,idxn,Fij,ADD_VALUES);
 			}
 		}
-		//cout << "\n==========================================================================================\n\n";
 		return 0;
 	}
 }

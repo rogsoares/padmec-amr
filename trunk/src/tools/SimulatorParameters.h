@@ -8,7 +8,6 @@
 
 typedef std::set<int> setNodes;
 enum RefinementStrategies{H_REFINEMENT, ADAPTIVE_REMESHING, RH_REFINEMENT};
-//enum RefinementStrategies{H_REFINEMENT, ADAPTIVE_REMESHING};
 enum INTERPOLATION_OPTIONS {h_REFINEMENT,LINEAR, QUADRATIC, ADAPTATIVE, CONSERVATIVE, PURE_INJECTION, HALF_WEIGHTING, FULL_WEIGHTING};
 
 namespace PRS{
@@ -210,7 +209,16 @@ public:
 	void updatePrintOutVTKFrequency();
 	string getFilename(string f);
 	void generateFilename(const string &meshFilename, char *filename);
-	bool timeToPrintVTK() const { return allowPrintingVTK; }
+
+
+
+	void setTimetoPrintVTK(){
+		allowPrintingVTK = true;
+	}
+
+	bool timeToPrintVTK()const{
+		return allowPrintingVTK;
+	}
 
 	/*
 	 * Adaptation parameters
