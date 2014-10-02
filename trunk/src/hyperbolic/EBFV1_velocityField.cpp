@@ -10,7 +10,8 @@
 namespace PRS{
 
 	double EBFV1_hyperbolic::calculateVelocityField(int dom, int dim){
-		//cout << "calculateVelocityField\n";
+
+		CPU_Profile::Start();
 
 		double p_I, p_J, Sw_I, Sw_J, MobI, MobJ, MobIJ, length, flag;
 		double Cij[3], vel[3], versor[3], pGrad_I[3], pGrad_J[3], pw_grad_IJ[3];
@@ -80,6 +81,9 @@ namespace PRS{
 			}
 			pPPData->setVelocity_new(dom,edge,vel);
 		}
+
+		CPU_Profile::End("VelocityField");
+
 	}
 }
 

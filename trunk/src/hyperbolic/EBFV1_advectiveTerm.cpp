@@ -2,8 +2,10 @@
 
 namespace PRS{
 	double EBFV1_hyperbolic::calculateIntegralAdvectiveTerm(int dom, double &timeStep){
+
+		CPU_Profile::Start();
+
 		int dim = pGCData->getMeshDim();
-		double startt = MPI_Wtime();
 
 		pEntity edge;
 		double Sw_I, Sw_J, fwII, fwJJ, fwIJ, df_dsIJ, n, alpha;
@@ -116,7 +118,7 @@ namespace PRS{
 
 		//cout << setprecision(7) <<  "\talphamax: " << alpha_max << "\ttimeStep: " << timeStep << endl;
 
-		double endt = MPI_Wtime();
-		return endt-startt;
+		CPU_Profile::End("IntegralAdvectiveTerm");
+		return 0;
 	}
 }
