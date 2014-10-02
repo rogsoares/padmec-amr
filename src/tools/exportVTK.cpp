@@ -1,11 +1,12 @@
 #include "exportVTK.h"
+#include "CPU_Profiling.h"
 
 void print_pwgrad(ofstream &fid, pMesh theMesh, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData);
 //void printNonVisc(ofstream &fid, pMesh theMesh, PRS::PhysicPropData *pPPData);
 
 void exportSolutionToVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3, void *pData4, string filename){
 
-	double t1 = MPI_Wtime();
+	CPU_Profile::Start();
 	// open file
 	ofstream fid;
 	fid.open(filename.c_str());
@@ -70,10 +71,9 @@ void exportSolutionToVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3
 	//	print_Sw_GradientNorm(fid,theMesh,pErrorAnalysis,pSimPar,pPPData);
 	}
 #endif
-
 	fid.close();
 
-	//cout << setprecision(2) << scientific << "Time to print VTK file: " << MPI_Wtime - t1 << "[s]\n";
+	CPU_Profile::End("printOutVTK");
 }
 
 // print vertex coordenates and transfer to each one all computed values

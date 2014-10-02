@@ -9,6 +9,9 @@
 
 namespace PRS{
 	void EBFV1_hyperbolic::calculateSaturationGradient(pMesh theMesh){
+
+		CPU_Profile::Start();
+
 		int dim = pGCData->getMeshDim();
 		resetSaturationGradient(theMesh);
 		int ndom = (int)pSimPar->setOfDomains.size();
@@ -18,12 +21,8 @@ namespace PRS{
 		}
 		calc_Sw_grad_3(theMesh,dim);
 		calc_Sw_grad_4(dim);
-		double Sw_grad[3];
-		int nnodes = M_numVertices(theMesh);
-		for (int node=0; node<295; node++){
-			pPPData->get_Sw_Grad(node,Sw_grad);
-			//cout << node+1 << setprecision(6) << fixed << " " << Sw_grad[0] << " " << Sw_grad[1] << endl;
-		}
+
+		CPU_Profile::End("SaturationGradient");
 	}
 
 	void EBFV1_hyperbolic::calc_Sw_grad_1(int dom, int dim){

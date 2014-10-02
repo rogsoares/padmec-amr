@@ -4,12 +4,15 @@ namespace PRS{
 
 	// Euler Foward - time advance:  (compute saturation explicitly). For each new time step compute a new saturation.
 	void EBFV1_hyperbolic::calculateExplicitAdvanceInTime(double delta_T){
+		CPU_Profile::Start();
+
 		saveSwField();					// save Sw field (Sw_t) before calculate Sw_t+1
-		nodeWithOut_Wells(delta_T);
-		nodeWith_Wells(delta_T);
+		nodeWithOut_Wells(delta_T);		// Advance time for all free node not located in wells
+		nodeWith_Wells(delta_T);		// Advance time for nodes in production well (fractional-steps)
+
+		CPU_Profile::End("ExplicitAdvanceInTime");
 	}
 
-	// Advance time for all free node not located in wells
 	void EBFV1_hyperbolic::nodeWithOut_Wells(double delta_T){
 		double Sw,Sw_old,nonvisc,volume;
 		int idx;
@@ -34,7 +37,6 @@ namespace PRS{
 		}
 	}
 
-	// Advance time for nodes in production well
 	void EBFV1_hyperbolic::nodeWith_Wells(double delta_T){
 		const int N = pSimPar->getWellTimeDiscretion();
 		int i,j, well_idx;

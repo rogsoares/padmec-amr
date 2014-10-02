@@ -70,8 +70,8 @@ SRC_DIR12=$(PROJ_DIR)/src/adaptation/h-refinement
 #SRC_DIR13=$(PROJ_DIR)/src/adaptation/rh-refinement
 
 OBJS1=$(OBJ_DIR)/main.o $(OBJ_DIR)/SIMULATION_core.o $(OBJ_DIR)/SIMULATION_core__solvers.o $(OBJ_DIR)/SIMULATION_adaptation.o \
-	$(OBJ_DIR)/EBFV1_elliptic.o $(OBJ_DIR)/set_SOE.o $(OBJ_DIR)/EBFV1_E.o $(OBJ_DIR)/EBFV1_G.o $(OBJ_DIR)/EBFV1_F_omega.o $(OBJ_DIR)/EBFV1_F_gamma.o \
-	$(OBJ_DIR)/EBFV1__DefectCorrectionSolver.o $(OBJ_DIR)/EBFV1__MatrixFreeSolver.o $(OBJ_DIR)/EBFV1_pressure_gradient.o $(OBJ_DIR)/EBFV1_velocityField.o \
+	$(OBJ_DIR)/EBFV1_Elliptic_main.o $(OBJ_DIR)/EBFV1_AssemblyMatVec.o $(OBJ_DIR)/EBFV1_E.o $(OBJ_DIR)/EBFV1_G.o $(OBJ_DIR)/EBFV1_F_omega.o $(OBJ_DIR)/EBFV1_F_gamma.o \
+	$(OBJ_DIR)/EBFV1_DefectCorrectionSolver.o $(OBJ_DIR)/EBFV1_MatrixFreeSolver.o $(OBJ_DIR)/EBFV1_PressureGradient.o $(OBJ_DIR)/EBFV1_velocityField.o \
 	$(OBJ_DIR)/EBFV1_hyperbolic.o $(OBJ_DIR)/EBFV1_hyperbolic_MIMPES.o $(OBJ_DIR)/EBFV1_advectiveTerm.o $(OBJ_DIR)/EBFV1_advanceSaturation.o \
 	$(OBJ_DIR)/SaturationGradient.o \
 	$(OBJ_DIR)/MeshData.o $(OBJ_DIR)/OilProductionManagement.o \

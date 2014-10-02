@@ -66,21 +66,24 @@ namespace PRS{
 		void calculateSaturationGradient(pMesh);
 
 	private:
-		/// every new time-step, nodal gradient must be set to zero and start a new calculation
+		// every new time-step, nodal gradient must be set to zero and start a new calculation
 		void resetSaturationGradient(pMesh theMesh);
 		
-		/// loop over all edges (omega domain
+		// loop over all edges (omega domain
 		void calc_Sw_grad_1(int, int);
 		
-		/// loop over all boundary edges (2-D) or all external faces (3-D)
+		// loop over all boundary edges (2-D) or all external faces (3-D)
 		void calc_Sw_grad_2(int, int);
 		
-		/// Averaging by Total Volume in 3-D (area in 2-D problems)
+		// Averaging by Total Volume in 3-D (area in 2-D problems)
 		void calc_Sw_grad_3(pMesh theMesh, int);
 
-		/// Imposition of Homogeneus Neumman Boundary Conditions
+		// Imposition of Homogeneus Neumman Boundary Conditions
 		void calc_Sw_grad_4(int);
 		
+		// If restart is required, then oil production file data is used to update the cumulated oil value
+		void setCumulativeOilProd();
+
 		double _cumulativeOil;
 
 		PetscErrorCode ierr;
