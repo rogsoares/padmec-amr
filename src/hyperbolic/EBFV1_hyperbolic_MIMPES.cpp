@@ -5,15 +5,15 @@
  *      Author: rogerio
  */
 
-#include "EBFV1_hyperbolic_adaptative.h"
+#include "EBFV1_hyperbolic_MIMPES.h"
 #include "exportVTK.h"
 
 namespace PRS{
 
-	EBFV1_hyperbolic_adaptative::EBFV1_hyperbolic_adaptative(){
+	EBFV1_hyperbolic_MIMPES::EBFV1_hyperbolic_MIMPES(){
 	}
 
-	EBFV1_hyperbolic_adaptative::EBFV1_hyperbolic_adaptative(pMesh mesh,PhysicPropData *ppd, SimulatorParameters *sp,GeomData *gcd,MeshData *md, OilProductionManagement *popm, ErrorAnalysis *pEAna){
+	EBFV1_hyperbolic_MIMPES::EBFV1_hyperbolic_MIMPES(pMesh mesh,PhysicPropData *ppd, SimulatorParameters *sp,GeomData *gcd,MeshData *md, OilProductionManagement *popm, ErrorAnalysis *pEAna){
 		pMData = md;
 		pOPManager = popm;
 		pPPData = ppd;
@@ -36,10 +36,10 @@ namespace PRS{
 		cumulative_p_timestep = 0;
 	}
 
-	EBFV1_hyperbolic_adaptative::~EBFV1_hyperbolic_adaptative(){
+	EBFV1_hyperbolic_MIMPES::~EBFV1_hyperbolic_MIMPES(){
 	}
 
-	double EBFV1_hyperbolic_adaptative::solver(pMesh theMesh, double &timeStep){
+	double EBFV1_hyperbolic_MIMPES::solver(pMesh theMesh, double &timeStep){
 		if (!P_pid()) std::cout << "Adaptative Hyperbolic solver...\n";
 
 		bool go_MIMPES = true;                                                  // says to keep Sw advance while velocity is hold constant
@@ -95,7 +95,7 @@ namespace PRS{
 
 	// Compute a new implicit time-step (p_timestep) if necessary.
 	// This happens either at the beginning of simulation or when sum of timeStep is greater than DT.
-	void EBFV1_hyperbolic_adaptative::calculateImplicitTS(double &p_timestep, double timeStep, double &DV_norm, bool &go_ImplicitTS, bool &go_MIMPES){
+	void EBFV1_hyperbolic_MIMPES::calculateImplicitTS(double &p_timestep, double timeStep, double &DV_norm, bool &go_ImplicitTS, bool &go_MIMPES){
 		if (go_ImplicitTS){
 			if (p_timestepOld<.0){                                                  // initialize p_timestepOld for the beginning of simulation (t=0)
 				p_timestepOld = timeStep;
@@ -119,7 +119,7 @@ namespace PRS{
 		}
 	}
 
-	void EBFV1_hyperbolic_adaptative::correct_p_TS(double &p_timestep, bool &go_MIMPES){
+	void EBFV1_hyperbolic_MIMPES::correct_p_TS(double &p_timestep, bool &go_MIMPES){
 		double p = getCumulative_p_TS() + p_timestep;
 		if ( p > pSimPar->getSimTime() ){
 			p_timestep = pSimPar->getSimTime()-getCumulative_p_TS();
@@ -129,7 +129,7 @@ namespace PRS{
 		setCumulative_p_TS(p);
 	}
 
-	void EBFV1_hyperbolic_adaptative::correct_Sw_TS(double &timeStep, bool &go_MIMPES){
+	void EBFV1_hyperbolic_MIMPES::correct_Sw_TS(double &timeStep, bool &go_MIMPES){
 		// CFL time step must be corrected to satisfy VTK print out or MIMPES procedure
 		double cum_VTK = pSimPar->getPrintOutVTKFrequency();
 		double cum_p_TS = getCumulative_p_TS();
@@ -160,7 +160,7 @@ namespace PRS{
 		}
 	}
 
-	void EBFV1_hyperbolic_adaptative::calculateVelocityVariationNorm(double &DV_norm, int dim){
+	void EBFV1_hyperbolic_MIMPES::calculateVelocityVariationNorm(double &DV_norm, int dim){
 		int i, dom, ndom, edge, nedges, numGEdges;
 		double Cij[3], v_new[3], v_old[3], Dv[3], DV_domNorm[4], Cij_norm, aux, dot, DV_norm_sum;
 
@@ -192,7 +192,7 @@ namespace PRS{
 		DV_norm = sqrt(aux);
 	}
 
-	void EBFV1_hyperbolic_adaptative::MIMPES_output(double Sw_timestep_sum, double p_timestep, int numCFL_Steps, int sumNum_p_DT, int sumNum_Sw_DT, double DV_norm){
+	void EBFV1_hyperbolic_MIMPES::MIMPES_output(double Sw_timestep_sum, double p_timestep, int numCFL_Steps, int sumNum_p_DT, int sumNum_Sw_DT, double DV_norm){
 		fid << setprecision(6) << fixed
 				<< (double)(pSimPar->getCumulativeSimulationTime()/pSimPar->getSimTime()) << " "
 				<< (double)(Sw_timestep_sum/numCFL_Steps)/p_timestep << " "
@@ -200,7 +200,7 @@ namespace PRS{
 				<< DV_norm << endl;
 	}
 
-	void EBFV1_hyperbolic_adaptative::createDimensionLessFactors(){
+	void EBFV1_hyperbolic_MIMPES::createDimensionLessFactors(){
 		double L, H, phi;
 		phi = pSimPar->getPorosity(3300);
 		pSimPar->getReservoirGeometricDimensions(L,H);

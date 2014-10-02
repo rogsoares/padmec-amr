@@ -12,14 +12,23 @@
 
 namespace PRS{
 
-//	 class: EBFV1_hyperbolic_MIMPES
-//
-//	 The goal of this class is to implement an adaptative saturation time advance based on the velocity norm variation. It's supposed that the velocity
-//	 field varies much slower than the saturations field. It suggests that the velocity variable need not be calculated every time step. Thus, a signi-
-//	 ficantly reduce in CPU time consumption may be reached without compromise the results accuracy. It's defined two time steps counters: one related
-//	 to the velocities field (vel_ts) and another one related to the saturations field (sat_ts). It's assumed that vel_ts >= sat_ts and sat_ts is res-
-//	 tricted by the CFL condition. The variable vel_ts is always calculated first than sat_ts. It's assumed an extrapolation in the velocities filed
-//	 variation behavior in such way results will not be prejudiced. Here, functions defined in EBFV1_hyperbolic class are reused.
+/*
+-------------------------------------------------------------------------------------------------------------------------------------------
+class: EBFV1_hyperbolic_MIMPES
+-------------------------------------------------------------------------------------------------------------------------------------------
+This class implements a modified IMPES (Implicit Pressure Explicit Saturation) formulation for the two-phase oil-water flow in porous media.
+As pressure filed varies slowly during entire simulation, it can be kept constant for some number of time-steps. At this moment, pressure
+gradient field is also hold constant and only the velocity and saturation fields are updated. The frequency of updates is controlled by an
+empirical factor called DVTOL which is based in the velocity norm variation. It's expected to reduce computational CPU time significantly
+where it can reduce by a factor of 10 when compared to the classical IMPES formulation. For more details about this strategy see:
+
+Numerical Simulation of Oil-Water Displacements Using a Higher Order Control Volume Formulation in Parallel Computers with Distributed Memory
+Proceedings of COBEM 2011, 21st, Brazilian Congress of Mechanical Engineering
+Copyright © 2011 by ABCM
+October 24-28, 2011, Natal, RN, Brazil
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+*/
 
 	class EBFV1_hyperbolic_MIMPES : public EBFV1_hyperbolic {
 	public:
