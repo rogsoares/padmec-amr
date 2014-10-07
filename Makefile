@@ -1,40 +1,36 @@
 CXXFLAGS=-g -Wall
 
 APP_DIR=$(HOME)/applications
-PROJ_DIR=/home/julio/Desktop/Programming/prototypes/SIMULATORPROJ1
+
+#MG 1D directory
+1D_DIR=/home/julio/Desktop/Programming/libraries/MG_lib/MG_1D
 
 CXX=mpicxx
 
-INCLUDES=-I$(PROJ_DIR)/include -I$(PETSC_DIR)/include
+INCLUDES=-I$(1D_DIR)/include -I$(PETSC_DIR)/include 
 
-OBJ_DIR=$(PROJ_DIR)/objs
-SRC_DIR=$(PROJ_DIR)/src
-OBJECTS=$(OBJ_DIR)/main.o
-SRC=$(SRC_DIR)/main.cpp
+1D_OBJ_DIR=$(1D_DIR)/objs
+1D_SRC_DIR=$(1D_DIR)/src
+1D_OBJECTS=$(1D_OBJ_DIR)/MG_1D.o
+1D_SRC=$(1D_SRC_DIR)/MG_1D.cpp
 
-EXEC=simulator.exe
+STATICLIB=libmultigrid.a
 
-all:	$(EXEC)
+
+all:$(STATICLIB)
+
 
 include ${PETSC_DIR}/conf/variables
 include ${PETSC_DIR}/conf/rules 
 
-$(EXEC):	$(OBJECTS) chkopts
+$(STATICLIB):	$(1D_OBJECTS) chkopts
 	@echo 'Linking....'
-	$(CXX) -o $(EXEC) $(OBJECTS) $(PETSC_KSP_LIB) $(LIBS)
+	ar crsu $(STATICLIB) $(1D_OBJECTS)
 	@echo "ok. Done!"
 
-$(OBJ_DIR)/%.o:	$(SRC_DIR)/%.cpp
-	$(CXX) -c $(INCLUDES) $<
-	@mv *.o $(OBJ_DIR)
+$(1D_OBJ_DIR)/%.o:	$(1D_SRC_DIR)/%.cpp 
+	$(CXX) $(CXXFLAGS) -c $(INCLUDES)  $<
+	@mv *.o $(1D_OBJ_DIR)
 
 cleanup:
-	rm *.o $(OBJ_DIR)/*.o *.exe
-
-
-
-
-
-
-
-
+	rm *.o $(1D_OBJ_DIR)/*.o *.exe
