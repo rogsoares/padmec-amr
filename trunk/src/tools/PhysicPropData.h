@@ -166,8 +166,8 @@ public:
 	}
 
 	// GET Volume/mobility,fractionalflux
-	double getVolume(pEntity, const int&);
-	double getWeightedVolume(pEntity);
+	//double getVolume(pEntity, const int&);
+	//double getWeightedVolume(pEntity);
 	double getTotalMobility(pEntity);
 	double getTotalMobility(double Sw);
 	double getFractionalFlux(const double&);

@@ -38,31 +38,50 @@ namespace PRS{
 	}
 
 	void EBFV1_hyperbolic::nodeWith_Wells(double delta_T){
-		const int N = pSimPar->getWellTimeDiscretion();
+		const double tol = 1e-5;							// tolerance for fractional flux correction
+		const int N = pSimPar->getWellTimeDiscretion();		// get number of delta subdivisions
+		double dt_well = (double)delta_T/N;					// time step for well nodes saturation
+
 		int i,j, well_idx;
-		double Sw,Sw0,Sw_old,Vt,Qi,Vi,Qwi,Qt,fw,fo,nonvisc,wp,volume, nrc, porosity;
-		double dt_well = (double)delta_T/N;			// time step for well nodes saturation
-		double cml_oil,Qo,Qw;
+		double Sw,Sw0,Sw1,Sw_old,Vt,Qi,Vi,Qwi,Qt,fw,fo,nonvisc,wp,volume, nrc, porosity,cml_oil,Qo,Qw,diff_Sw;
 
 		// TODO: nao usar constantes para identificar pocos!
-		Qt = pSimPar->getFlowrateValue(51);		// source/sink term
-		Vt = pSimPar->getWellVolume(51);		// for node i, Qi is a fraction of total well flow rate (Qt)
+		Qt = pSimPar->getFlowrateValue(51);					// source/sink term
+		Vt = pSimPar->getWellVolume(51);					// for node i, Qi is a fraction of total well flow rate (Qt)
 		cml_oil = .0;
 		Qo = .0;
 		Qw = .0;
+		int iter = 0;
 		int nnodes = pPPData->getNumNodesWells();
 		for (i=0; i<nnodes; i++){
 			pPPData->getNeumannIndex(i,well_idx);
 			pPPData->getNonvisc(well_idx,nonvisc);
 			pPPData->getSaturation(well_idx,Sw_old);
 			pGCData->getVolume(well_idx,Vi);
-			Qi = Qt*(Vi/Vt);							// Fluid (water+oil) flow rate through node i
+			Qi = Qt*(Vi/Vt);								// Fluid (water+oil) flow rate through node i
 			wp = 0.2*Vi;
 			for (j=0; j<N; j++){
 				Sw0 = Sw_old - (dt_well/wp)*(nonvisc);
 				fw = pPPData->getFractionalFlux(Sw0);
 				Qwi = fabs(fw*Qi);
 				Sw = Sw0 - dt_well*(Qwi/wp);
+
+				// correct fw
+//				do{
+//					Sw1 = Sw;
+//					fw = pPPData->getFractionalFlux(Sw1);
+//					Qwi = fabs(fw*Qi);
+//					Sw = Sw1 - dt_well*(Qwi/wp);
+//					diff_Sw = fabs(Sw - Sw1);
+//
+//					// avoid infinite loop
+//					iter++;
+//					if (iter>10){
+//						//cout << "Iter. exceeded! Exiting loop.\n";
+//						break;
+//					}
+//
+//				}while ( diff_Sw > tol );
 				Sw_old = Sw;
 			}
 	#ifdef _SEEKFORBUGS_

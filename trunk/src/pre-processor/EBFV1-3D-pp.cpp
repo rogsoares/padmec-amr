@@ -267,17 +267,6 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 		domlist[i++] =  *iter;
 	}
 
-	double volsum = .0;
-	for(iter = setOfDomain.begin(); iter!=setOfDomain.end(); iter++){
-		vit = M_vertexIter(theMesh);
-		while (pEntity v = VIter_next(vit)){
-			cout << EN_id(v) << ", dom = " << *iter << ", volsum =" << volsum;
-			volsum += pGCData->getVolume(v,*iter);
-			cout << "\tvolsum = " << volsum << endl;
-		}
-		VIter_delete(vit);
-	}
-
 	PetscPrintf(PETSC_COMM_WORLD,"EBFV1-3D pre-processor has finished.\n\n");
 	return 0;
 }

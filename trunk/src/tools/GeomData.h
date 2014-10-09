@@ -5,8 +5,7 @@
 #include "Matrix.h"
 
 
-namespace PRS
-{
+namespace PRS{
 	typedef std::vector<double> DataArray;
 	typedef map<int,DataArray> MapDataArray;
 	typedef map<int,double> MapData;
@@ -233,12 +232,12 @@ namespace PRS
 
 		// return
 		void getBdryFace(int dom, int row, int &idx_0, int &idx_1, int &idx_2, int &idx0_global, int &idx1_global, int &idx2_global){
-			idx_0 = faces_bdry[dom].getValue(row,0);		// index number for vertex ID for domain k
-			idx_1 = faces_bdry[dom].getValue(row,1);		// idem
-			idx_2 = faces_bdry[dom].getValue(row,2);		// idem
-			idx0_global = faces_bdry[dom].getValue(row,3);	// global index number for vertex ID
-			idx1_global = faces_bdry[dom].getValue(row,4);	// idem
-			idx2_global = faces_bdry[dom].getValue(row,5);	// idem
+			idx_0 = faces_bdry[dom].getValue(row,3);		// index number for vertex ID for domain k
+			idx_1 = faces_bdry[dom].getValue(row,4);		// idem
+			idx_2 = faces_bdry[dom].getValue(row,5);		// idem
+			idx0_global = faces_bdry[dom].getValue(row,6);	// global index number for vertex ID
+			idx1_global = faces_bdry[dom].getValue(row,7);	// idem
+			idx2_global = faces_bdry[dom].getValue(row,8);	// idem
 		}
 
 		// get control volume for one vertex

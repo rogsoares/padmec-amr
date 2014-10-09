@@ -42,8 +42,10 @@ namespace PRS{           // PRS: Petroleum Reservoir Simulator
 			while (pEntity node = VIter_next(vit)){
 				if ( pSimPar->isNodeFree( GEN_tag( node->getClassification() )) ){
 					pPPData->getPressure(idx,p);
-					VecSetValue(output,row++,p,INSERT_VALUES);
+					VecSetValue(output,row,p,INSERT_VALUES);
+					//cout << "ID = " << EN_id(node) << "\tidx: " << idx << "\tsize:" << pMData->getNum_GF_Nodes() << "\tflag: " << GEN_tag(node->getClassification()) << endl;
 					idx++;
+					row++;
 				}
 			}
 			VIter_delete(vit);
