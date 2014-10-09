@@ -203,10 +203,9 @@ namespace PRS{
 	}
 
 	int MeshData::getNodesWithKnownValues(pMesh theMesh){
-		//pEntity edge
-		pEntity node, face;
+		pEntity node, edge, face;
 		int i,ID;
-		//double coord1[3],coord2[3],x1,y1,x2,y2;
+		double coord1[3],coord2[3],x1,y1,x2,y2;
 
 		// search for flagged nodes
 		// =========================================================================
@@ -225,37 +224,37 @@ namespace PRS{
 
 		// search for flagged edges
 		// =========================================================================
-//		EIter eit = M_edgeIter( theMesh );
-//		while ( (edge = EIter_next(eit)) ){
-//			if (!theMesh->getRefinementDepth(edge)){
-//				int flag = EN_getFlag(edge);
-//				/*
-//				 * This is a way to use the simulator to evaluate elliptic equation without screw-up the input data procedure.
-//				 */
-//				V_coord(edge->get(0,0),coord1); x1 = coord1[0]; y1 = coord1[1];
-//				V_coord(edge->get(0,1),coord2); x2 = coord2[0]; y2 = coord2[1];
-//
-//				#ifdef CRUMPTON_EXAMPLE
-//				if (flag >= 2000 && flag <3000 &&  flag != 2005 ){	// take only external boundary edges
-//					// boundary conditions:
-//					// u(x,y) = [2*sin(y)+cos(y)]alpha*x + sin(y),	x <= 0
-//					//			exp(x)cos(y),						x > 0
-//
-//					ID = get_AppToPETSc_Ordering(EN_id(edge->get(0,0)));
-//					dirichlet[ID] = (x1 <= .0)?((2.*sin(y1)+cos(y1))*ALPHA*x1 + sin(y1)):exp(x1)*sin(y1);
-//					ID = get_AppToPETSc_Ordering(EN_id(edge->get(0,1)));
-//					dirichlet[ID] = (x2 <= .0)?((2.*sin(y2)+cos(y2))*ALPHA*x2 + sin(y2)):exp(x2)*sin(y2);
-//				}
-//				#else
-//				if ( !pSimPar->isNodeFree(flag) )
-//					for (i=0; i<2; i++){
-//						ID = get_AppToPETSc_Ordering(EN_id(edge->get(0,i)));
-//						dirichlet[ID] = pSimPar->getBC_Value(flag);
-//					}
-//				#endif
-//			}
-//		}
-//		EIter_delete(eit);
+		EIter eit = M_edgeIter( theMesh );
+		while ( (edge = EIter_next(eit)) ){
+			if (!theMesh->getRefinementDepth(edge)){
+				int flag = EN_getFlag(edge);
+				/*
+				 * This is a way to use the simulator to evaluate elliptic equation without screw-up the input data procedure.
+				 */
+				V_coord(edge->get(0,0),coord1); x1 = coord1[0]; y1 = coord1[1];
+				V_coord(edge->get(0,1),coord2); x2 = coord2[0]; y2 = coord2[1];
+
+				#ifdef CRUMPTON_EXAMPLE
+				if (flag >= 2000 && flag <3000 &&  flag != 2005 ){	// take only external boundary edges
+					// boundary conditions:
+					// u(x,y) = [2*sin(y)+cos(y)]alpha*x + sin(y),	x <= 0
+					//			exp(x)cos(y),						x > 0
+
+					ID = get_AppToPETSc_Ordering(EN_id(edge->get(0,0)));
+					dirichlet[ID] = (x1 <= .0)?((2.*sin(y1)+cos(y1))*ALPHA*x1 + sin(y1)):exp(x1)*sin(y1);
+					ID = get_AppToPETSc_Ordering(EN_id(edge->get(0,1)));
+					dirichlet[ID] = (x2 <= .0)?((2.*sin(y2)+cos(y2))*ALPHA*x2 + sin(y2)):exp(x2)*sin(y2);
+				}
+				#else
+				if ( !pSimPar->isNodeFree(flag) )
+					for (i=0; i<2; i++){
+						ID = get_AppToPETSc_Ordering(EN_id(edge->get(0,i)));
+						dirichlet[ID] = pSimPar->getBC_Value(flag);
+					}
+				#endif
+			}
+		}
+		EIter_delete(eit);
 
 		// search for flagged faces (on boundary only)
 		// =========================================================================
@@ -276,9 +275,9 @@ namespace PRS{
 			FIter_delete(fit);
 		}
 
-//		for (MIter iter = dirichletBegin(); iter!=dirichletEnd(); iter++){
-//			printf("\nid[%d] - %.6f",iter->first,iter->second);
-//		}
+		for (MIter iter = dirichletBegin(); iter!=dirichletEnd(); iter++){
+			printf("\nid[%d] - %.6f",iter->first,iter->second);
+		}
 //		throw 1;
 
 		if (!P_getSumInt(dirichlet.size()) ){

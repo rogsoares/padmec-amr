@@ -60,15 +60,82 @@ public:
 		cpumap[whatprofiling] = cpulist;
 	}
 
-	static void StatisticOutput(string filename){
+	static void End2(string group, string whatprofiling){
+		CPUtimeMap getCPUGroup = cpugroup[group];
+		CPUtimeList cpulist = getCPUGroup[whatprofiling];
+
+		cpulist.push_back(MPI_Wtime() - tic);
+		getCPUGroup[whatprofiling] = cpulist;
+		cpugroup[group] = getCPUGroup;
+	}
+
+	static void StatisticOutput(int argc, char** argv){
 		int sizemap = (int)cpumap.size();
 		if (!sizemap){
 			cout << "CPU profiling statistics could not be printed.\n";
 			return;
 		}
 
+		int i;
+		double cumulated, average, h, m, s, total;
+		double arrayprofile[sizemap];
+
+		ofstream fid;
+		if (argc==2){
+			fid.open("StatisticOutput.txt");
+		}
+		else{
+			fid.open(argv[2]);
+		}
+
+		i = 0;
+		total = .0;
+		for (CPUtimeMapIter iter1 = cpumap.begin(); iter1 != cpumap.end(); iter1++){
+			CPUtimeList cpulist = (*iter1).second;
+			cumulated = .0;
+			for (CPUtimeListIter iter2 = cpulist.begin(); iter2 != cpulist.end(); iter2++){
+				cumulated += *iter2;
+			}
+			int sizelist = (int)cpulist.size();
+			arrayprofile[i] = (double)cumulated/sizelist; // take average time
+			total += (double)arrayprofile[i];
+			i++;
+		}
+		cout << total << endl;
+
+		fid << "CPU profile: Displays statistics about CPU time\n";
+		fid << "===========================================================================================\n";
+		fid << "Function                    CPU[%]                       h/m/s\n\n";
+
+		const int WIDTH = 33;
+		int linewidth;
+		i = 0;
+		string funcname;
+		for (CPUtimeMapIter iter1 = cpumap.begin(); iter1 != cpumap.end(); iter1++){
+			convertSecToTime(arrayprofile[i],&h,&m,&s);
+			funcname = (*iter1).first;
+			linewidth = WIDTH - (int)funcname.length();	// (*iter1).first.size() = size of function name string
+			fid << (*iter1).first <<  setw(linewidth) << setprecision(2) << fixed << 100.0*arrayprofile[i]/total << "\t\t\t";
+			fid << setprecision(0) << h << " " << m << " " << s << endl;
+			i++;
+			funcname.clear();
+		}
+		cpumap.clear();
+	}
+
+	static void StatisticOutput2(string group, string filename){
+		int sizemap = (int)cpugroup.size();
+		if (!sizemap){
+			cout << "CPU profiling statistics could not be printed.\n";
+			return;
+		}
+
+
 		double cumulated, average, h, m, s, total;
 		int i;
+
+		CPUtimeMap getCPUGroup = cpugroup[group];
+		sizemap = (int)getCPUGroup.size();
 		double arrayprofile[sizemap];
 
 		ofstream fid;
@@ -76,7 +143,7 @@ public:
 
 		i = 0;
 		total = .0;
-		for (CPUtimeMapIter iter1 = cpumap.begin(); iter1 != cpumap.end(); iter1++){
+		for (CPUtimeMapIter iter1 = getCPUGroup.begin(); iter1 != getCPUGroup.end(); iter1++){
 			CPUtimeList cpulist = (*iter1).second;
 			cumulated = .0;
 			//cout << (*iter1).first << ":\n";
@@ -100,7 +167,7 @@ public:
 		int linewidth;
 		i = 0;
 		string funcname;
-		for (CPUtimeMapIter iter1 = cpumap.begin(); iter1 != cpumap.end(); iter1++){
+		for (CPUtimeMapIter iter1 = getCPUGroup.begin(); iter1 != getCPUGroup.end(); iter1++){
 			//cout << "arrayprofile[i]: " << arrayprofile[i] << endl;
 			convertSecToTime(arrayprofile[i],&h,&m,&s);
 			funcname = (*iter1).first;
@@ -111,14 +178,16 @@ public:
 			funcname.clear();
 		}
 		//cout << "Statistics were cleaned from memory and saved in file.\n";
-		cpumap.clear();
+		getCPUGroup.clear();
 	}
 
 	typedef std::list<double> CPUtimeList;
 	typedef std::list<double>::iterator CPUtimeListIter;
 	typedef std::map<string,CPUtimeList> CPUtimeMap;
 	typedef std::map<string,CPUtimeList>::iterator CPUtimeMapIter;
+	typedef std::map<string,CPUtimeMap> MapGroup;
 
+	static MapGroup cpugroup;						// allow multiple profiles
 	static CPUtimeMap cpumap;						// store all CPU time for every time _whatprofiling is called
 	static double tic;								// initial counting
 };

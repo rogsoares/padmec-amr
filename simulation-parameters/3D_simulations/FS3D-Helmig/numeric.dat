@@ -37,10 +37,10 @@ where i = processor-rank-number and N = number-of-processors
 You MUST provide only filename, i.e, filename = (filename-i-of-N.dat) - (-i-of-N.dat)
 
 mesh filename:
-/home/rogerio/projetos/GOOGLE_CODES/padmec-amr/trunk/simulation-parameters/3D_simulations/FS3D-HMPM/pp-data-files/FS3D-HMPM-tests.msh
+/home/rogerio/projetos/GOOGLE_CODES/padmec-amr/trunk/simulation-parameters/3D_simulations/FS3D-Helmig/pp-data-files/FS3D_Helmig.msh
 
 export filename (to VTK format without extension .vtk):
-/home/rogerio/projetos/GOOGLE_CODES/padmec-amr/trunk/simulation-parameters/3D_simulations/FS3D-HMPM/results/FS3D-HMPM
+/home/rogerio/projetos/GOOGLE_CODES/padmec-amr/trunk/simulation-parameters/3D_simulations/FS3D-Helmig/results/FS3D-Helmig
 
 Start simulation from <restart> file?
 no
@@ -49,7 +49,6 @@ Initial and Boundary conditions
 ================================================================================
 
 Dirichlet (Specify: flags and respective pressure values):
-10 1
 51 0
 end
 

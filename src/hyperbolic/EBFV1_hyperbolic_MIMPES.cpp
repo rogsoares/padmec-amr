@@ -37,6 +37,7 @@ namespace PRS{
 	}
 
 	EBFV1_hyperbolic_MIMPES::~EBFV1_hyperbolic_MIMPES(){
+		fid.close();
 	}
 
 	double EBFV1_hyperbolic_MIMPES::solver(pMesh theMesh, double &timeStep){
@@ -97,25 +98,27 @@ namespace PRS{
 	// This happens either at the beginning of simulation or when sum of timeStep is greater than DT.
 	void EBFV1_hyperbolic_MIMPES::calculateImplicitTS(double &p_timestep, double timeStep, double &DV_norm, bool &go_ImplicitTS, bool &go_MIMPES){
 		if (go_ImplicitTS){
-			if (p_timestepOld<.0){                                                  // initialize p_timestepOld for the beginning of simulation (t=0)
+			CPU_Profile::Start();
+			if (p_timestepOld<.0){							// initialize p_timestepOld for the beginning of simulation (t=0)
 				p_timestepOld = timeStep;
 			}
-			p_timestepOld *= time_factor;                                   // make implicit p_timestepOld variable dimensionless
-			p_timestep = (DVTOL/DV_norm)*p_timestepOld;             // Update new implicit time step: p_timestep
-			double RT = (double)(p_timestep/p_timestepOld); // dimensionless DT ratio
+			p_timestepOld *= time_factor;					// make implicit p_timestepOld variable dimensionless
+			p_timestep = (DVTOL/DV_norm)*p_timestepOld;		// Update new implicit time step: p_timestep
+			double RT = (double)(p_timestep/p_timestepOld);	// dimensionless DT ratio
 			if (RT>1.25){
 				p_timestep = 1.25*p_timestepOld;
 			}
 			else if ( RT<0.75 ){
 				p_timestep = 0.75*p_timestepOld;
 			}
-			p_timestep /= time_factor;                                              // gives implicit p_timestep variable dimension of time
-			if (p_timestep < timeStep || (RT>0.75 && RT<1.25)){                                             // It doesn't make sense p_timestep be less than timeStep
+			p_timestep /= time_factor;								// gives implicit p_timestep variable dimension of time
+			if (p_timestep < timeStep || (RT>0.75 && RT<1.25)){     // It doesn't make sense p_timestep be less than timeStep
 				p_timestep = timeStep;
 			}
-			correct_p_TS(p_timestep,go_MIMPES);                                             // do not allow p_timestep go beyond total simualtion time
+			correct_p_TS(p_timestep,go_MIMPES);						// do not allow p_timestep go beyond total simualtion time
 			go_ImplicitTS = false;
 			p_timestepOld = p_timestep;
+			CPU_Profile::End("ImplicitTS");
 		}
 	}
 
@@ -161,6 +164,8 @@ namespace PRS{
 	}
 
 	void EBFV1_hyperbolic_MIMPES::calculateVelocityVariationNorm(double &DV_norm, int dim){
+		CPU_Profile::Start();
+
 		int i, dom, ndom, edge, nedges, numGEdges;
 		double Cij[3], v_new[3], v_old[3], Dv[3], DV_domNorm[4], Cij_norm, aux, dot, DV_norm_sum;
 
@@ -190,6 +195,8 @@ namespace PRS{
 		}
 		aux = (double)(DV_norm_sum/ndom);
 		DV_norm = sqrt(aux);
+
+		CPU_Profile::End("VelocityVariationNorm");
 	}
 
 	void EBFV1_hyperbolic_MIMPES::MIMPES_output(double Sw_timestep_sum, double p_timestep, int numCFL_Steps, int sumNum_p_DT, int sumNum_Sw_DT, double DV_norm){

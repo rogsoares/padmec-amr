@@ -85,6 +85,7 @@ namespace PRS{
 				pPPData->get_pw_Grad(dom,idx0,p_grad_I);
 				pPPData->get_pw_Grad(dom,idx1,p_grad_J);
 				pPPData->get_pw_Grad(dom,idx2,p_grad_K);
+
 				dot1 = inner_product(line1,p_vec,3);
 				dot2 = inner_product(line2,p_vec,3);
 				dot3 = inner_product(line3,p_vec,3);
@@ -96,6 +97,7 @@ namespace PRS{
 					p_grad_J[i] += aux[i]*dot2;
 					p_grad_K[i] += aux[i]*dot3;
 				}
+
 				pPPData->set_pw_Grad(dom,idx0,p_grad_I);
 				pPPData->set_pw_Grad(dom,idx1,p_grad_J);
 				pPPData->set_pw_Grad(dom,idx2,p_grad_K);
@@ -109,13 +111,16 @@ namespace PRS{
 		ndom = (int)pSimPar->setOfDomains.size();
 		for (dom=0; dom<ndom; dom++){
 			nnodes = pGCData->getNumNodesPerDomain(dom);
+			double vol_total = 0;
 			for (node=0; node<nnodes; node++){
 				pPPData->get_pw_Grad(dom,node,p_grad);
 				pGCData->getVolume(dom,node,vol);
+				vol_total += vol;
 				for (i=0; i<dim; i++){
 					p_grad[i] /= vol;
 				}
 				pPPData->set_pw_Grad(dom,node,p_grad);
+				//cout << setprecision(8) << p_grad[0] << " " << p_grad[1] << " " << p_grad[2] << "\tvol = " << vol <<  endl;
 			}
 		}
 	}
