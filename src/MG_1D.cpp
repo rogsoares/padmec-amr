@@ -1,5 +1,6 @@
 #include "includes.h"
-#include "MG_1D.h"
+#include "libincludes.h"
+
 
 
 int MG_1D::createComponents(int *n,int gridlevel){
@@ -18,7 +19,7 @@ int MG_1D::createComponents(int *n,int gridlevel){
         }
             *n=n_coarse; //going up ...
 
-    cout<<"\nGrid "<<gridlevel<<":\n"<<"e-"<<n_coarse<<"x1"<<"\t Acoarse-"<<n_coarse<<"x"<<n_coarse<<endl<<endl; //for test purposes
+    //cout<<"\nGrid "<<gridlevel<<":\n"<<"e-"<<n_coarse<<"x1"<<"\t Acoarse-"<<n_coarse<<"x"<<n_coarse<<endl<<endl; //for test purposes
 
     //create error vec
     ierr=VecCreate(PETSC_COMM_WORLD,&e);CHKERRQ(ierr);
@@ -42,14 +43,14 @@ int MG_1D::createComponents(int *n,int gridlevel){
     ierr=MatSetFromOptions(I);CHKERRQ(ierr);
     ierr=MatSetUp(I);CHKERRQ(ierr);
 
-    cout<<"\nGrid "<<gridlevel<<"'s components...ok\n\n";
+    //cout<<"\nGrid "<<gridlevel<<"'s components...ok\n\n";
     return 0;
 
 }
 
 int MG_1D::assembleRAI(int n,Mat A_fine){
 
-    cout<<"\n\nAssembling RAI...\n\n";
+   // cout<<"\n\nAssembling RAI...\n\n";
 
     PetscScalar value[3];
     PetscInt col[3];
@@ -60,7 +61,7 @@ int MG_1D::assembleRAI(int n,Mat A_fine){
     int i;
 
     //R
-    cout<<"\nR...";
+    //cout<<"\nR...";
     value[0] = 1.0/4.0 ; value[1] =2.0/4.0; value[2] =1.0/4.0;
         for (i=0;i<n_coarse;i++){
             col[0] = correction;++correction;
@@ -71,9 +72,8 @@ int MG_1D::assembleRAI(int n,Mat A_fine){
     ierr = MatAssemblyBegin(R,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
     ierr = MatAssemblyEnd(R,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
-    cout<<"...ok..\n";
     //Transpose R to form I
-    cout<<"I...";
+    //cout<<"I...";
         for(int i=0;i<n_coarse;i++){
             MatGetRow(R,i,&nonzeros,&colsIndex,&values);//get R row's i nonzeros
             MatSetValues(I,nonzeros,colsIndex,1,&i,values,INSERT_VALUES); //we take R's i row,and transform into a I column i
@@ -85,43 +85,42 @@ int MG_1D::assembleRAI(int n,Mat A_fine){
     ierr = MatAssemblyEnd(I,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
     MatScale(I,2.0);
 
-    cout<<"...ok...\n";
     //A_coarse=RAI
-    cout<<"Acoarse...";
+    //cout<<"Acoarse...";
     MatMatMatMult(R,A_fine,I,MAT_INITIAL_MATRIX ,PETSC_DEFAULT,&A);
     ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
     ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-    cout<<"...ok...\n";
+    /*
     printMatrixToFile(R,"Restrictionmat");
     printMatrixToFile(I,"Interpolationmat");
-    printMatrixToFile(A,"Coarsediscretmat");
+    printMatrixToFile(A,"Coarsediscretmat");*/
     return 0;
 }
 
 void MG_1D::Restrict(Vec r_fine,int i){
 
-        if(i==0)
-            cout<<"\n->restrict from  base grid to level "<<i; //for test purposes
-                else
-                    cout<<"\n->restrict from level "<<i-1<<" to "<<i; //for test purposes
+       // if(i==0)
+         //   cout<<"\n->restrict from  base grid to level "<<i; //for test purposes
+            //    else
+             //       cout<<"\n->restrict from level "<<i-1<<" to "<<i; //for test purposes
     MatMult(R,r_fine,r);
-    cout<<"...ok\n";
+    //cout<<"...ok\n";
         printVectorToFile(r,"r_restricted");
 
 }
 
 void MG_1D::Interpolate(Vec e_fine,int i){
 
-        printVectorToFile(e,"e_coarse");
-                printVectorToFile(e_fine,"e_fine");
+                //printVectorToFile(e,"e_coarse");
+                //printVectorToFile(e_fine,"e_fine");
 
 
-    if(i==0)
-        cout<<"\n->interpolate from level "<<i<<" to base grid"; //for test purposes ;//for test purposes
-            else
-                cout<<"\n->interpolate from level "<<i<<" to "<<i-1; //for test purposes ;//for test purposes
+    //if(i==0)
+      //  cout<<"\n->interpolate from level "<<i<<" to base grid"; //for test purposes ;//for test purposes
+      //      else
+        //        cout<<"\n->interpolate from level "<<i<<" to "<<i-1; //for test purposes ;//for test purposes
     MatMult(I,e,e_fine);
-    cout<<"...ok\n";
+    //cout<<"...ok\n";
 }
 
 
@@ -142,15 +141,15 @@ int MG_1D::solver(){
     ierr = KSPSetTolerances(ksp,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT,itnum);CHKERRQ(ierr);
     ierr = KSPSolve(ksp,r,e);CHKERRQ(ierr);
     ierr = KSPGetIterationNumber(ksp,&its); CHKERRQ(ierr);
-    cout<<"\n\ncurrent iteration(smoothing -> e) : "<<its<<endl;
-    ierr = KSPView(ksp,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+    //cout<<"\n\ncurrent iteration(smoothing -> e) : "<<its<<endl;
+   // ierr = KSPView(ksp,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
     ierr = KSPDestroy(&ksp); CHKERRQ(ierr);
 
         return 0;
 }
 
 MG_1D::~MG_1D(){
-    cout<<"\nDestroying components (from coarse grid)...\n";   //for test purposes
+    //cout<<"\nDestroying components (from coarse grid)...\n";   //for test purposes
     VecDestroy(&e);
     VecDestroy(&r);
     MatDestroy(&A);

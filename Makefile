@@ -9,12 +9,10 @@ CXX=mpicxx
 
 INCLUDES=-I$(1D_DIR)/include -I$(PETSC_DIR)/include 
 
-1D_OBJ_DIR=$(1D_DIR)/objs
-1D_SRC_DIR=$(1D_DIR)/src
-1D_OBJECTS=$(1D_OBJ_DIR)/MG_1D.o
-1D_SRC=$(1D_SRC_DIR)/MG_1D.cpp
-
-STATICLIB=libmultigrid.a
+OBJ_DIR=$(1D_DIR)/objs
+SRC_DIR=$(1D_DIR)/src
+OBJECTS_1D=$(OBJ_DIR)/Controller_V.o $(OBJ_DIR)/MG_1D.o
+STATICLIB=$(1D_DIR)/lib/libmultigrid.a
 
 
 all:$(STATICLIB)
@@ -23,14 +21,19 @@ all:$(STATICLIB)
 include ${PETSC_DIR}/conf/variables
 include ${PETSC_DIR}/conf/rules 
 
-$(STATICLIB):	$(1D_OBJECTS) chkopts
+#chkopts
+
+$(STATICLIB):	$(OBJECTS_1D) 
 	@echo 'Linking....'
-	ar crsu $(STATICLIB) $(1D_OBJECTS)
+	ar crsu $(STATICLIB) $(OBJECTS_1D)
 	@echo "ok. Done!"
 
-$(1D_OBJ_DIR)/%.o:	$(1D_SRC_DIR)/%.cpp 
+$(OBJ_DIR)/%.o:	$(SRC_DIR)/%.cpp 
 	$(CXX) $(CXXFLAGS) -c $(INCLUDES)  $<
-	@mv *.o $(1D_OBJ_DIR)
+	@mv *.o $(OBJ_DIR)
+
+
 
 cleanup:
-	rm *.o $(1D_OBJ_DIR)/*.o *.exe
+	rm *.o $(1D_OBJ_DIR)/*.o 
+	rm *.a $(1d_DIR)/lib/*.a
