@@ -23,6 +23,7 @@ using namespace std;
 // Petsc includes
 // =============================================================================
 #include "petscksp.h"
+#include "libincludes.h"
 
 #endif
 

@@ -1,17 +1,17 @@
 #ifndef _MG1D_H
 #define _MG1D_H
 
+
 class MG_1D{
     private :
         PetscErrorCode ierr;
         Mat R,I; // m. R-Restriction(n_cXn) m. I-Interpolation(nXn_c) AR-A*R(n_cxn)
-
     public :
         Mat A;//A-coarse discretization
-        Vec e;
-        Vec r;   //e-coarse error(must be smoothed) r-residual(rhs)
-        int n_coarse;//use for restriction and interpolation ...basis of a new coarse grid
-        int n_fine;//use for restriction and interpolation
+        Vec e;  //coarse errors only(must be smoothed)
+        Vec r;   // r-residual(rhs)
+        int n_coarse;//used in restriction and interpolation ...basis of a new coarse grid
+        int n_fine;//used in restriction and interpolation
         int printMatrixToFile(Mat &A,const char *filename);
         MG_1D(){};
         ~MG_1D();
