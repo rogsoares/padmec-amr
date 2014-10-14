@@ -40,7 +40,7 @@ mesh filename:
 /home/rogerio/projetos/GOOGLE_CODES/padmec-amr/trunk/simulation-parameters/3D_simulations/FS3D-Helmig/pp-data-files/FS3D_Helmig.msh
 
 export filename (to VTK format without extension .vtk):
-/home/rogerio/projetos/GOOGLE_CODES/padmec-amr/trunk/simulation-parameters/3D_simulations/FS3D-Helmig/results/FS3D-Helmig
+/home/rogerio/projetos/GOOGLE_CODES/padmec-amr/trunk/simulation-parameters/3D_simulations/FS3D-Helmig/results/FS3D-Helmig-dvtol1e-3
 
 Start simulation from <restart> file?
 no

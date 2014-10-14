@@ -200,15 +200,17 @@ void E_vertices(pEntity edge, std::vector<pEntity> & vertex){
 
 void printSimulationHeader(){
 	if (!P_pid())
-		std::cout<< "\n\n\t\t\t###################################################################\n"
+		std::cout<< "\n\n\t\t\t=====================================================================================\n"
 		"\t\t\t\t\tUNIVERSIDADE FEDERAL DE PERNAMBUCO\n"
-		"\t\t\t\t\tPADMEC - DECIV - DEMEC - PRH-26 - CNPq\n"
-		"\t\t\t\t\t\t\t2008-2010\n"
-		"\n\t\t\t\t\tParallel Reservoir Simulator - v1.1.5\n"
-		"\t\t\t\t\tAuthor: Silva, R. S.\n"
-		"\t\t\t\t\tNO WARRANTY!!! \n"
-		"\t\t\t\t\tUSE IT AT YOUR OWN RISK!!!\n"
-		"\t\t\t###################################################################\n\n";
+		"\t\t\t\t\tCENTRO ACADEMICO DO AGRESTE - CAA\n"
+		"\t\t\t\t\tNUCLEO DE TECNOLOGIA - NT\n"
+		"\t\t\t\t\tPADMEC - DEMEC - CNPq\n"
+		"\t\t\t\t\t2008-2014\n"
+		"\n\t\t\t\t\tPRS: Parallel Reservoir Simulator\n"
+		"\t\t\t\t\tA Finite Volume Scheme for the Two-Phase Oil-Water Flow in 2-D and\n\t\t\t\t\t3-D heterogeneous/anisotropic porous media\n"
+		"\n\t\t\t\t\tAuthor: Rogerio Soares da Silva.\n"
+		"\t\t\t\t\tNO WARRANTY. IT MEANS: USE IT AT YOUR OWN RISK\n"
+		"\t\t\t=====================================================================================\n\n";
 }
 
 

@@ -45,7 +45,9 @@ namespace PRS{
 	
 	const double* SimulatorParameters::getPermeability(const int &dom){
 		MIter_RockProperties mit = mapRockProp.find(dom);
-		if (mit != mapRockProp.end()) return mit->second->K;
+		if (mit != mapRockProp.end()){
+			return mit->second->K;
+		}
 		cout << "Warning: no permeability tensor associated to domain " << dom << ".\n";
 		cout << __FILE__ << "\t at line " << __LINE__ << endl;
 		return 0;
@@ -58,7 +60,9 @@ namespace PRS{
 	
 	double SimulatorParameters::getBC_Value(const int &flag){
 		MapFlagIter mIter = mapBC.find(flag);
-		if (mIter != mapBC.end()) return mIter->second->val;
+		if (mIter != mapBC.end()){
+			return mIter->second->val;
+		}
 		cout << "Warning: getBC_Value() return null value\n";
 		cout << __FILE__ << "\t at line " << __LINE__ << endl;
 		return 0;
@@ -141,7 +145,7 @@ namespace PRS{
 			int flag = miter->first;
 			// FOR EACH NODE ON PRODUCTION WELL
 			Vt = .0;
-			cout << "Number of nodes on well: " << miter->second.size() << endl;
+		//	cout << "Number of nodes on well: " << miter->second.size() << endl;
 			for (siter = miter->second.begin(); siter!=miter->second.end();siter++){
 				int id = *siter;
 				// to which domain node belongs get its volume
@@ -238,7 +242,7 @@ namespace PRS{
 	double SimulatorParameters::getTotalInjectionFlowRate() const{
 		double Q = 0.0;
 		for (MWCIter mwiter=MWells.begin(); mwiter!=MWells.end(); mwiter++){
-			printf("well flag %d. Flow rate: %f.  Volume: %f\n",mwiter->first,mwiter->second.flowRate,mwiter->second.wellVolume);
+			//printf("well flag %d. Flow rate: %f.  Volume: %f\n",mwiter->first,mwiter->second.flowRate,mwiter->second.wellVolume);
 			if ( isInjectionWell( mwiter->first ) ){
 				Q += mwiter->second.flowRate;
 			}
@@ -309,7 +313,6 @@ namespace PRS{
 			int theStep = getStepOutputFile();
 			incrementeStepOutputFile();
 			char fname[256];
-
 			sprintf(fname,"%s__%d-of-%d__step-%d.vtk",expofName.c_str(),P_pid(),P_size(),theStep);
 			PetscPrintf(PETSC_COMM_WORLD,"VTK Output: step file #%d\n",theStep);
 			printVTK(theMesh,pData1,pData2,pData3,pData4,fname);
