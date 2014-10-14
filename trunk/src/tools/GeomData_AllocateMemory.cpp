@@ -47,7 +47,7 @@ namespace PRS{
 			Cij[k].initialize(.0);
 
 			int size = (dim==2)?numDomBDRYEdges[k]:numDomBDRYFaces[k];
-			cout << "SIZE: " << size << endl;
+			//cout << "SIZE: " << size << endl;
 			Dij[k].allocateMemory(size,3);
 			Dij[k].initialize(.0);
 

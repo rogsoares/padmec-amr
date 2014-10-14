@@ -22,7 +22,6 @@ namespace PRS{
 	}
 
 	void SimulatorParameters::getParametersDirectoryPath(){
-		if (!P_pid()) std::cout << "getting parameters directory path... ";
 
 		// read numeric parameters
 		ifstream fid;
@@ -65,7 +64,6 @@ namespace PRS{
 			fid3.close();
 			fid4.close();
 		}
-		if (!P_pid()) std::cout << "OK.\n";
 	}
 
 	void SimulatorParameters::initialize(GeomData *pGCData, pMesh theMesh){
@@ -99,8 +97,6 @@ namespace PRS{
 		switch ( getEllipticSolver() ){
 		case 1:{
 			int ndom;
-			cout << prepFilename().c_str() << endl;
-
 			ifstream fid;
 			fid.open(prepFilename().c_str());
 			if ( !fid.is_open() ){
@@ -131,7 +127,6 @@ namespace PRS{
 	}
 
 	void SimulatorParameters::loadNumericParameters(GeomData *pGCData){
-		if (!P_pid()) std::cout << "loading numeric parameters... ";
 		string str;
 		ifstream fid;
 
@@ -170,6 +165,12 @@ namespace PRS{
 
 		setPositionToRead(fid,"export filename (to VTK format without extension .vtk):");
 		fid >> expofName;
+
+		cout << "\nPath and file name:\n";
+		cout << prepfName << "\n\n";
+		cout << "Output path and file name:\n";
+		cout << expofName << endl;
+		cout << "-------------------------------------------------------------------------------------------------------------------------\n\n";
 
 		string strYes;
 		setPositionToRead(fid,"Start simulation from <restart> file?");
@@ -214,7 +215,6 @@ namespace PRS{
 				char strtmp[512]; sprintf(strtmp,"%s__0-of-1__step-%d.vtk",expofName.c_str(),i);
 				rfid.open(strtmp);
 				if (rfid.is_open()){
-					//cout << strtmp << endl;
 					rfid.close();
 				}
 				else{
@@ -247,12 +247,9 @@ namespace PRS{
 			cout << "\nCumulative Simulation Time: " << cumTS << "  [" << setprecision(2) << double(100.*cumTS/getSimTime()) << "% concluded]" << endl;
 			cout << "lastpvi= " << lastpvi << endl;
 		}
-		if (!P_pid()) std::cout << "done.\n";
-		//exit(1);
 	}
 
 	void SimulatorParameters::loadPhysicalParameters(int dim){
-		if (!P_pid()) std::cout << "loading physical parameters... ";
 		ifstream fid;
 		string str;
 		// read physical parameters
@@ -289,11 +286,9 @@ namespace PRS{
 
 		fid.close();
 		getDomains();
-		if (!P_pid()) std::cout << "done.\n";
 	}
 
 	void SimulatorParameters::loadSolverParameters(){
-		if (!P_pid()) std::cout << "Loading solver parameters... ";
 		ifstream fid;
 		string str;
 		// read solver parameters
@@ -320,13 +315,6 @@ namespace PRS{
 		setPositionToRead(fid,"Sets number of iterations at which GMRES, FGMRES and LGMRES restarts:");
 		fid >> _Krylov_restart;
 
-		if (!P_pid()){
-			std::cout << "\n abstol : " << _abstol << endl;
-			std::cout << "   rtol : " << _rtol << endl;
-			std::cout << "  rtol2 : " << _rtol2 << endl;
-			std::cout << "   dtol : " << _dtol << endl;
-			std::cout << "restart : " << _Krylov_restart << endl;
-		}
 
 		// Load a 'database' to set a preconditioner chosen by user. <private>
 		setPreconditionerDataBase();
@@ -348,15 +336,10 @@ namespace PRS{
 					pos = str.find(miter->first,0);
 					if (pos != string::npos){				// miter->first: string name
 						pctype = miter->second;				// miter->second preconditioner
-						if (!P_pid()) std::cout << "     PC : " << miter->first << std::endl;
 					}
 					miter++;
 				}
 			}
-		}
-		if (!P_pid()){
-			std::cout << "done.\n";
-			if (getPCType() == PCNONE) std::cout << "\n**** WARNING *** No preconditioner chosen.\n\n" ;
 		}
 
 		// read pressure solver scheme for EBFV1 formulation
@@ -373,7 +356,6 @@ namespace PRS{
 	}
 
 	void SimulatorParameters::loadHighOrderParameter(){
-		if (!P_pid()) std::cout << "Loading high order parameters... ";
 		ifstream fid;
 		string str;
 		// read solver parameters
@@ -448,7 +430,6 @@ namespace PRS{
 			mit_koef = map_koef.find(theString[i]);
 			if ( mit_koef != map_koef.end() ){
 				koef = mit_koef->second;
-				if (!P_pid()) cout << "koef = " << koef << endl;
 			}
 		}
 
@@ -456,9 +437,7 @@ namespace PRS{
 		_WFdelta = 0.2;
 		setPositionToRead(fid,"Delta value for Woodfield:");
 		fid >> _WFdelta;
-
 		fid.close();
-		if (!P_pid()) std::cout << "done.\n";
 	}
 
 	void SimulatorParameters::setPositionToRead(ifstream &fid, string str2){
@@ -512,21 +491,15 @@ namespace PRS{
 			int count =0;
 			// check if file data size match to mesh dimensions
 			// 2-D -> K[2][2] or 3-D -> K[3][3]
-			if (!P_pid()) cout << "\nK = ";
 			while( stream1 >> num ){
 				K_tmp.push_back(num);
 				count++;
-				if (!P_pid()) cout << num << " ";
 			}
-			if ( count != dim*dim )
+			if ( count != dim*dim ){
 				throw Exception(__LINE__,__FILE__,"Mesh dimension and permeability tensor size do not match!\n");
+			}
 
 			std::copy(K_tmp.begin(),K_tmp.end(),rockprop->K);
-
-			// get rotation tensor
-			//			getline(fid,str);
-			//			double gamma = strtod(str.c_str(), 0)*pi/180.0;
-			//			cout << "rotation tensor = "  << gamma << endl; STOP();
 
 			// get porosity
 			getline(fid,str);
@@ -535,7 +508,6 @@ namespace PRS{
 			K_tmp.clear();
 			stream1.clear();
 		}
-		if (!P_pid()) cout << endl;
 		if (mapRockProp.size()==0)
 			throw Exception(__LINE__,__FILE__,"You must provide rock properties\n");
 	#endif
@@ -548,11 +520,9 @@ namespace PRS{
 		while( 1 ){
 			fid >> str;
 			if (!str.compare("end")) break;
-			cout << str << endl;
 			int flag = atoi(str.c_str());
 			fid >> str;
 			double val = strtod(str.c_str(), 0);
-			cout << str << endl;
 
 			// for every flag number create a new BdryConditionType pointer and add inform type of condition and its value.
 			bct = new BdryConditionType;
@@ -561,13 +531,10 @@ namespace PRS{
 
 			// two map container are used: one for saturation and other to dirichlet/neumann boundary conditions
 			if (!whatmap.compare("saturation")){
-				printf("mapSaturation[flag] = %d\n",flag);
 				mapSaturation[flag] = bct;
-				printf("val = %f\n",val);
 			}
 			else{
 				mapBC[flag] = bct;
-				printf("flag: %d has boundary condition: %f\n",flag,bct->val);
 			}
 		}
 	}
@@ -596,7 +563,6 @@ namespace PRS{
 				well_info.isProduction = false;
 			}
 			MWells[flag] = well_info;
-			//cout << "Flag: " << flag << "\tFlow: " << val << endl;
 		}
 	}
 

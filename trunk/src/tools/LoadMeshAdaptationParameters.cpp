@@ -11,7 +11,7 @@
 namespace PRS{
 
 	void SimulatorParameters::loadMeshAdaptationParameters(){
-		if (!P_pid()) std::cout << "loading mesh adaptation parameters... ";
+		//if (!P_pid()) std::cout << "loading mesh adaptation parameters... ";
 		ifstream fid;
 		string str;
 		// read madapt parameters
@@ -110,10 +110,10 @@ namespace PRS{
 		}
 
 		setPositionToRead(fid,"h_min_allowed = h_min/n, where h_min is the minimum element height of the initial mesh.");
-		fid >> str; cout << str << endl;
+		fid >> str; //cout << str << endl;
 		remeshing_param3 = strtod(str.c_str(), 0);
 
-		if (!P_pid()) std::cout << "done.\n";
+		//if (!P_pid()) std::cout << "done.\n";
 	}
 }
 

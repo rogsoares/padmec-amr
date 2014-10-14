@@ -7,11 +7,13 @@
 
 // Calculates Cij, Dij(boundary faces) and nodal volume. It also works for multi domains meshes
 int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
-	PetscPrintf(PETSC_COMM_WORLD,"Starting EBFV1-3D pre-processor:\n\n");
+	PetscPrintf(PETSC_COMM_WORLD,"Starting EBFV1-3D pre-processor...");
 
 	GeomData *pGCData = (GeomData*)pData;
 	pGCData->setMeshDim(theMesh->getDim());
-	if (theMesh->getDim() != 3) throw Exception(__LINE__,__FILE__,"Only 3-D meshes are allowed. Exiting...\n");
+	if (theMesh->getDim() != 3){
+		throw Exception(__LINE__,__FILE__,"Only 3-D meshes are allowed. Exiting...\n");
+	}
 
 	theMesh->modifyState(3,2);
 	theMesh->modifyState(2,3);
@@ -39,8 +41,6 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 	}
 	RIter_delete(rit);
 
-	cout << "Number of domains: " << setOfDomain.size() << endl;
-
 	// mark faces (boundary)
 	bool detectBdryFaces = false;
 	std::set<int>::iterator iter = setOfDomain.begin();
@@ -66,7 +66,6 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 			}
 		}
 		RIter_delete(rit);
-		cout << "Number of boundary faces for domain " << dom << ": " << countBDRYFaces << endl;
 	}
 	//throw 1;
 
@@ -86,7 +85,7 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 	// loop over elements
 	// for each element:	1 - calculate Cij for each edge and store them on the respective edge
 	//						2 - calculate element contribution to volume of control volume
-	PetscPrintf(PETSC_COMM_WORLD,"Loop over tetras - start...  ");MPI_Barrier(MPI_COMM_WORLD);
+//	PetscPrintf(PETSC_COMM_WORLD,"Loop over tetras - start...  ");MPI_Barrier(MPI_COMM_WORLD);
 	rit = M_regionIter(theMesh);
 	while ( (tetra = RIter_next(rit)) ){
 		// get all four tetrahedron's vertices
@@ -228,7 +227,7 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 	}
 	RIter_delete(rit);	// END TETRAHEDRALS LOOP
 	pGCData->setTotalReservoirVolume(vt);
-	PetscPrintf(PETSC_COMM_WORLD,"Finished\n");MPI_Barrier(MPI_COMM_WORLD);
+	//PetscPrintf(PETSC_COMM_WORLD,"Finished\n");MPI_Barrier(MPI_COMM_WORLD);
 
 	// deallocate vectors
 	for (i=0; i<4; i++) delete[] tetraFCenter[i];
@@ -242,7 +241,7 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 
 	int count = 0;
 	dblarray Dij(3,.0);
-	PetscPrintf(PETSC_COMM_WORLD,"Loop over boundary faces - start... ");///MPI_Barrier(MPI_COMM_WORLD);
+	//PetscPrintf(PETSC_COMM_WORLD,"Loop over boundary faces - start... ");///MPI_Barrier(MPI_COMM_WORLD);
 	if ( M_numFaces(theMesh) != 0 ){
 		FIter fit = M_faceIter(theMesh);
 		while ( (face = FIter_next(fit)) ){
@@ -256,7 +255,7 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 		}
 		FIter_delete(fit);
 	}
-	PetscPrintf(PETSC_COMM_WORLD,"Finished\n");MPI_Barrier(MPI_COMM_WORLD);
+	//PetscPrintf(PETSC_COMM_WORLD,"Finished\n");MPI_Barrier(MPI_COMM_WORLD);
 	calculateEdgeLength(theMesh,pGCData);
 	calculateCijNorm(theMesh,pGCData,setOfDomain);
 	identifyBoundaryElements(theMesh,pGCData,setOfDomain);
@@ -267,7 +266,8 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 		domlist[i++] =  *iter;
 	}
 
-	PetscPrintf(PETSC_COMM_WORLD,"EBFV1-3D pre-processor has finished.\n\n");
+	PetscPrintf(PETSC_COMM_WORLD," finished.\n");
+	cout << "-------------------------------------------------------------------------------------------------------------------------\n\n";
 	return 0;
 }
 
@@ -286,6 +286,7 @@ void computeDij(pMesh theMesh, pEntity face, GeomData *pGCData){
  		DijVector(face,oppositeVertex,Dij);
 		pGCData->setDij(face,dom1,dom2,Dij);
 	}
-	else
+	else{
 		throw Exception(__LINE__,__FILE__,"Problems to find opposite vertex to face.\n");
+	}
 }

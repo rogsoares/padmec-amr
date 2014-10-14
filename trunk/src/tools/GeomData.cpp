@@ -279,7 +279,7 @@ namespace PRS{
 		domainList = new int[_ndom];
 		for (int i=0; i<_ndom; i++){
 			domainList[i] = domlist[i];
-			cout << "domainsList[i] = " << domainList[i] << endl;
+			//cout << "domainsList[i] = " << domainList[i] << endl;
 		}
 	}
 }

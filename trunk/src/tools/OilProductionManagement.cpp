@@ -14,7 +14,6 @@ namespace PRS{
 	OilProductionManagement::OilProductionManagement(string fname, double iov,double TotalInjectionFlowRate, bool restart){
 		IOV = iov;
 		TIFR = TotalInjectionFlowRate;
-		PetscPrintf(PETSC_COMM_WORLD,"IOV = %f   TIFR = %f\n",IOV,TIFR);
 
 		if (restart){
 			fid.open(fname.c_str(),ios_base::app);

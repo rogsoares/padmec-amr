@@ -39,11 +39,9 @@ namespace PRS{
 	}
 
 	void MeshData::initialize(pMesh theMesh, GeomData* pGCData){
-		if (!P_pid()) cout << "Initializing MeshData... ";
 		reorderVerticesIds(theMesh,&pGCData->getNumRemoteCopies);
 		settingFreeAndPrescribedNodes(theMesh);
 		createVectorsForRHS(theMesh,theMesh->getDim());
-		if (!P_pid()) cout << "done.";
 	}
 
 	void MeshData::deallocateData(){
@@ -61,7 +59,6 @@ namespace PRS{
 	}
 
 	void MeshData::reorderVerticesIds(pMesh theMesh, int (*pFunc_numRemoteCopies)(pEntity)){
-		if(!P_pid()) std::cout << "\tStart reordering vertices IDs... ";
 		// rank p must take all remote nodes
 		set<int> remoteNodesSet;
 		set<int>::iterator Iter;
@@ -169,7 +166,6 @@ namespace PRS{
 		AOCreateMapping(PETSC_COMM_WORLD,N,apOrdering,petscOrdering,&ao);
 		delete[] apOrdering;
 		delete[] petscOrdering;
-		if(!P_pid()) std::cout << "done.\n";
 	}
 
 	void MeshData::settingFreeAndPrescribedNodes(pMesh theMesh){
@@ -180,14 +176,18 @@ namespace PRS{
 	}
 
 	int MeshData::FreePrescribedNodes(pMesh theMesh){
-		if (!P_pid()) std::cout << "\tDefining free and nonfree nodes...";
 		// all processors must hold all prescribed nodes
 		// (that's ONLY true for EBFV1 elliptic equation!!!)
 		getNodesWithKnownValues(theMesh);
 
 		numGP = dirichlet.size();
 		numGF = numGN - numGP;
-		if (!P_pid()) printf("\n\tnumGlobal(%d), numGlobalFree(%d) ,numGlobalPrescribed(%d)\n",numGN,numGF,numGP);
+		if (!P_pid()){
+			cout << "Number of global nodes   : " << numGN << endl;
+			cout << "Number of dirichlet nodes: " << numGP << endl;
+			cout << "Number of free nodes     : " << numGF << endl;
+			cout << "-------------------------------------------------------------------------------------------------------------------------\n\n";
+		}
 
 		// a set container for all unknowns. But first, we set for all nodes and
 		// then subtract the prescribed ids. it will be used to assembly the LHS
@@ -197,7 +197,6 @@ namespace PRS{
 		//		for (i=1; i<=numGN; i++) setGFIDs.insert(i);
 		//		for (MIter mit=dirichlet.begin(); mit!=dirichlet.end(); mit++) setGFIDs.erase((*mit).first);
 		//		setGFIDs.clear();
-		if (!P_pid()) std::cout << "\tdone.\n";
 		MPI_Barrier(MPI_COMM_WORLD);
 		return 0;
 	}
@@ -208,13 +207,9 @@ namespace PRS{
 		double coord1[3],coord2[3],x1,y1,x2,y2;
 
 		// search for flagged nodes
-		// =========================================================================
-		cout << "\nsearching for flagged nodes\n ";
-		cout << "num nodes = " << M_numVertices(theMesh) << endl;
 		VIter vit = M_vertexIter( theMesh );
 		while ( (node = VIter_next(vit)) ){
 			int flag = (!node->getClassification())?0:GEN_tag(node->getClassification());
-			//cout << "\nID = " << EN_id(node) << "\tID_petsc:" << get_AppToPETSc_Ordering(EN_id(node)) << "\tflag" << flag << "\tCC: " << !pSimPar->isNodeFree(flag);
 			if ( !pSimPar->isNodeFree(flag) ){
 				ID = get_AppToPETSc_Ordering(EN_id(node));
 				dirichlet[ID] = pSimPar->getBC_Value(flag);
@@ -223,7 +218,6 @@ namespace PRS{
 		VIter_delete(vit);
 
 		// search for flagged edges
-		// =========================================================================
 		EIter eit = M_edgeIter( theMesh );
 		while ( (edge = EIter_next(eit)) ){
 			if (!theMesh->getRefinementDepth(edge)){
@@ -276,7 +270,7 @@ namespace PRS{
 		}
 
 		for (MIter iter = dirichletBegin(); iter!=dirichletEnd(); iter++){
-			printf("\nid[%d] - %.6f",iter->first,iter->second);
+			//printf("\nid[%d] - %.6f",iter->first,iter->second);
 		}
 //		throw 1;
 
@@ -336,7 +330,6 @@ namespace PRS{
 			if (val) *val = mit->second;
 			key = true;
 		}
-		//std::cout<<"Node "<<ID<<" is: "<<key<<endl;
 		return key;
 	}
 
@@ -452,13 +445,11 @@ namespace PRS{
 	}
 
 	void MeshData::mappingUnknowns(){
-		if (!P_pid())std::cout << "\tMapping unknowns...";
 		int i, k = 0, j = 0;
 		FP_Array = new int[numGN];
 		for (i = 0; i<numGN; i++){
 			FP_Array[i] = ( !getDirichletValue(i+1,0) )?k++:j++;
 		}
-		if (!P_pid()) std::cout << "done.\n";
 		MPI_Barrier(MPI_COMM_WORLD);
 	}
 

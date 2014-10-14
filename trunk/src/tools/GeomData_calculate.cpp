@@ -254,7 +254,7 @@ namespace PRS{
 			}
 			RIter_delete(rit);
 			numDomBDRYFaces[i] = (int)faceList.size();
-			cout << "numDomBDRYFaces = " << numDomBDRYFaces[i] << endl;
+			//cout << "numDomBDRYFaces = " << numDomBDRYFaces[i] << endl;
 			if (!numDomBDRYFaces[i]){
 				throw Exception(__LINE__,__FILE__,"Number of boundary faces: 0.");
 			}
@@ -287,7 +287,7 @@ namespace PRS{
 		int dim = theMesh->getDim();
 		pEntity edge;
 
-		cout << "Num. Edges: " << M_numEdges(theMesh) << endl;
+		//cout << "Num. Edges: " << M_numEdges(theMesh) << endl;
 		for (int dom = 0; dom<ndom; dom++){
 			int row = 0;
 			int dom_flag = domainList[dom];

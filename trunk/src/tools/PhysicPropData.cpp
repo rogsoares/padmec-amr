@@ -185,7 +185,7 @@ namespace PRS{
 		if (simPar->useRestart()){
 			ifstream fid;
 			string strline;
-			cout << "restart file name:  " << simPar->getRestartFilename().c_str() << endl;
+		//	cout << "restart file name:  " << simPar->getRestartFilename().c_str() << endl;
 			fid.open(simPar->getRestartFilename().c_str());
 
 			if (!fid.is_open()){
@@ -199,7 +199,7 @@ namespace PRS{
 			getline(fid,strline);
 
 			// load data
-			cout << "Loading initial saturation field using the last VTK file generated.\n";
+			//cout << "Loading initial saturation field using the last VTK file generated.\n";
 			while ( (node = VIter_next(vit)) ){
 				fid >> Sw;
 				setSaturation(idx,Sw);
@@ -213,7 +213,7 @@ namespace PRS{
 				int flag = GEN_tag(node->getClassification());
 				Sw = simPar->getInitialSaturation(node);
 				if ( Sw > .0 ){
-					printf("Injection well located in node %d Sw = %f flag: %d\n",EN_id(node),Sw,flag);
+					//printf("Injection well located in node %d Sw = %f flag: %d\n",EN_id(node),Sw,flag);
 					well = 1;
 				}
 				setSaturation(idx,Sw);
