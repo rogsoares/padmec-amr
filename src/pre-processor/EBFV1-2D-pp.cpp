@@ -21,7 +21,7 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 	theMesh->modifyState(0,2);	// create adjacency around nodes
 	theMesh->modifyState(1,2);	// create faces around edge
 
-	cout << "Mesh dimension: 2D\n";
+	//cout << "Mesh dimension: 2D\n";
 	int i,j,flag,dom;
 	double edgeCenter[3], I[3], J[3];
 
@@ -180,7 +180,7 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 		}
 	}
 	EIter_delete(eit);
-	cout << "preprocessor: Number of Boundary edges = " << numBE << endl;
+	//cout << "preprocessor: Number of Boundary edges = " << numBE << endl;
 	calculateEdgeLength(theMesh,pGCData);
 	calculateCijNorm(theMesh,pGCData,setOfDomain);
 
@@ -200,11 +200,11 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 		VIter_delete(vit);
 	}
 	pGCData->setTotalReservoirVolume(vt);
-	cout << "Number of domains: " << setOfDomain.size() << ". They are: ";
-	for( iter = setOfDomain.begin(); iter!=setOfDomain.end(); iter++){
-		cout << *iter << "  ";
-	}
-	cout << endl;
+	//cout << "Number of domains: " << setOfDomain.size() << ". They are: ";
+//	for( iter = setOfDomain.begin(); iter!=setOfDomain.end(); iter++){
+//		cout << *iter << "  ";
+//	}
+//	cout << endl;
 
 #ifdef TRACKING_PROGRAM_STEPS
 	cout << "TRACKING_PROGRAM_STEPS: EBFV1_preprocessor_2D\tOUT\n";
