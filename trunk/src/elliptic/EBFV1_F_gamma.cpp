@@ -9,7 +9,6 @@ namespace PRS{
 
 		double sum[3]={.0,.0,.0};
 		if (pGCData->getMeshDim()==2){
-			throw 1;
 			nedges = pGCData->getNumBDRYEdgesPerDomain(dom);
 			for (j = 0; j<nedges; j++){
 				pGCData->getBdryEdge(dom,j,idx_0,idx_1);
