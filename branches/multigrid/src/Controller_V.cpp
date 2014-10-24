@@ -4,50 +4,79 @@
 Controller_V::Controller_V(int n,Vec r,Vec e,Vec u,Vec y,Mat A,int*counter){
 
     int level=0; //grid level
-    int n_temp=n; //this variable is used in grid const ruction
+    int n_temp=n; //this variable is used in grid construction
     MAXGRIDS=0;
+    *counter=0;//counts multigrid iterations
     MG_1D* pGrid; //pointer to  grid
-    PetscInt its,oldits;
-    Vec Ap; //residual factor
-    VecCreate(PETSC_COMM_WORLD,&Ap);
-    VecSetSizes(Ap,PETSC_DECIDE,n);
-    VecSetFromOptions(Ap);
+    PetscInt its=0,oldits=0;
+    PetscReal eNorm; //Multigrid Convergence Condition
+    Vec Au; //residual factor
+    VecCreate(PETSC_COMM_WORLD,&Au);
+    VecSetSizes(Au,PETSC_DECIDE,n);
+    VecSetFromOptions(Au);
+    VecSet(e,0);
 
+
+
+    //VecNorm(e,NORM_2,&ResNorm);
+    //cout<<"\nERRORNORM_atController_V.cppbefore Multigrid->"<<ResNorm<<endl;
+    currentitnum=0; //iteration counter initialization
+    double CPUTIME=MPI_Wtime();
     pGrid=generateGrids(n,&MAXGRIDS);//return an array of grids
          for(int i=0;i<MAXGRIDS;i++){
             pGrid[i].createComponents(&n_temp,i+1);
+            /*set restriction,interpolation and coarse grid matrices
+             A(coarse)=RAI // A(coarse) is an aproximation of the original matrix from the fine grid
+             I=R transposed
+            */
+                if(i==0)
+                    pGrid[i].assembleRAI(n,A);   //if this is the first jump,then take original data
+                        else
+                            pGrid[i].assembleRAI(pGrid[i-1].n_coarse,pGrid[i-1].A);//if this is jump n,then take past coarse grid's data
+
          }
 
         do{
-            oldits=its;            //its remains static ,when the convergence condition is reached
 
+            //  its=0;
             //smooth the error
-            KSPJacobi(A,y,u,its,3);
-
+            KSPJacobi(A,y,u,its);
             //calculate the residual
             VecCopy(y,r);
-            MatMult(A,u,Ap);
-            VecAXPY(r,-1,Ap); //r=y-Ap
+            MatMult(A,u,Au);
+            VecAXPY(r,-1,Au); //r=y-Au
+      //         VecNorm(r,NORM_2,&ResNorm);
+    //cout<<"\nRESIDUALNORM_atController_V.cppbefore Multigrid->"<<ResNorm<<endl;
 
           /* recursive function here...*/
             Multigrid(n,A,r,e,pGrid,&level,MAXGRIDS,e);
 
             VecAXPY(u,1.0,e);//u'=u+e
+            //VecNorm(r,NORM_2,&ResNorm);
+            //cout<<"\nRESIDUALNORM_atController_V.cppafter Multigrid->"<<ResNorm<<endl;
+            VecNorm(e,NORM_2,&eNorm);
+            //cout<<"\nERRORNORM_atController_V.cppafter Multigrid->"<<ResNorm<<endl;
+           // cout<<endl<<endl<<"\t\t====end of cycle "<<*counter+1<<"===="<<endl<<endl<<endl<<endl;
             ++*counter;
 
-        }while(oldits!=its);
+      }while(eNorm>1);
 
             for(int i=(MAXGRIDS-1);i--;i>=0){
                     pGrid[i].~MG_1D();
             }
         delete[] pGrid;
+        cout<<"\n = = = = Multigrid Type : V-cycle =  =  =  =\n\n";
+        cout<<"\nSmoother : Jacobi(PRECONDITIONING)+RICHARDSON(KSP)\n";
+        cout<<"\nNumber of coarse grids used : "<<MAXGRIDS<<endl;
+        cout<<"\nTotal number of cycles : "<<*counter<<endl;
+        cout<<"\nCPU Time : "<<MPI_Wtime() - CPUTIME<<endl<<endl;
 }
 
 MG_1D* Controller_V::generateGrids(int n,int*MAXGRIDS){
     MG_1D* newgrids;
 
-   // cout<<"\n\ncreating grids...\n\n";
-            while(n>=5){        //think about the last level matrix A=R(2x5)A(5x5)I(5x2)=A(2x2)->if n is smaller ,then the coarse_matrix will become a vector
+    //cout<<"\n\ncreating grids...\n\n";
+                   while(n>=5){        //think about the last level matrix A=R(2x5)A(5x5)I(5x2)=A(2x2)->if n is smaller ,then the coarse_matrix will become a vector
                 if(n%2==0){
                                 n-=1;
                 }
@@ -57,7 +86,7 @@ MG_1D* Controller_V::generateGrids(int n,int*MAXGRIDS){
                       //  cout<<"\ngrid "<<*MAXGRIDS<<" created("<<n<<" points) :: level->"<<*MAXGRIDS-1<<"\n";    //for test purposes
                     }
             }
-    newgrids=new MG_1D [*MAXGRIDS];
+    newgrids=new MG_1D[*MAXGRIDS];
     return newgrids;
 
 }
@@ -67,11 +96,7 @@ int Controller_V::Multigrid(int n,Mat A_fine,Vec r_fine,Vec e_fine,MG_1D* pGrid,
     /* recursive function here...*/
 
     if(n>=5){
-        /*set restriction,interpolation and coarse grid matrices
-         A(coarse)=RAI // A(coarse) is an aproximation of the original matrix from the fine grid
-         I=R transposed
-        */
-        pGrid[*i].assembleRAI(n,A_fine);
+
         //restrict r
         pGrid[*i].Restrict(r_fine,*i);
         //smooth the error
@@ -85,15 +110,12 @@ int Controller_V::Multigrid(int n,Mat A_fine,Vec r_fine,Vec e_fine,MG_1D* pGrid,
             if(*i>0){
                 pGrid[*i].Interpolate(pGrid[*i-1].e,*i);
                 return Multigrid(0,pGrid[*i-1].A,pGrid[*i-1].r,pGrid[*i-1].e,pGrid,i,MAXGRIDS,errorF);
-                /*n is considered to be zero because we jump "if" at the top (of Multigrid function)
-                        and we are only using "else" for interpoltation means...(only grids_1d and i are needed)
-                */
 
             }
                 else{
                     pGrid[*i].Interpolate(errorF,*i);
                    // cout<<"\nend of multigrid...\n\n";
-                                return 0;
+                                return 0;// check this
 
                 }
         }
@@ -102,7 +124,9 @@ int Controller_V::Multigrid(int n,Mat A_fine,Vec r_fine,Vec e_fine,MG_1D* pGrid,
 }
 
 
-int Controller_V::KSPJacobi(Mat A, Vec y, Vec v, PetscInt &its,int itnum){
+int Controller_V::KSPJacobi(Mat A, Vec y, Vec v, PetscInt &its){
+    currentitnum+=10; //iteration variation...(number of iterations per cycle)
+    cout<<"\nCONTROLLER'S current itnum : "<<currentitnum;
 	KSP ksp;
     PetscErrorCode ierr;
 	PC preconditioner;
@@ -111,9 +135,9 @@ int Controller_V::KSPJacobi(Mat A, Vec y, Vec v, PetscInt &its,int itnum){
 	ierr = KSPSetType(ksp,KSPRICHARDSON);CHKERRQ(ierr);
 	ierr = KSPGetPC(ksp,&preconditioner);CHKERRQ(ierr);
 	ierr = PCSetType(preconditioner,PCJACOBI);CHKERRQ(ierr);
-    ierr = KSPSetInitialGuessNonzero(ksp,PETSC_TRUE);
+    ierr = KSPSetInitialGuessNonzero(ksp,PETSC_FALSE);
     ierr = KSPSetFromOptions(ksp);CHKERRQ(ierr);
-    ierr = KSPSetTolerances(ksp,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT,itnum);CHKERRQ(ierr);
+    ierr = KSPSetTolerances(ksp,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT,currentitnum);CHKERRQ(ierr);
     ierr = KSPSolve(ksp,y,v);CHKERRQ(ierr);
     ierr = KSPGetIterationNumber(ksp,&its); CHKERRQ(ierr);
     //cout<<"\n\ncurrent iteration : "<<its<<endl;

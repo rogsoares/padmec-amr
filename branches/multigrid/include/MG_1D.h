@@ -1,5 +1,6 @@
 #ifndef _MG1D_H
 #define _MG1D_H
+#include <string.h>
 
 
 class MG_1D{
@@ -21,6 +22,7 @@ class MG_1D{
         void Interpolate(Vec e_fine,int i);     //interpolation proc.(from coarse to fine)
         int solver();
         int printVectorToFile(Vec& v,const char* filename);
+        int currentitnum;
 
 
 };
