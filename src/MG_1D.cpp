@@ -17,10 +17,12 @@ int MG_1D::createComponents(int *n,int gridlevel){
                     evendetected=false;
                 }
         }
+
             *n=n_coarse; //going up ...
 
     //cout<<"\nGrid "<<gridlevel<<":\n"<<"e-"<<n_coarse<<"x1"<<"\t Acoarse-"<<n_coarse<<"x"<<n_coarse<<endl<<endl; //for test purposes
-
+    //initialize iteration counter
+    currentitnum=0;
     //create error vec
     ierr=VecCreate(PETSC_COMM_WORLD,&e);CHKERRQ(ierr);
     ierr=VecSetSizes(e,PETSC_DECIDE,n_coarse);CHKERRQ(ierr);
@@ -43,7 +45,7 @@ int MG_1D::createComponents(int *n,int gridlevel){
     ierr=MatSetFromOptions(I);CHKERRQ(ierr);
     ierr=MatSetUp(I);CHKERRQ(ierr);
 
-    //cout<<"\nGrid "<<gridlevel<<"'s components...ok\n\n";
+   // cout<<"\nGrid "<<gridlevel<<"'s components...ok\n\n";
     return 0;
 
 }
@@ -98,14 +100,24 @@ int MG_1D::assembleRAI(int n,Mat A_fine){
 }
 
 void MG_1D::Restrict(Vec r_fine,int i){
+       // PetscReal ResNorm; //Multigrid Convergence Condition
+
+   // VecNorm(r_fine,NORM_2,&ResNorm);
+    //    cout<<"\nRESIDUALNORM_atMG_1D.cpp  before restriction(at level:"<<i<<")->"<<ResNorm<<endl;
 
        // if(i==0)
-         //   cout<<"\n->restrict from  base grid to level "<<i; //for test purposes
+           // cout<<"\n->restrict from  base grid to level "<<i; //for test purposes
             //    else
              //       cout<<"\n->restrict from level "<<i-1<<" to "<<i; //for test purposes
     MatMult(R,r_fine,r);
     //cout<<"...ok\n";
-        printVectorToFile(r,"r_restricted");
+
+       // VecNorm(r,NORM_2,&ResNorm);
+       // cout<<"\nRESIDUALNORM_atMG_1D.cpp  after restriction(at level:"<<i+1<<")->"<<ResNorm<<endl;
+
+
+
+    //printVectorToFile(r,thisgoesout);
 
 }
 
@@ -119,31 +131,45 @@ void MG_1D::Interpolate(Vec e_fine,int i){
       //  cout<<"\n->interpolate from level "<<i<<" to base grid"; //for test purposes ;//for test purposes
       //      else
         //        cout<<"\n->interpolate from level "<<i<<" to "<<i-1; //for test purposes ;//for test purposes
+
+       // PetscReal ResNorm; //Multigrid Convergence Condition
+       // VecNorm(e,NORM_2,&ResNorm);
+        //cout<<"\nERRORNORM_atMG_1D.cpp  before interpolation(at level:"<<i+1<<")->"<<ResNorm<<endl;
+
     MatMult(I,e,e_fine);
+      //  VecNorm(e_fine,NORM_2,&ResNorm);
+    //    cout<<"\nERRORNORM_atMG_1D.cpp  after interpolation(at level:"<<i<<")->"<<ResNorm<<endl;
     //cout<<"...ok\n";
 }
 
 
 int MG_1D::solver(){
+        currentitnum+=15; //iteration variation...(number of iterations per cycle)
 
 	KSP ksp;
     PetscErrorCode ierr;
 	PC preconditioner;
 	PetscInt its;
-	int itnum=5; //iteration in a grid defined by the program
+	  /*PetscReal ResNorm; //Multigrid Convergence Condition
+        VecNorm(r,NORM_2,&ResNorm);
+        cout<<"\nRESIDUALNORM_atMG_1D.cpp  before error relaxation ->"<<ResNorm<<endl;
+        VecNorm(e,NORM_2,&ResNorm);
+        cout<<"\nERRONORM_atMG_1D.cpp  before error relaxation ->"<<ResNorm<<endl;*/
 	ierr = KSPCreate(PETSC_COMM_WORLD,&ksp);CHKERRQ(ierr);
 	ierr = KSPSetOperators(ksp,A,A);CHKERRQ(ierr);
 	ierr = KSPSetType(ksp,KSPRICHARDSON);CHKERRQ(ierr);
 	ierr = KSPGetPC(ksp,&preconditioner);CHKERRQ(ierr);
 	ierr = PCSetType(preconditioner,PCJACOBI);CHKERRQ(ierr);
-    ierr = KSPSetInitialGuessNonzero(ksp,PETSC_TRUE);
+    ierr = KSPSetInitialGuessNonzero(ksp,PETSC_FALSE);
     ierr = KSPSetFromOptions(ksp);CHKERRQ(ierr);
-    ierr = KSPSetTolerances(ksp,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT,itnum);CHKERRQ(ierr);
+    ierr = KSPSetTolerances(ksp,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT,currentitnum);CHKERRQ(ierr);
     ierr = KSPSolve(ksp,r,e);CHKERRQ(ierr);
     ierr = KSPGetIterationNumber(ksp,&its); CHKERRQ(ierr);
     //cout<<"\n\ncurrent iteration(smoothing -> e) : "<<its<<endl;
    // ierr = KSPView(ksp,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
     ierr = KSPDestroy(&ksp); CHKERRQ(ierr);
+    //VecNorm(e,NORM_2,&ResNorm);
+        //cout<<"\nERRORNORM_atMG_1D.cpp  after  relaxation ->"<<ResNorm<<endl;
 
         return 0;
 }
