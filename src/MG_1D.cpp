@@ -5,6 +5,7 @@
 
 int MG_1D::createComponents(int *n,int gridlevel){
 
+    firstuse=true;
     bool evendetected=true;
     n_fine=*n;
 
@@ -160,7 +161,12 @@ int MG_1D::solver(){
 	ierr = KSPSetType(ksp,KSPRICHARDSON);CHKERRQ(ierr);
 	ierr = KSPGetPC(ksp,&preconditioner);CHKERRQ(ierr);
 	ierr = PCSetType(preconditioner,PCJACOBI);CHKERRQ(ierr);
-    ierr = KSPSetInitialGuessNonzero(ksp,PETSC_FALSE);
+      if(firstuse==true){
+                ierr = KSPSetInitialGuessNonzero(ksp,PETSC_FALSE);
+                firstuse=false;
+            }
+                    else
+                        ierr = KSPSetInitialGuessNonzero(ksp,PETSC_TRUE);
     ierr = KSPSetFromOptions(ksp);CHKERRQ(ierr);
     ierr = KSPSetTolerances(ksp,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT,currentitnum);CHKERRQ(ierr);
     ierr = KSPSolve(ksp,r,e);CHKERRQ(ierr);

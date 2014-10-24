@@ -23,6 +23,7 @@ class MG_1D{
         int solver();
         int printVectorToFile(Vec& v,const char* filename);
         int currentitnum;
+        bool firstuse;
 
 
 };
