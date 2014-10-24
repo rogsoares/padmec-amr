@@ -15,6 +15,7 @@ Controller_V::Controller_V(int n,Vec r,Vec e,Vec u,Vec y,Mat A,int*counter){
     VecSetSizes(Au,PETSC_DECIDE,n);
     VecSetFromOptions(Au);
     VecSet(e,0);
+    firstuse=true; //alternates :PETSC INTIAL GUESS NON-ZERO
 
 
 
@@ -126,7 +127,7 @@ int Controller_V::Multigrid(int n,Mat A_fine,Vec r_fine,Vec e_fine,MG_1D* pGrid,
 
 int Controller_V::KSPJacobi(Mat A, Vec y, Vec v, PetscInt &its){
     currentitnum+=10; //iteration variation...(number of iterations per cycle)
-    cout<<"\nCONTROLLER'S current itnum : "<<currentitnum;
+    //cout<<"\nCONTROLLER'S current itnum : "<<currentitnum;
 	KSP ksp;
     PetscErrorCode ierr;
 	PC preconditioner;
@@ -135,7 +136,12 @@ int Controller_V::KSPJacobi(Mat A, Vec y, Vec v, PetscInt &its){
 	ierr = KSPSetType(ksp,KSPRICHARDSON);CHKERRQ(ierr);
 	ierr = KSPGetPC(ksp,&preconditioner);CHKERRQ(ierr);
 	ierr = PCSetType(preconditioner,PCJACOBI);CHKERRQ(ierr);
-    ierr = KSPSetInitialGuessNonzero(ksp,PETSC_FALSE);
+        if(firstuse==true){
+            ierr = KSPSetInitialGuessNonzero(ksp,PETSC_FALSE);
+            firstuse=false;
+        }
+                else
+                    ierr = KSPSetInitialGuessNonzero(ksp,PETSC_TRUE);
     ierr = KSPSetFromOptions(ksp);CHKERRQ(ierr);
     ierr = KSPSetTolerances(ksp,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT,currentitnum);CHKERRQ(ierr);
     ierr = KSPSolve(ksp,y,v);CHKERRQ(ierr);

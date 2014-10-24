@@ -14,6 +14,7 @@ class Controller_V {
         int MAXGRIDS;
         MG_1D* generateGrids(int n,int*MAXGRIDS);
         int KSPJacobi(Mat A, Vec y, Vec v, PetscInt &its);
+        bool firstuse;
 
 
 };
