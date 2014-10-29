@@ -21,11 +21,14 @@ namespace PRS {
 		ParUtil::Instance()->init(argc,argv);
 		PetscInitialize(&argc,&argv,(char *)0,(char *)0);
 
-		if ( argc==1 ){
-			throw Exception(__LINE__,__FILE__, Exception::INIT_ERROR );
+		if ( argc<2 ){
+			char msg[256];
+			sprintf(msg,"You MUST type: ./PADAMEC_AMR.exe a b, where:\na = 0 or 1 (Steady State or Transient\n");
+			throw Exception(__LINE__,__FILE__, msg );
 		}
-		simFlag = atoi(argv[1]);
 
+		simFlag = atoi(argv[1]);
+		int FVM_formulation = atoi(argv[2]);
 		printSimulationHeader();
 
 		// Initialize simulation pointers
@@ -33,6 +36,8 @@ namespace PRS {
 		pGCData = new GeomData;
 		pSimPar = new SimulatorParameters(theMesh);
 		pMData = new MeshData(pSimPar,theMesh);
+
+
 
 		// Load data from files
 		pSimPar->inputDataFromFiles(pGCData);
@@ -93,10 +98,6 @@ namespace PRS {
 		pPPData->initialize(pMData,pSimPar,theMesh,false,pGCData);
 		pMData->initialize(theMesh,pGCData);
 
-		if (!P_pid()){
-			printf("Number of processes required: %d\n",P_size());
-		}
-
 		// Oil production output
 		string path = pSimPar->getOutputPathName();
 		char tmp[256]; sprintf(tmp,"%s_oil-production-%d.csv",path.c_str(),P_size());
@@ -112,8 +113,12 @@ namespace PRS {
 
 	Elliptic_equation* SIMULATION_core::init_EllipticSolverPointer(int elliptic_method){
 		switch ( elliptic_method ){
+		// EBFV1: A vertex centered edge based finite volume formulation
 		case 1:
 			return new EBFV1_elliptic(theMesh,pPPData,pSimPar,pGCData,pMData);
+		// MEBFV: A modified vertex centered element based finite volume formulation for highly heterogeneous porous media
+		case 2:
+			return new MEBFV_elliptic(theMesh,pPPData,pSimPar,pGCData,pMData);
 		default:
 			throw Exception(__LINE__,__FILE__,"Could not initialize a pointer to pElliptic_eq. Unknown method.\n");
 		}

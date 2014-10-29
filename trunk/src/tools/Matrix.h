@@ -61,8 +61,7 @@ public:
 		allocateMemory();
 	}
 
-	// we are supposing matrix has one column: matrix is  a vector
-	void allocateMemory(int rows){
+	void allocateMemory(int rows){ // we are supposing matrix has one column: matrix is  a vector
 		_rows = rows;
 		_cols = 1;
 		allocateMemory();
@@ -149,7 +148,7 @@ public:
 		*vec = mat[row]; 
 	}
 
-	T getValue(int i, int j){
+	const T getValue(int i, int j) const{
 		if (i>=_rows || j>=_cols){
 			cerr << "ERROR: Index out of bounds!\n";
 			exit(1);

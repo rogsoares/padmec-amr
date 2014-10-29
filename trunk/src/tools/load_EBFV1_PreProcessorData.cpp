@@ -199,7 +199,7 @@ namespace PRS{
 
 				pGCData->setVolume(v,setDomains[i],vol);
 				pGCData->setWeightedVolume(v,wvol);
-				pGCData->setNumRemoteCopies(v,nrc);
+				//pGCData->setNumRemoteCopies(v,nrc);
 
 				///printf("dom = %d,  vol[%d] = %f\n",setDomains[i],ID,pGCData->getVolume(v,setDomains[i]));
 			}
@@ -269,7 +269,7 @@ namespace PRS{
 					pGCData->setCij(edge,setDomains[i],Cij);
 					pGCData->setCij_norm(edge,setDomains[i],aux);
 					//pGCData->setNumRemoteCopies(edge,nrc);
-					pGCData->setNumRC(edge,setDomains[i],nrc);
+					//pGCData->setNumRC(edge,setDomains[i],nrc);
 					pGCData->set_belongsToBoundary(edge, (setDomains[i] != iGrp) );
 
 					dblarray edIJ(dim,.0);

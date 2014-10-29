@@ -237,6 +237,18 @@ public:
 		return projectedSw_grad.getValue(k);
 	}
 
+	/***********************************************************************************************/
+	// MEBFV
+
+	int getNumWells() const;						// number of wells prescribed (Neumann boundary value)
+	int getNumWellNodes(int) const;					// number of nodes located on well
+	void getFlowRate(int,int,int&,double&) const;	// get nodal weighted flow rate (Qi = Qt*(Vi/Vt), where:
+													// 						Qt: total well flow rate;
+													//						Vt: total well volume
+													//						Vi: nodal volume (control volume)
+	void calculateNodalFlowRate(pMesh,GeomData*);	// calculate Nodal Flow Rate
+	void getTotalWellFlowRate(int flag, double& Qt);
+
 private:
 	bool steady_state;	// check if steady-state or transient simulations
 	double Swr;			// Irreducible water saturation
@@ -257,6 +269,15 @@ private:
 
 	int nnodes;
 	bool Allocated;				// says if Sw and pressure must be allocated
+
+
+	/******************************************************************************************************************************/
+	// MEBFV
+	int numWells;						// number of wells on reservoir
+	Matrix<int> numWellNodes;
+	int** idxWellNodeMat;			//store node indices for well p
+	double** flowrateWellNodeMat;	//store weighted flow rate (Qi=Qt*(Vi/Vt)) for each node on well p.
+	std::map<int,double> totalFlowRate_map;
 };
 }
 #endif /*PHYSICALPROPERTIESDATA_H_*/

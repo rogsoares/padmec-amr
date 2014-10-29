@@ -141,6 +141,27 @@ namespace PRS
 								    void (*pFunc_setVector)(int,int,const double*),
 								    GeomData* pgc, int, bool rn=false);
 
+
+		/***********************************************************************************************/
+		// MEBFV:
+		/***********************************************************************************************/
+
+		// returns matrix indices (rows: idxm_IJ, cols: idxn_IJ) for global mesh nodes I and J
+		void getRowsAndCols(int id0, int id1, int* idxm_IJ, int* idxn_IJ);
+
+		// returns dirichlet rows and columns indices of global stiffness matrix which will be used to compute rhs vector
+		IS get_DirichletISRows() const;
+		IS get_DirichletISCols() const;
+
+		int nrows() const;	// number of mesh nodes
+		int ncols() const;	// number of mesh nodes
+		int nfreen() const; // number of mesh free nodes
+
+		void mapNodeID(pMesh);	// gives a sequential numbering for all mesh node IDs. From 0 to N-1, where N is the number of mesh nodes
+		void getMappedNodeID(int,int&);
+		void getMappedNodeID(int,int,int,int&,int&,int&);
+
+
 	private:
 		PetscErrorCode ierr;
 
@@ -192,6 +213,11 @@ namespace PRS
 
 		// unifyVectorsOnMeshNodes's stuffs
 		UVMN_Struct *pMS;	// _Unify _Vectors On _Mesh _Nodes Struct
+
+		/***********************************************************************************************/
+		// MEBFV:
+		/***********************************************************************************************/
+		std::map<int,int> nodeID_map;
 
 	};
 }

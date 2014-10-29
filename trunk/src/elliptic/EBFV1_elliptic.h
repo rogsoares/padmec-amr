@@ -42,12 +42,12 @@ namespace PRS{           // PRS: Petroleum Reservoir Simulator
 		~EBFV1_elliptic();
 		double solver(pMesh);
 
-		void getCPUtime(double &assemblyT, double &solverT, double &gradientT, int &KSPiter){
-			assemblyT = _assemblyT;
-			solverT = _solverT;
-			gradientT = _gradientT;
-			KSPiter = _KSPiter;
-		}
+//		void getCPUtime(double &assemblyT, double &solverT, double &gradientT, int &KSPiter){
+//			assemblyT = _assemblyT;
+//			solverT = _solverT;
+//			gradientT = _gradientT;
+//			KSPiter = _KSPiter;
+//		}
 
 
 	private:
