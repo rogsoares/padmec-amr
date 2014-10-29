@@ -39,7 +39,7 @@ namespace PRS{
 	}
 
 	void MeshData::initialize(pMesh theMesh, GeomData* pGCData){
-		reorderVerticesIds(theMesh,&pGCData->getNumRemoteCopies);
+		reorderVerticesIds(theMesh,0);
 		settingFreeAndPrescribedNodes(theMesh);
 		createVectorsForRHS(theMesh,theMesh->getDim());
 	}
@@ -183,9 +183,17 @@ namespace PRS{
 		numGP = dirichlet.size();
 		numGF = numGN - numGP;
 		if (!P_pid()){
-			cout << "Number of global nodes   : " << numGN << endl;
-			cout << "Number of dirichlet nodes: " << numGP << endl;
-			cout << "Number of free nodes     : " << numGF << endl;
+			cout << "Number of processes required: " << P_size() << endl;
+			cout << "Number of global nodes      : " << numGN << endl;
+			cout << "Number of dirichlet nodes   : " << numGP << endl;
+			cout << "Number of free nodes        : " << numGF << endl;
+			cout << "Number of edges             : " << M_numEdges(theMesh) << endl;
+			if (theMesh->getDim()==2){
+				cout << "Number of triangles (2D)    : " << M_numFaces(theMesh) << endl;
+			}
+			else{
+				cout << "Number of tetrahedra (3D)   : " << M_numRegions(theMesh) << endl;
+			}
 			cout << "-------------------------------------------------------------------------------------------------------------------------\n\n";
 		}
 
@@ -572,7 +580,7 @@ namespace PRS{
 				while ( (face = FIter_next(fit)) ){
 					for (i=0;i<3;i++){
 						node = (pEntity)face->get(0,i);
-						if (pGCData->getNumRemoteCopies(node)){
+						if (0){
 							ID = get_AppToPETSc_Ordering(EN_id(node));					// node ID
 							//mapPB_nodes[ID] = (!ptr)?pFunc_getScalar(node):getScalar(node,pMS);
 							row = pSimPar->getLocalNodeIDNumbering(node,pMS->tag);
@@ -587,7 +595,7 @@ namespace PRS{
 			else{
 				VIter vit = M_vertexIter(theMesh);
 				while ( (node = VIter_next(vit)) ){
-					if (pGCData->getNumRemoteCopies(node)){
+					if (0){
 						ID = get_AppToPETSc_Ordering(EN_id(node));					// node ID
 						//mapPB_nodes[ID] = (!ptr)?pFunc_getScalar(node):getScalar(node,pMS);
 						row = pSimPar->getLocalNodeIDNumbering(node,pMS->tag);

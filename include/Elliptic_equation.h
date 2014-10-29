@@ -14,7 +14,7 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 		Elliptic_equation(){}
 		virtual ~Elliptic_equation(){}
 		virtual double solver(pMesh)=0;
-		virtual void getCPUtime(double &assembly, double &solver, double &gradient, int &KSPiter)=0;
+		//virtual void getCPUtime(double &assembly, double &solver, double &gradient, int &KSPiter);
 
 	protected:
 		Vec output;

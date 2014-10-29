@@ -166,12 +166,6 @@ namespace PRS{
 		setPositionToRead(fid,"export filename (to VTK format without extension .vtk):");
 		fid >> expofName;
 
-		cout << "\nPath and file name:\n";
-		cout << prepfName << "\n\n";
-		cout << "Output path and file name:\n";
-		cout << expofName << endl;
-		cout << "-------------------------------------------------------------------------------------------------------------------------\n\n";
-
 		string strYes;
 		setPositionToRead(fid,"Start simulation from <restart> file?");
 		getline(fid,strYes);
@@ -247,6 +241,16 @@ namespace PRS{
 			cout << "\nCumulative Simulation Time: " << cumTS << "  [" << setprecision(2) << double(100.*cumTS/getSimTime()) << "% concluded]" << endl;
 			cout << "lastpvi= " << lastpvi << endl;
 		}
+
+		if (!P_pid()){
+			cout << "SIMULATION INFO:\n";
+			cout << "-------------------------------------------------------------------------------------------------------------------------";
+			cout << "\nPath and file name:\n";
+			cout << prepfName << "\n";
+			cout << "Output path and file name:\n";
+			cout << expofName << endl;
+		}
+
 	}
 
 	void SimulatorParameters::loadPhysicalParameters(int dim){
@@ -435,8 +439,8 @@ namespace PRS{
 
 		// Delta value for woodfield
 		_WFdelta = 0.2;
-		setPositionToRead(fid,"Delta value for Woodfield:");
-		fid >> _WFdelta;
+		//setPositionToRead(fid,"Delta value for Woodfield:");
+		//fid >> _WFdelta;
 		fid.close();
 	}
 
