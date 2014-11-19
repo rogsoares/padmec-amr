@@ -43,8 +43,6 @@ void calculateGeomCoefficients(pEntity face, double *Cij, double *Dij, double &v
 		}
 		Cij[pos] = v[1];
 		Cij[pos+1] = -v[0];
-
-
 		Dij[pos] = -(J[1]-I[1])/2.0;					// Dij vector is orthogonal to edge (it's unknown Dij orientation)
 		Dij[pos+1] =  (J[0]-I[0])/2.0;
 		v[0] = edgeCenter[0]-faceCenter[0];				// reference vector

@@ -1,10 +1,6 @@
 #include "EBFV1_modified.h"
 
-void calculeMatrix_E(pEntity face, GeomData* pGCData, const double* K, const double* Cij, double *E_ij);
-
-void calculateMatrix_E(pEntity face, GeomData* pGCData, const double* Cij, double* E_ij, double* E_jk, double* E_ik){
-	double K[4];
-	getPermeabilityTensor(face,K);			// absolute permeability tensor
+void calculateMatrix_E(pEntity face, const double* K, GeomData* pGCData, const double* Cij, double* E_ij, double* E_jk, double* E_ik){
 	calculeMatrix_E((pEntity)F_edge(face,0),pGCData,K,Cij,E_ij);
 	calculeMatrix_E((pEntity)F_edge(face,1),pGCData,K,Cij,E_jk);
 	calculeMatrix_E((pEntity)F_edge(face,2),pGCData,K,Cij,E_ik);
@@ -21,7 +17,7 @@ void calculeMatrix_E(pEntity edge, GeomData* pGCData, const double* K, const dou
 	int id1 = EN_id(edge->get(0,1));		// get node J ID
 	sign = ( id0 > id1 )?-1.0:1.0; 		// vector IJ must point from the smaller vertex ID to the greater
 
-	//pGCData->getVersor(edge,versor);
+	pGCData->getEdgeVec_Unitary(edge,versor);
 	versor[0] *= sign;
 	versor[0] *= sign;
 	k = 0;

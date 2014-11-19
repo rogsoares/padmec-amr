@@ -93,6 +93,7 @@ namespace PRS
 		
 		// inform which columns from A must be copied to assembly RHS vector (prescribed nodes) this vector is the same for all processors.
 		PetscInt *idxn;
+		PetscInt *idxm;
 		PetscInt *pos;
 		PetscInt *F_rows;
 		PetscInt *F_cols;
@@ -145,21 +146,18 @@ namespace PRS
 		/***********************************************************************************************/
 		// MEBFV:
 		/***********************************************************************************************/
+		int nrows() const;					// number of mesh nodes
+		int ncols() const;					// number of mesh nodes
+		int numFreeNodes() const; 			// number of mesh free nodes
 
-		// returns matrix indices (rows: idxm_IJ, cols: idxn_IJ) for global mesh nodes I and J
-		void getRowsAndCols(int id0, int id1, int* idxm_IJ, int* idxn_IJ);
+		void mapNodeID(pMesh);				// gives a sequential numbering for all mesh node IDs. From 0 to N-1,
+											// where N is the number of mesh nodes
 
-		// returns dirichlet rows and columns indices of global stiffness matrix which will be used to compute rhs vector
-		IS get_DirichletISRows() const;
-		IS get_DirichletISCols() const;
+		void getMappedIndices_free(int i_th_element, int i_th_edge, int* idxm_IJ, int* idxn_IJ);	// indices for A matrix
+		void getMappedIndices_dirichlet(int i_th_element, int* idx_IJ, int* idx_JK, int idx_IK);	// indices for dirichlet matrix
 
-		int nrows() const;	// number of mesh nodes
-		int ncols() const;	// number of mesh nodes
-		int nfreen() const; // number of mesh free nodes
-
-		void mapNodeID(pMesh);	// gives a sequential numbering for all mesh node IDs. From 0 to N-1, where N is the number of mesh nodes
-		void getMappedNodeID(int,int&);
-		void getMappedNodeID(int,int,int,int&,int&,int&);
+		const int* getDirichlet_idx() const;		// return pointer of indices for prescribed mesh nodes
+		const double* getDirichlet_data() const;	// return pointer of prescribed values assigned to mesh nodes
 
 
 	private:
@@ -218,6 +216,18 @@ namespace PRS
 		// MEBFV:
 		/***********************************************************************************************/
 		std::map<int,int> nodeID_map;
+		int* dirichlet_idx;
+		double* dirichlet_data;
+		int msize;		// number of mesh nodes
+		int nfreen;		// number of free (not prescribed) mesh nodes
+		int nnfreen;	// number of not free (prescribed) mesh nodes
+
+		// matrix to store indices (free and not free) which are used to assembly Stiffness matrix and Dirichlet Matrix
+		// rows_cols_indices_mat:
+		//                           (first edge)                           (second edge)                       (third edge)
+		//			ith_row: idxm_0 idxm_1 idxn_0 idxn_1 idxn_2   idxm_0 idxm_1 idxn_0 idxn_1 idxn_2   idxm_0 idxm_1 idxn_0 idxn_1 idxn_2
+		Matrix<int> rows_cols_indices_free_mat;
+		Matrix<int> rows_cols_indices_nfree_mat;
 
 	};
 }

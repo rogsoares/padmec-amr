@@ -10,16 +10,16 @@
 
 #include "EBFV1__pre-processors.h"
 #include "GeomData.h"
+#include "rockProp.h"
 
 void EBFV1_modified_preprocessor_2D();
-
-// to be implemeneted
-void getPermeabilityTensor(pEntity elem, double* K);
 void assemblyMatrix_A(const double*, const double*, const double*, const double*, const double*, const double*,const double*, const double*, const double*,double*,double*, double*);
 void calculateGeomCoefficients(pEntity, double *, double *, double &);
 void calculateMatrix_F(pEntity, const double*, const double*, double, double*, double*, double*);
-void calculateMatrix_E(pEntity, GeomData*, const double*, double*, double*, double*);
-void calculateMatrix_G(pEntity, GeomData*, const double*, double*, double*, double*);
+void calculeMatrix_E(pEntity face, GeomData* pGCData, const double* K, const double* Cij, double *E_ij);
+void calculateMatrix_E(pEntity, GeomData*, const double*, const double*, double*, double*, double*);
+void calculeMatrix_G(pEntity edge, GeomData* pGCData, const double* K, const double* Cij, double *G_ij);
+void calculateMatrix_G(pEntity, GeomData*, const double*, const double*, double*, double*, double*);
 
 #endif /* EBFV1_MODIFIED_H_ */
 
