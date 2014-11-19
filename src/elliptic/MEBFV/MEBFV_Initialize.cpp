@@ -16,10 +16,12 @@ namespace PRS{
 
 		int nrows = pMData->nrows();	// number of mesh nodes
 		int ncols = pMData->ncols();	// number of mesh nodes
-		int nfnodes = pMData->nfreen(); // number of mesh free nodes
+		int nfnodes = pMData->numFreeNodes(); // number of mesh free nodes
+		int nnfnodes = nrows - nfnodes;	// number of dirichlet nodes (prescribed)
 
 		// define A matrix
 		MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,nrows,ncols,80,PETSC_NULL,80,PETSC_NULL,&A);
+		MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,nrows,ncols,80,PETSC_NULL,80,PETSC_NULL,&dirichletMat);
 
 		// define b vector
 		VecCreate(PETSC_COMM_WORLD,&b);
@@ -29,6 +31,10 @@ namespace PRS{
 		VecDuplicate(b,&x);
 		VecDuplicate(b,&dirichletVec);
 		VecDuplicate(b,&SST);
+
+		// setup rhs vector
+		VecZeroEntries(dirichletVec);
+		VecSetValues(dirichletVec,nnfnodes,pMData->getDirichlet_idx(),pMData->getDirichlet_data(),INSERT_VALUES);
 		setSST();
 
 		// do not initialize this variable again

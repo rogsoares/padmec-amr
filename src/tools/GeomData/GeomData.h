@@ -82,6 +82,9 @@ namespace PRS{
 		void setEdgeVec_Unitary(pEntity, dblarray);
 		void getEdgeVec_Unitary(pEntity, dblarray&);
 
+		void getEdgeLength(pEntity, double&);
+		void getEdgeVec_Unitary(pEntity, double*);
+
 		// check if an edge belongs to domain
 		bool nodeBelongToDomain(pEntity , const int &);
 		bool edgeBelongToDomain(pEntity , const int &);
@@ -194,8 +197,6 @@ namespace PRS{
 		void initializeElementMatrix(int numElements);
 		void setElementMatrices(int row, const double* Aij, const double* Ajk, const double* Aik);
 		void getElementMatrices(int row, double* Aij, double* Ajk, double* Aik);
-		void getIJK_IDs(int,int&,int&,int&);
-		void setIJK_IDs(int,int,int,int);
 		void getVolume_MEBFV(int,double&);
 
 	private:
@@ -256,7 +257,6 @@ namespace PRS{
 		//
 		// geoElementMat size: m=number of elements, n = 6x3 = 18
 		Matrix<double> geoElementMat;
-		Matrix<int> idxElemMat;
 		double* volume_MEBFV;			// vector for all volume control volume
 	};
 }

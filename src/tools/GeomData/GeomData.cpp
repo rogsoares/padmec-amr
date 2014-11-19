@@ -178,6 +178,11 @@ namespace PRS{
 		return pCoeffnt->length;
 	}
 
+	void GeomData::getEdgeLength(pEntity edge, double& length){
+		Coefficients* pCoeffnt = getAttachedData_pointer<Coefficients>(edge);
+		return pCoeffnt->length;
+	}
+
 	void GeomData::setEdgeVector(pEntity edge, dblarray vec){
 		Coefficients* pCoeffnt = getAttachedData_pointer<Coefficients>(edge);
 		pCoeffnt->edgeVector = vec;
@@ -198,6 +203,13 @@ namespace PRS{
 	void GeomData::getEdgeVec_Unitary(pEntity edge, dblarray& vec){
 		Coefficients* pCoeffnt = getAttachedData_pointer<Coefficients>(edge);
 		vec = pCoeffnt->edgeVectorUnitary;
+	}
+
+	void GeomData::getEdgeVec_Unitary(pEntity edge, double* versor){
+		Coefficients* pCoeffnt = getAttachedData_pointer<Coefficients>(edge);
+		versor[0] = pCoeffnt->edgeVectorUnitary[0];
+		versor[1] = pCoeffnt->edgeVectorUnitary[1];
+		versor[2] = pCoeffnt->edgeVectorUnitary[2];
 	}
 
 	void GeomData::setTotalReservoirVolume(double V_local){
