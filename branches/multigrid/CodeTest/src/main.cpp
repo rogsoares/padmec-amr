@@ -10,8 +10,6 @@ int printMatrixToFile(Mat& A,const char* filename);
 int printVectorToFile(Vec& v,const char* filename);
 int KSP_linearsolver(Mat A, Vec y, Vec v, PetscInt &its,int itnum);
 int KSP_Jacobi(Mat A, Vec y, Vec v, PetscInt &its,int itnum);
-MG_1D* creategrids(int n,int*MAXGRIDS);
-void deleteCoarseGrids(MG_1D* grids,int MAXGRIDS);
 
 int main(int argc,char **args){
 
@@ -48,12 +46,13 @@ ____
 |
 -----
 */
-///*******************************************************************************************************
+///************************************************4******************************************************
 
 
     ///                                              Set Grid + problem
 
-    n=50;N=1+(2*n);          //NUMBER OF PRESSURE POINTS/TOTAL GRID POINTS
+    n=7;            //INTERNAL NUMBER OF PRESSURE POINTS
+    N=1+(2*n);          //TOTAL GRID POINTS
     double Lx=1000;          //GRID LENGHT(x ft)
     double deltaX=Lx/N;      //DELTA(distance between points)
     double Ly=1000;          //GRID WIDTH(y ft)
@@ -79,7 +78,7 @@ ____
     ///program variables////////////////////////////////
     PetscScalar *P ; //individual pressure of a vector
     PetscScalar val;
-    PetscReal r_norm;//residual norm
+    PetscReal rNorm;//residual norm
     Vec p,y,u,r,e;
     Mat A; //Discretization matrix
     double startt;
@@ -88,9 +87,11 @@ ____
     int MAXGRIDS=0;
     int gridindex=0;//used in grid selection
     int n_temp=n;//used to creategrids
-    PetscReal ResNorm;
 
-
+    Vec Au; //residual factor
+            VecCreate(PETSC_COMM_WORLD,&Au);
+            VecSetSizes(Au,PETSC_DECIDE,n);
+            VecSetFromOptions(Au);
 
 
     /*
@@ -140,7 +141,7 @@ ____
         ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
         ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
-    printMatrixToFile(A,"matrix");
+    printMatrixToFile(A,"coarse/true_matrix");
 
 
     /// ***************************************************************************************************
@@ -164,10 +165,14 @@ ____
 
     //for test purposes
   //  cout<<"\nenter itnum : ";
-    itnum=1;
+    itnum=1; //number of days = itnum*deltaT
     startt = MPI_Wtime();
     int *multigridits=new int[itnum]; //counts preconditioning
 
+    //.dat file variables...
+    filebuf buffer;
+    ostream output(&buffer);
+    istream input(&buffer);
 
         for(int it=1;it<=itnum;it++){
 
@@ -182,26 +187,53 @@ ____
                     ierr=VecSetValues(y,1,&index,&val,INSERT_VALUES);CHKERRQ(ierr);
 
                 }
+            // open file boundaries.dat and overwrite boundaries
+            buffer.open ("parameters/boundaries.dat", ios::in | ios::out | ios::trunc);
+
+            //for no-flow boundaries(dp/dx=0) pi-1=pi,
+                output<<"boundary_0 = "<<P[0]<<endl;// p0=1 in the example from Ertkein book
+                output<<"boundary_L = "<<P[n-1]<<endl;// p6=p5 in the example from Ertkein book
+
+                input.clear();           // clear  eofbit and  failbit
+
+            buffer.close();
+
             VecRestoreArray(p,&P);
 
             KSP_linearsolver(A,y,p,its,1);
             ///Multigrid (type : V-cycle )
-                  // do{
-                      //  oldits=its;            //its remains static ,when the convergence condition is reached
+
+            /*
+            cout<<"\njacobi test!\n";
+            int j=1;//test jacobi residual
+            ofstream rNormFile;
+            rNormFile.open("graphs/rNormJACOBI.txt");
+            rNormFile<<"r->jacobi"<<endl;
+            double CPUTIME;//for jacobi tests
+            double processtime[50];//used to calculate mean time of the process
+
+                   do{
 
                         ///TEST COMPARISON RICHARDSON+JACOBI x MULTIGRID
 
                         //Richardson Relaxation
-                        //KSP_Jacobi(A,y,p,its,200); ///RICHARDSON+JACOBI
-                        VecNorm(e,NORM_2,&ResNorm);
-                      //  cout<<"\nERRORNORM_atMain.cppbefore Multigrid->"<<ResNorm<<endl;
-                        Controller_V MG(n,r,e,p,y,A,&multigridits[it-1]);///MULTIGRID
-                         VecNorm(e,NORM_2,&ResNorm);
-                     //   cout<<"\nERRORNORM_atMain.cppafter Multigrid->"<<ResNorm<<endl;
+                        //KSP_Jacobi(A,y,p,its,1); ///RICHARDSON+JACOBI
+                        VecCopy(y,r);
+                        MatMult(A,p,Au);
+                        VecAXPY(r,-1,Au); //r=y-Au
+                        VecNorm(r,NORM_2,&rNorm);//VecNorm(u,NORM_2,&eNorm);
+                        rNormFile<<rNorm<<endl;//","<<eNorm<<endl;
+                        ++j;*/
+                        printVectorToFile(p,"coarse/true_u");
 
-                    //x }while(its!=oldits);
+                       cout<<"\nmultigrid test!\n";
+                        Controller_V MG(n,r,e,y,p,A,&multigridits[it-1]);///MULTIGRID
+
+                   // }while(j<=25);
+            //rNormFile.close();
 
         }
+
     cout<<"\n\ndays :  "<<deltaT*itnum<<endl<<endl;
     cout << "Total Time elapsed[s]: " <<  MPI_Wtime() - startt << endl;
     cout<<"\n***MULTIGRID ITS *** "<<endl;
@@ -213,7 +245,6 @@ ____
 
 
     printVectorToFile(y,"rhs");
-    printVectorToFile(p,"pressure");
     printVectorToFile(r,"residual");
 
     return 0;
@@ -254,8 +285,8 @@ int KSP_Jacobi(Mat A, Vec y, Vec v, PetscInt &its,int itnum){
     ierr = KSPSetTolerances(ksp,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT,itnum);CHKERRQ(ierr);
     ierr = KSPSolve(ksp,y,v);CHKERRQ(ierr);
     ierr = KSPGetIterationNumber(ksp,&its); CHKERRQ(ierr);
-   // cout<<"\n\ncurrent iteration : "<<its<<endl;
-    //ierr = KSPView(ksp,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+        ierr = KSPView(ksp,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+    cout<<"\n\ncurrent iteration : "<<its<<endl;
     ierr = KSPDestroy(&ksp); CHKERRQ(ierr);                      //variable adress is now required on KSPDDestroy Funcion
 
         return 0;

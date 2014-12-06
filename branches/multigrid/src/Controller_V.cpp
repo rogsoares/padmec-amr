@@ -1,13 +1,13 @@
 #include "includes.h"
 #include "libincludes.h"
 
-Controller_V::Controller_V(int n,Vec r,Vec e,Vec u,Vec y,Mat A,int*counter){
+Controller_V::Controller_V(int n,Vec r,Vec e,Vec y,Vec u,Mat A,int*counter){
 
     int level=0; //grid level
     int n_temp=n; //this variable is used in grid construction
     MAXGRIDS=0;
     *counter=0;//counts multigrid iterations
-    MG_1D* pGrid; //pointer to  grid
+    grid1D* pGrid; //pointer to  grid
     PetscInt its=0,oldits=0;
     PetscReal eNorm; //Multigrid Convergence Condition
     Vec Au; //residual factor
@@ -17,31 +17,37 @@ Controller_V::Controller_V(int n,Vec r,Vec e,Vec u,Vec y,Mat A,int*counter){
     VecSet(e,0);
     firstuse=true; //alternates :PETSC INTIAL GUESS NON-ZERO
 
-
-
     //VecNorm(e,NORM_2,&ResNorm);
     //cout<<"\nERRORNORM_atController_V.cppbefore Multigrid->"<<ResNorm<<endl;
     currentitnum=0; //iteration counter initialization
     double CPUTIME=MPI_Wtime();
     pGrid=generateGrids(n,&MAXGRIDS);//return an array of grids
          for(int i=0;i<MAXGRIDS;i++){
-            pGrid[i].createComponents(&n_temp,i+1);
+
+               if(i>0)
+                    pGrid[i].createComponents(&n_temp,i+1,pGrid[i-1].A);
+                        else
+                            pGrid[i].createComponents(&n_temp,i+1,A);
+
+
+
             /*set restriction,interpolation and coarse grid matrices
              A(coarse)=RAI // A(coarse) is an aproximation of the original matrix from the fine grid
              I=R transposed
             */
-                if(i==0)
-                    pGrid[i].assembleRAI(n,A);   //if this is the first jump,then take original data
-                        else
-                            pGrid[i].assembleRAI(pGrid[i-1].n_coarse,pGrid[i-1].A);//if this is jump n,then take past coarse grid's data
+                //if(i==0)
+                  //  pGrid[i].assembleRAI(n,A);   //if this is the first jump,then take original data
+                  //      else
+                    //        pGrid[i].assembleRAI(pGrid[i-1].n_coarse,pGrid[i-1].A);//if this is jump n,then take past coarse grid's data
 
          }
 
-        do{
+        //do{
 
-            //  its=0;
+            its=0;
             //smooth the error
             KSPJacobi(A,y,u,its);
+             printVectorToFile(u,"coarse/true_u2");
             //calculate the residual
             VecCopy(y,r);
             MatMult(A,u,Au);
@@ -50,7 +56,7 @@ Controller_V::Controller_V(int n,Vec r,Vec e,Vec u,Vec y,Mat A,int*counter){
     //cout<<"\nRESIDUALNORM_atController_V.cppbefore Multigrid->"<<ResNorm<<endl;
 
           /* recursive function here...*/
-            Multigrid(n,A,r,e,pGrid,&level,MAXGRIDS,e);
+            Multigrid(n,A,u,e,pGrid,&level,MAXGRIDS,u);
 
             VecAXPY(u,1.0,e);//u'=u+e
             //VecNorm(r,NORM_2,&ResNorm);
@@ -60,10 +66,10 @@ Controller_V::Controller_V(int n,Vec r,Vec e,Vec u,Vec y,Mat A,int*counter){
            // cout<<endl<<endl<<"\t\t====end of cycle "<<*counter+1<<"===="<<endl<<endl<<endl<<endl;
             ++*counter;
 
-      }while(eNorm>1);
+//      }while(eNorm>1);
 
             for(int i=(MAXGRIDS-1);i--;i>=0){
-                    pGrid[i].~MG_1D();
+                    pGrid[i].~grid1D();
             }
         delete[] pGrid;
         cout<<"\n = = = = Multigrid Type : V-cycle =  =  =  =\n\n";
@@ -73,8 +79,8 @@ Controller_V::Controller_V(int n,Vec r,Vec e,Vec u,Vec y,Mat A,int*counter){
         cout<<"\nCPU Time : "<<MPI_Wtime() - CPUTIME<<endl<<endl;
 }
 
-MG_1D* Controller_V::generateGrids(int n,int*MAXGRIDS){
-    MG_1D* newgrids;
+grid1D* Controller_V::generateGrids(int n,int*MAXGRIDS){
+    grid1D* newgrids;
 
     //cout<<"\n\ncreating grids...\n\n";
                    while(n>=5){        //think about the last level matrix A=R(2x5)A(5x5)I(5x2)=A(2x2)->if n is smaller ,then the coarse_matrix will become a vector
@@ -87,12 +93,12 @@ MG_1D* Controller_V::generateGrids(int n,int*MAXGRIDS){
                       //  cout<<"\ngrid "<<*MAXGRIDS<<" created("<<n<<" points) :: level->"<<*MAXGRIDS-1<<"\n";    //for test purposes
                     }
             }
-    newgrids=new MG_1D[*MAXGRIDS];
+    newgrids=new grid1D[*MAXGRIDS];
     return newgrids;
 
 }
 
-int Controller_V::Multigrid(int n,Mat A_fine,Vec r_fine,Vec e_fine,MG_1D* pGrid,int *i,int MAXGRIDS,Vec errorF){
+int Controller_V::Multigrid(int n,Mat A_fine,Vec r_fine,Vec e_fine,grid1D* pGrid,int *i,int MAXGRIDS,Vec errorF){
 
     /* recursive function here...*/
 
@@ -109,7 +115,8 @@ int Controller_V::Multigrid(int n,Mat A_fine,Vec r_fine,Vec e_fine,MG_1D* pGrid,
         else {
             --*i;  ///if the expansion is cancelled,then ++*i(called before "return Multigrid()...") must come back to *i...
             if(*i>0){
-                pGrid[*i].Interpolate(pGrid[*i-1].e,*i);
+                pGrid[*i].Interpolate(pGrid[*i-1].r,*i);//test
+                //pGrid[*i].Interpolate(pGrid[*i-1].e,*i);//original
                 return Multigrid(0,pGrid[*i-1].A,pGrid[*i-1].r,pGrid[*i-1].e,pGrid,i,MAXGRIDS,errorF);
 
             }
@@ -155,4 +162,12 @@ int Controller_V::KSPJacobi(Mat A, Vec y, Vec v, PetscInt &its){
 
 Controller_V::~Controller_V(){
     //cout<<"\n\nshutting down multigrid process...";
+}
+
+int Controller_V::printVectorToFile(Vec& v,const char* filename){
+	PetscViewer viewer;
+	PetscViewerASCIIOpen(PETSC_COMM_WORLD,filename,&viewer);
+	VecView(v,viewer);
+	PetscViewerDestroy(&viewer);
+	return 0;
 }

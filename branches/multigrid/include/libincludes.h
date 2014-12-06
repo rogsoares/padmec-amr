@@ -1,2 +1,3 @@
-#include "MG_1D.h"
+#include "grid1D.h"
 #include "Controller_V.h"
+#include "SetOperator.h"
