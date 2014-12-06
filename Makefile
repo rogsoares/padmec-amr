@@ -11,7 +11,7 @@ INCLUDES=-I$(1D_DIR)/include -I$(PETSC_DIR)/include
 
 OBJ_DIR=$(1D_DIR)/objs
 SRC_DIR=$(1D_DIR)/src
-OBJECTS_1D=$(OBJ_DIR)/Controller_V.o $(OBJ_DIR)/MG_1D.o
+OBJECTS_1D=$(OBJ_DIR)/Controller_V.o $(OBJ_DIR)/grid1D.o $(OBJ_DIR)/SetOperator.o
 STATICLIB=$(1D_DIR)/lib/libmultigrid.a
 
 
@@ -35,5 +35,5 @@ $(OBJ_DIR)/%.o:	$(SRC_DIR)/%.cpp
 
 
 cleanup:
-	rm *.o $(1D_OBJ_DIR)/*.o 
-	rm *.a $(1d_DIR)/lib/*.a
+	rm  $(OBJ_DIR)/*.o
+	rm  $(1D_DIR)/lib/*.a
