@@ -1,12 +1,18 @@
 #ifndef _SETOP_H
 #define _SETOP_H
 
+enum R_operator {INJECTION,FW};
+
+
 class SetOperator{
     private :
         PetscErrorCode ierr;
          //**Dirichlet boundaries**
         double D0;
         double DL;
+        //injection=0 full-weighting=1
+        R_operator Rop;
+
         //************************
     public :
         SetOperator();
@@ -17,4 +23,5 @@ class SetOperator{
         int SetOperator_CoarseA(int n_fine,int n_coarse,Mat R,Mat A_fine,Mat I,Mat *A);
         int printMatrixToFile(Mat &A,const char* filename);
 };
+
 #endif

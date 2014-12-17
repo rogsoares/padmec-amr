@@ -3,19 +3,13 @@
 #include <sstream> //output file1.txt,file2.txt...
 
 
-int grid1D::createComponents(int *n,int gridlevel,Mat A_fine){
+int grid1D::createComponents(int n,int gridlevel,Mat A_fine){
 
     int indexes[2]={0,0}; //used to build contribution vector (where a porcentage of the boundaries are)
 
     firstuse=true;
-    n_fine=*n;
+    n_fine=n;
     SetOperator op;   //build R and I
-
-        if(*n%2==0)
-            *n-=1;
-    //add grid
-    n_coarse=(*n-1)/2;
-    *n=n_coarse; //going up ...
 
     //cout<<"\nGrid "<<gridlevel<<":\n"<<"e-"<<n_coarse<<"x1"<<"\t Acoarse-"<<n_coarse<<"x"<<n_coarse<<endl<<endl; //for test purposes
 
@@ -50,9 +44,9 @@ int grid1D::createComponents(int *n,int gridlevel,Mat A_fine){
     op.SetOperator_CoarseA(n_fine,n_coarse,R,A_fine,I,&A);
     // cout<<"\nGrid "<<gridlevel<<"'s components...ok\n\n";
 
-   // printMatrixToFile(R,"Restrictionmat");
-   // printMatrixToFile(I,"Interpolationmat");
-   // printMatrixToFile(A,"Coarsediscretmat");
+    printMatrixToFile(R,"Restrictionmat");
+    printMatrixToFile(I,"Interpolationmat");
+    printMatrixToFile(A,"Coarsediscretmat");
 
     return 0;
 
@@ -63,10 +57,10 @@ void grid1D::Restrict(Vec r_fine,int i){
    // VecNorm(r_fine,NORM_2,&ResNorm);
     //    cout<<"\nRESIDUALNORM_atMG_1D.cpp  before restriction(at level:"<<i<<")->"<<ResNorm<<endl;
 
-       // if(i==0)
-           // cout<<"\n->restrict from  base grid to level "<<i; //for test purposes
+        //if(i==0)
+          //  cout<<"\n->restrict from  base grid to level "<<i+1; //for test purposes
             //    else
-             //       cout<<"\n->restrict from level "<<i-1<<" to "<<i; //for test purposes
+              //      cout<<"\n->restrict from level "<<i<<" to "<<i+1; //for test purposes
     MatMult(R,r_fine,r);
     //cout<<"...ok\n";
 
@@ -86,9 +80,9 @@ void grid1D::Interpolate(Vec e_fine,int i){
 
 
     //if(i==0)
-      //  cout<<"\n->interpolate from level "<<i<<" to base grid"; //for test purposes ;//for test purposes
-      //      else
-        //        cout<<"\n->interpolate from level "<<i<<" to "<<i-1; //for test purposes ;//for test purposes
+      //  cout<<"\n->interpolate from level "<<i+1<<" to base grid"; //for test purposes ;//for test purposes
+        //    else
+          //      cout<<"\n->interpolate from level "<<i+1<<" to "<<i; //for test purposes ;//for test purposes
 
        // PetscReal ResNorm; //Multigrid Convergence Condition
        // VecNorm(e,NORM_2,&ResNorm);
@@ -144,7 +138,7 @@ int grid1D::solver(){
 
 
 grid1D::~grid1D(){
-    cout<<"\nDestroying components (from coarse grid)...\n";   //for test purposes
+   // cout<<"\nDestroying components (from coarse grid)...\n";   //for test purposes
     VecDestroy(&e);
     VecDestroy(&r);
     VecDestroy(&boundCtbt);
