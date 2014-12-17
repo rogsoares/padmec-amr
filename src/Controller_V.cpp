@@ -3,12 +3,11 @@
 
 Controller_V::Controller_V(int n,Vec r,Vec e,Vec y,Vec u,Mat A,int*counter){
 
-    int level=0; //grid level
-    int n_temp=n; //this variable is used in grid construction
     MAXGRIDS=0;
     *counter=0;//counts multigrid iterations
     grid1D* pGrid; //pointer to  grid
-    PetscInt its=0,oldits=0;
+    gridGenerator gridOpt(1);
+    PetscInt its=0;//,oldits=0;
     PetscReal eNorm; //Multigrid Convergence Condition
     Vec Au; //residual factor
     VecCreate(PETSC_COMM_WORLD,&Au);
@@ -21,24 +20,17 @@ Controller_V::Controller_V(int n,Vec r,Vec e,Vec y,Vec u,Mat A,int*counter){
     //cout<<"\nERRORNORM_atController_V.cppbefore Multigrid->"<<ResNorm<<endl;
     currentitnum=0; //iteration counter initialization
     double CPUTIME=MPI_Wtime();
-    pGrid=generateGrids(n,&MAXGRIDS);//return an array of grids
+
+    pGrid=gridOpt.generateGrids(n,&MAXGRIDS); //allocate memmory
+    gridOpt.getCoarsePoints(pGrid);//get generated points...
+
+    //pGrid=generateGrids(n,&MAXGRIDS);//return an array of grids
          for(int i=0;i<MAXGRIDS;i++){
 
                if(i>0)
-                    pGrid[i].createComponents(&n_temp,i+1,pGrid[i-1].A);
+                    pGrid[i].createComponents(pGrid[i-1].n_coarse,i+1,pGrid[i-1].A);
                         else
-                            pGrid[i].createComponents(&n_temp,i+1,A);
-
-
-
-            /*set restriction,interpolation and coarse grid matrices
-             A(coarse)=RAI // A(coarse) is an aproximation of the original matrix from the fine grid
-             I=R transposed
-            */
-                //if(i==0)
-                  //  pGrid[i].assembleRAI(n,A);   //if this is the first jump,then take original data
-                  //      else
-                    //        pGrid[i].assembleRAI(pGrid[i-1].n_coarse,pGrid[i-1].A);//if this is jump n,then take past coarse grid's data
+                            pGrid[i].createComponents(n,i+1,A);
 
          }
 
@@ -47,7 +39,6 @@ Controller_V::Controller_V(int n,Vec r,Vec e,Vec y,Vec u,Mat A,int*counter){
             its=0;
             //smooth the error
             KSPJacobi(A,y,u,its);
-             printVectorToFile(u,"coarse/true_u2");
             //calculate the residual
             VecCopy(y,r);
             MatMult(A,u,Au);
@@ -55,8 +46,7 @@ Controller_V::Controller_V(int n,Vec r,Vec e,Vec y,Vec u,Mat A,int*counter){
       //         VecNorm(r,NORM_2,&ResNorm);
     //cout<<"\nRESIDUALNORM_atController_V.cppbefore Multigrid->"<<ResNorm<<endl;
 
-          /* recursive function here...*/
-            Multigrid(n,A,u,e,pGrid,&level,MAXGRIDS,u);
+            Multigrid(n,A,u,e,pGrid,MAXGRIDS);
 
             VecAXPY(u,1.0,e);//u'=u+e
             //VecNorm(r,NORM_2,&ResNorm);
@@ -68,9 +58,6 @@ Controller_V::Controller_V(int n,Vec r,Vec e,Vec y,Vec u,Mat A,int*counter){
 
 //      }while(eNorm>1);
 
-            for(int i=(MAXGRIDS-1);i--;i>=0){
-                    pGrid[i].~grid1D();
-            }
         delete[] pGrid;
         cout<<"\n = = = = Multigrid Type : V-cycle =  =  =  =\n\n";
         cout<<"\nSmoother : Jacobi(PRECONDITIONING)+RICHARDSON(KSP)\n";
@@ -79,55 +66,41 @@ Controller_V::Controller_V(int n,Vec r,Vec e,Vec y,Vec u,Mat A,int*counter){
         cout<<"\nCPU Time : "<<MPI_Wtime() - CPUTIME<<endl<<endl;
 }
 
-grid1D* Controller_V::generateGrids(int n,int*MAXGRIDS){
-    grid1D* newgrids;
 
-    //cout<<"\n\ncreating grids...\n\n";
-                   while(n>=5){        //think about the last level matrix A=R(2x5)A(5x5)I(5x2)=A(2x2)->if n is smaller ,then the coarse_matrix will become a vector
-                if(n%2==0){
-                                n-=1;
-                }
-                    else{   //add grid
-                        n=(n-1)/2;
-                        ++*MAXGRIDS;
-                      //  cout<<"\ngrid "<<*MAXGRIDS<<" created("<<n<<" points) :: level->"<<*MAXGRIDS-1<<"\n";    //for test purposes
-                    }
-            }
-    newgrids=new grid1D[*MAXGRIDS];
-    return newgrids;
 
-}
+int Controller_V::Multigrid(int n,Mat A_fine,Vec r_fine,Vec e_fine,grid1D* pGrid,int MAXGRIDS){
 
-int Controller_V::Multigrid(int n,Mat A_fine,Vec r_fine,Vec e_fine,grid1D* pGrid,int *i,int MAXGRIDS,Vec errorF){
+///GO UPWARDS
 
-    /* recursive function here...*/
+        for (int i=0;i<MAXGRIDS;i++){
 
-    if(n>=5){
+            //restrict r
+                    if (i==0)
+                        pGrid[i].Restrict(r_fine,i);
+                            else
+                                pGrid[i].Restrict(pGrid[i-1].r,i);
 
-        //restrict r
-        pGrid[*i].Restrict(r_fine,*i);
-        //smooth the error
-        pGrid[*i].solver();
-        ++*i; ///next grid level
-                return Multigrid(pGrid[*i-1].n_coarse,pGrid[*i-1].A,pGrid[*i-1].r,pGrid[*i-1].e,pGrid,i,MAXGRIDS,errorF);
-    }
+            //smooth the error
+            pGrid[i].solver();
 
-        else {
-            --*i;  ///if the expansion is cancelled,then ++*i(called before "return Multigrid()...") must come back to *i...
-            if(*i>0){
-                pGrid[*i].Interpolate(pGrid[*i-1].r,*i);//test
-                //pGrid[*i].Interpolate(pGrid[*i-1].e,*i);//original
-                return Multigrid(0,pGrid[*i-1].A,pGrid[*i-1].r,pGrid[*i-1].e,pGrid,i,MAXGRIDS,errorF);
+        }
+
+///GO DOWNWARDS
+
+        for (int i=MAXGRIDS-1;i>=0;i--){
+            if(i>0){
+                pGrid[i].Interpolate(pGrid[i-1].r,i);//test
+                //pGrid[i].Interpolate(pGrid[i-1].e,i);//original
 
             }
                 else{
-                    pGrid[*i].Interpolate(errorF,*i);
-                   // cout<<"\nend of multigrid...\n\n";
+                    pGrid[i].Interpolate(r_fine,i);//original
+                    //pGrid[i].Interpolate(e_fine,i);//original
+                    cout<<"\nend of multigrid...\n\n";
                                 return 0;// check this
 
                 }
         }
-
 
 }
 

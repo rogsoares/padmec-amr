@@ -2,25 +2,49 @@
 #include "libincludes.h"
 #include <sstream> //output file1.txt,file2.txt...
 
+
 SetOperator::SetOperator(){
 
+//get boundary conditions
     ifstream bound("parameters/boundaries.dat", ios::binary);
+    char buffer[23]; //offset 13 columns("boundaries = ") in the file,then get the value
+    int value;//used to get Restriction type
 
         if (bound) {
 
-        double value; //store boundaries values and passes them to the variable D0,DL
-        char buffer[13] ; //offset 13 columns("boundaries = ") in the file,then get the value
-
-        bound.read (buffer,13);// read data as a block
-        bound>>value;
-        D0=value;value=0; //get first condition
-        bound.read (buffer,13);// read data as a block:
-        bound>>value;
-        DL=value; //get second condition
-
-        bound.close();
+            bound.read (buffer,13);// read data as a block
+            bound>>D0;//get first condition
+            bound.read (buffer,13);// read data as a block:
+            bound>>DL;//get second condition
+            bound.close();
 
         }
+
+//get restriction operator
+    ifstream rest("parameters/options.dat", ios::binary);
+
+            if (rest) {
+
+                rest.read (buffer,11);// read data as a block ...number is 15,because this line is trivial
+                rest>>value;
+                rest.read (buffer,23);// read data as a block:
+                rest>>value;
+                rest.close();
+
+            }
+            switch(value){
+                case 0:
+                    Rop=INJECTION;
+                    break;
+                case 1:
+                    Rop=FW;
+                    break;
+                default :
+                    cout<<"\n\nMG Error in parameters/options.dat->RESTRICTION OPERATOR = "<<value<<"\n\n";
+                    cout<<"use 0 (INJECTION) or 1 (FULL-WEIGHTING)\n\n";
+                    exit(0);
+            }
+
 }
 
 ///SetOperator
@@ -34,28 +58,56 @@ SetOperator::SetOperator(){
             */
 
 int SetOperator::SetOperator_Restriction(int n_fine,int n_coarse,Mat* R){
-
+    int correction=0;   //used for R assembling
     PetscScalar value[3];
     PetscInt col[3];
-    int correction=0;   //used for R assembling
 
-    ierr=MatCreate(PETSC_COMM_WORLD,R);CHKERRQ(ierr);
-    ierr=MatSetSizes(*R,PETSC_DECIDE,PETSC_DECIDE,n_coarse,n_fine);CHKERRQ(ierr);
-    ierr=MatSetFromOptions(*R);CHKERRQ(ierr);
-    ierr=MatSetUp(*R);CHKERRQ(ierr);
+        switch (Rop){
 
-    //R
-    //cout<<"\nR...";
-    value[0] = 1.0/4.0 ; value[1] =2.0/4.0; value[2] =1.0/4.0;
-        for (int i=0;i<n_coarse;i++){
-            col[0] = correction;++correction;
-            col[1] = correction;++correction;
-            col[2] = correction;
-            ierr = MatSetValues(*R,1,&i,3,col,value,INSERT_VALUES);CHKERRQ(ierr);
-        }
-    ierr = MatAssemblyBegin(*R,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(*R,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-    return 0;
+            case INJECTION :
+                cout<<"\n using injection operator...";
+                ierr=MatCreate(PETSC_COMM_WORLD,R);CHKERRQ(ierr);
+                ierr=MatSetSizes(*R,PETSC_DECIDE,PETSC_DECIDE,n_coarse,n_fine);CHKERRQ(ierr);
+                ierr=MatSetFromOptions(*R);CHKERRQ(ierr);
+                ierr=MatSetUp(*R);CHKERRQ(ierr);
+
+                //R
+                //cout<<"\nR...";
+                value[0] = 1.0 ; value[1]=0 ;value [2]=0;
+                correction=2; //the first one goes in the second column
+                col[2]=correction;
+                    for (int i=0;i<n_coarse;i++){
+                        col[0] = col[2]-1;++correction;
+                        col[1] = correction;++correction;
+                        col[2] = correction;
+                        ierr = MatSetValues(*R,1,&i,1,col,value,INSERT_VALUES);CHKERRQ(ierr);
+                    }
+                ierr = MatAssemblyBegin(*R,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+                ierr = MatAssemblyEnd(*R,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+
+                break;
+            case FW :
+                cout<<"\nusing FW operator...";
+                ierr=MatCreate(PETSC_COMM_WORLD,R);CHKERRQ(ierr);
+                ierr=MatSetSizes(*R,PETSC_DECIDE,PETSC_DECIDE,n_coarse,n_fine);CHKERRQ(ierr);
+                ierr=MatSetFromOptions(*R);CHKERRQ(ierr);
+                ierr=MatSetUp(*R);CHKERRQ(ierr);
+
+                //R
+                //cout<<"\nR...";
+                value[0] = 1.0/4.0 ; value[1] =2.0/4.0; value[2] =1.0/4.0;
+                    for (int i=0;i<n_coarse;i++){
+                        col[0] = correction;++correction;
+                        col[1] = correction;++correction;
+                        col[2] = correction;
+                        ierr = MatSetValues(*R,1,&i,3,col,value,INSERT_VALUES);CHKERRQ(ierr);
+                    }
+                ierr = MatAssemblyBegin(*R,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+                ierr = MatAssemblyEnd(*R,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+                break;
+            }
+
+            return 0;
 }
 
 int SetOperator::SetOperator_Interpolation(int n_fine,int n_coarse,Mat R,Mat* I){
@@ -63,6 +115,10 @@ int SetOperator::SetOperator_Interpolation(int n_fine,int n_coarse,Mat R,Mat* I)
     int nonzeros;//MatGetRow parameter
     const PetscInt* colsIndex;//MatGetRow parameter
     const PetscScalar* values;//MatGetRow parameter
+    int correction=0;
+
+    PetscScalar value[3];
+    PetscInt line[3];
 
     ierr=MatCreate(PETSC_COMM_WORLD,I);CHKERRQ(ierr);  //Mat Create AIJ?
     ierr=MatSetSizes(*I,PETSC_DECIDE,PETSC_DECIDE,n_fine,n_coarse);CHKERRQ(ierr);
@@ -71,6 +127,7 @@ int SetOperator::SetOperator_Interpolation(int n_fine,int n_coarse,Mat R,Mat* I)
 
     //Transpose R
     //cout<<"I...";
+    /*
         for(int i=0;i<n_coarse;i++){
             MatGetRow(R,i,&nonzeros,&colsIndex,&values);//get R row's i nonzeros
             MatSetValues(*I,nonzeros,colsIndex,1,&i,values,INSERT_VALUES); //we take R's i row,and transform into a I column i
@@ -79,8 +136,16 @@ int SetOperator::SetOperator_Interpolation(int n_fine,int n_coarse,Mat R,Mat* I)
             MatRestoreRow(R,i,&nonzeros,&colsIndex,&values);
         }
     ierr = MatAssemblyBegin(*I,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(*I,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-    MatScale(*I,2.0);
+    ierr = MatAssemblyEnd(*I,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);*/
+      value[0] = 1.0/2.0 ; value[1] =2.0/2.0; value[2] =1.0/2.0;
+                    for (int i=0;i<n_coarse;i++){
+                        line[0] = correction;++correction;
+                        line[1] = correction;++correction;
+                        line[2] = correction;
+                        ierr = MatSetValues(*I,3,line,1,&i,value,INSERT_VALUES);CHKERRQ(ierr);
+                    }
+                ierr = MatAssemblyBegin(*I,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+                ierr = MatAssemblyEnd(*I,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
     return 0;
 }

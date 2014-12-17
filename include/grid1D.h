@@ -20,7 +20,7 @@ class grid1D{
         bool firstuse;
         grid1D(){};
         ~grid1D();
-        int createComponents(int *n,int gridlevel,Mat A_fine);
+        int createComponents(int n,int gridlevel,Mat A_fine);
         void Restrict(Vec r_fine,int i);        //restriction proc.(from fine to coarse)
         void Interpolate(Vec e_fine,int i);     //interpolation proc.(from coarse to fine)
         int solver();
