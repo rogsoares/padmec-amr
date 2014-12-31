@@ -4,7 +4,7 @@ clear
 clear
 clear
 
-echo"cleanning..."
+echo"cleanning->multigridlib dir..."
 make cleanup
 echo "make->multigrid"
 echo ""
@@ -13,10 +13,13 @@ make
 echo ""
 
 #simulator directory
+cd ../../../prototypes/SIMULATORPROJ1
+echo "cleanning->simulator dir..."
+make cleanup
 echo "make->simulator"
 echo ""
 echo ""
-cd ../../../prototypes/SIMULATORPROJ1
+
 make
 
 echo  "run the simulator now? "
