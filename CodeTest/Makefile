@@ -32,7 +32,8 @@ $(OBJ_DIR)/%.o:	$(SRC_DIR)/%.cpp
 	@mv *.o $(OBJ_DIR)
 
 cleanup:
-	rm *.o $(OBJ_DIR)/*.o *.exe
+	rm  $(OBJ_DIR)/*.o *.exe
+	rm  $(PROJ_DIR)/coarse/*.txt
 
 
 

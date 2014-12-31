@@ -51,7 +51,7 @@ ____
 
     ///                                              Set Grid + problem
 
-    n=7;            //INTERNAL NUMBER OF PRESSURE POINTS
+    n=10000;            //INTERNAL NUMBER OF PRESSURE POINTS
     N=1+(2*n);          //TOTAL GRID POINTS
     double Lx=1000;          //GRID LENGHT(x ft)
     double deltaX=Lx/N;      //DELTA(distance between points)
@@ -141,7 +141,7 @@ ____
         ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
         ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
-    printMatrixToFile(A,"coarse/true_matrix");
+    printMatrixToFile(A,"coarse/true_matrix.txt");
 
 
     /// ***************************************************************************************************
@@ -173,10 +173,27 @@ ____
     filebuf buffer;
     ostream output(&buffer);
     istream input(&buffer);
+    bool getbc=false; //false-boundary weren't found! true-boundary conditions found!
 
         for(int it=1;it<=itnum;it++){
 
-            VecGetArray(p,&P);
+            VecGetArray(p,&P); //represent Petsc Vec as Vec[n];
+
+                if(getbc==false){
+                     // open file boundaries.dat and overwrite any boundaries.dat in that directory
+                    buffer.open ("parameters/boundaries.dat", ios::in | ios::out | ios::trunc);
+
+                    //for no-flow boundaries(dp/dx=0) pi-1=pi,
+                        output<<"boundary_0 = "<<P[0]<<endl;// p0=1 in the example from Ertkein book
+                        output<<"boundary_L = "<<P[n-1]<<endl;// p6=p5 in the example from Ertkein book
+
+                        input.clear();           // clear  eofbit and  failbit
+
+                    buffer.close();
+                    getbc=true;
+
+                }
+
             ///WE must update the rhs elements before each iteration...(problem varies on time)
                 for(int index=0;index<n;index++){
 
@@ -187,20 +204,15 @@ ____
                     ierr=VecSetValues(y,1,&index,&val,INSERT_VALUES);CHKERRQ(ierr);
 
                 }
-            // open file boundaries.dat and overwrite boundaries
-            buffer.open ("parameters/boundaries.dat", ios::in | ios::out | ios::trunc);
 
-            //for no-flow boundaries(dp/dx=0) pi-1=pi,
-                output<<"boundary_0 = "<<P[0]<<endl;// p0=1 in the example from Ertkein book
-                output<<"boundary_L = "<<P[n-1]<<endl;// p6=p5 in the example from Ertkein book
 
-                input.clear();           // clear  eofbit and  failbit
-
-            buffer.close();
 
             VecRestoreArray(p,&P);
 
             KSP_linearsolver(A,y,p,its,1);
+            printVectorToFile(p,"coarse/true_u.txt");
+
+
             ///Multigrid (type : V-cycle )
 
             /*
@@ -224,7 +236,6 @@ ____
                         VecNorm(r,NORM_2,&rNorm);//VecNorm(u,NORM_2,&eNorm);
                         rNormFile<<rNorm<<endl;//","<<eNorm<<endl;
                         ++j;*/
-                        printVectorToFile(p,"coarse/true_u");
 
                        cout<<"\nmultigrid test!\n";
                         Controller_V MG(n,r,e,y,p,A,&multigridits[it-1]);///MULTIGRID

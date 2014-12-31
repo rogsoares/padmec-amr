@@ -1,2 +1,4 @@
 MAXGRIDS = 4
 RESTRICTION OPERATOR = 1
+PreIts = 4  
+PostIts = 2  
