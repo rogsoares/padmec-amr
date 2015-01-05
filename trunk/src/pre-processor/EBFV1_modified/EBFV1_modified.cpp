@@ -21,13 +21,13 @@ void EBFV1_modified_preprocessor_2D(pMesh theMesh, GeomData* pGCData){
 	double F_ij[8], F_jk[8], F_ik[8];	// F: 4x2
 	double G_ij[4], G_jk[4], G_ik[4];	// G: 2x2
 	double A_ij[6], A_jk[6], A_ik[6];	// A: 2x3
-	RPFP* pRockPropFunc;
+	RockPropFuncPointer* pFUNC_RockProp;
 
 	dim = theMesh->getDim();
 	numElements = M_numFaces(theMesh);
 	pGCData->initializeElementMatrix(numElements);
 	calculateEdgeLength(theMesh,pGCData);
-	getRockPropertyFuncPointer(pRockPropFunc);					// based on user inputs, define a function pointer to what rock property
+	getRockPropertyFuncPointer(pFUNC_RockProp);					// based on user inputs, define a function pointer to what rock property
 
 	int k = 0;
 	FIter fit = M_faceIter(theMesh);

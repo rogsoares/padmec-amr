@@ -7,7 +7,7 @@
 
 #include "rockProp.h"
 
-void getRockPropertyFuncPointer(RPFP* pFunc){
+void getRockPropertyFuncPointer(RockPropFuncPointer* pFunc){
 
 #ifdef HOMOGENEOUSPERMEABILITY
 	pFunc = homogeneousPermeability;
