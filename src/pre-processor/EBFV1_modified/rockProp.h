@@ -8,15 +8,16 @@
 #ifndef ROCKPROP_H_
 #define ROCKPROP_H_
 
+#include "auxiliar.h"
 //This file is intent to define functions which represent rock properties such as:
 //
 //		1) absolute permeability tensor
 //		2) porosity
 
 // RPFP: Rock property function pointer
-typedef void (*pFunc)(pEntity,int,double*) RPFP;
+typedef void (*RockPropFuncPointer)(pEntity,int,double*);
 
-void getRockPropertyFuncPointer(RPFP*);
+void getRockPropertyFuncPointer(RockPropFuncPointer*);
 
 
 /*
