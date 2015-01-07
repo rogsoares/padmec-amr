@@ -13,7 +13,7 @@ PROJ_DIR=$(HOME)/projetos/mesh-data
 CXX=mpicxx
 INCLUDES=-I$(PROJ_DIR)
 SOURCES=$(PROJ_DIR)
-OBJ=main.o read.o write.o mesh.o refine.o refine_TRI.o refine_QUAD.o refine_TETRA.o utilities.o
+OBJ=main.o read.o write.o mesh.o mesh_parallel.o refine.o refine_TRI.o refine_QUAD.o refine_TETRA.o utilities.o
 EXEC=mesh-data.exe
 
 all:	$(EXEC)

@@ -16,12 +16,14 @@ struct VertexInfo{
 	Coords* coords;
 	int physical;
 	int geom;
+	int numRCopies;
 };
 
 struct EdgeInfo{
 	int MPV_id;		// Middle Point Vertex ID: for refinement purposes
 	int physical;	// physical flag: dirichlet, neumann, etc
 	int geom;		// geometry identification
+	int numRCopies;
 };
 
 struct TriInfo{
@@ -30,6 +32,7 @@ struct TriInfo{
 	int id2;
 	int geom;
 	int physical;
+	int numRCopies;
 };
 
 struct QuadInfo{
@@ -51,6 +54,7 @@ struct TetraInfo{
 };
 
 enum ELEM_TYPE{TRI, QUAD, TETRA};
+enum REF_MOMENT{BEFORE, AFTER};
 
 namespace MeshDB{
 
@@ -69,23 +73,24 @@ namespace MeshDB{
 		void setVertex(int ID, int physical, int geom);
 		void createTetrahedron(int id0, int id1, int id2, int id3, int physical, int geom);
 
-		int getNumVertices() const;
-		int getNumEdges() const;
-		int getNumTriangles() const;
+		int getNumVertices(REF_MOMENT rm) const;
+		int getNumEdges(REF_MOMENT rm) const;
+		int getNumTriangles(REF_MOMENT rm) const;
 		int getNumQuad() const { return 0; }
-		int getNumTetras() const;
+		int getNumTetras(REF_MOMENT rm) const;
 
 		void refine_mesh(int refLevel);
 
 		void getEdge(int id0, int id1, EdgeInfo**);
 		void findEdge(int id0, int id1, bool& found);
 		void findEdge(int id0, int id1, bool& found0, bool& found1, std::map<int, std::map<int, EdgeInfo*> >::iterator& iter);
-		void printMeshStatistic() const;
+		void printMeshStatistic(const char* filename) const;
 
 		int getDim() const;
 		void setDim(int d);
 
 		ELEM_TYPE getElemType() const;
+		string getElementType() const;
 		void setElemType(ELEM_TYPE et);
 
 		void setChacteristics();
@@ -97,6 +102,15 @@ namespace MeshDB{
 
 		int dim;
 		ELEM_TYPE elem_type;
+
+		int numVertices_before;
+		int numVertices_after;
+		int numEdges_before;
+		int numTriangles_before;
+		int numQuad_before;
+		int numTetra_before;
+
+		int _refLevel;
 
 		// where vertices, edges and triangles are stored
 		std::map<int, VertexInfo*> VertexDB;
@@ -113,19 +127,25 @@ namespace MeshDB{
 		void refine_TETRA();
 
 		void getTetraVerticesCoords(TetraInfo* tinfo, Coords** p1, Coords** p2, Coords** p3, Coords** p4);
+		void getVertexID_EdgeTetra(int id0, int id1, int& max_vertex_ID, int& ID);
 		void calculate_volume();
 
 		// PARALLEL STUFFES
 		// ---------------------------------------------------------------------------
 		int rank;
-		int get_rank(){
-			return rank;
-		}
+		int get_rank() const;
 
 		int nproc;
-		int get_nproc(){
-			return nproc;
-		}
+		int get_nproc() const;
+
+		// serial mesh partition into nproc parts
+		void mesh_partition();
+
+		// migrate mesh entities from rank 0 to all other processes
+		void mesh_distribution();
+
+		// create consistent global vertex ID over partition's boundaries.
+		void bdry_linkSetup();
 	};
 
 }

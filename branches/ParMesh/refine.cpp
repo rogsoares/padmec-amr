@@ -18,13 +18,16 @@
 
 namespace MeshDB{
 	void  Mesh::refine_mesh(int refLevel){
+		_refLevel = refLevel;
+		mesh_partition();
+		mesh_distribution();
 		cout << "Refinement level: " << endl;
 		for(int i=0; i<refLevel; i++){
-			cout << "Before refinement: \n";
-			this->calculate_volume();
+//			cout << "Before refinement: \n";
+//			calculate_volume();
 			createEdgeDataStructure();
 			cout << "                  " << i+1 << "/" << refLevel << endl;
-			switch (this->getElemType()){
+			switch (getElemType()){
 			case TRI:
 				refine_TRI();
 				break;
@@ -32,13 +35,14 @@ namespace MeshDB{
 				refine_QUAD();
 				break;
 			case TETRA:
+				refine_TRI();	// boundary element faces
 				refine_TETRA();
 				break;
 			}
-			cout << "After refinement: \n";
-			this->calculate_volume();
+//			cout << "After refinement: \n";
+//			calculate_volume();
 			deleteEdgeDataStructure();
 		}
-		printMeshStatistic();
+		bdry_linkSetup();
 	}
 }
