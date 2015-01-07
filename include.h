@@ -10,4 +10,6 @@
 #include <fstream>
 using namespace std;
 
+#include "mpi.h"
+
 #endif

@@ -114,6 +114,18 @@ namespace MeshDB{
 
 		void getTetraVerticesCoords(TetraInfo* tinfo, Coords** p1, Coords** p2, Coords** p3, Coords** p4);
 		void calculate_volume();
+
+		// PARALLEL STUFFES
+		// ---------------------------------------------------------------------------
+		int rank;
+		int get_rank(){
+			return rank;
+		}
+
+		int nproc;
+		int get_nproc(){
+			return nproc;
+		}
 	};
 
 }

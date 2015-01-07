@@ -2,8 +2,12 @@
 
 namespace MeshDB{
 
-	Mesh::Mesh(){}
-	Mesh::~Mesh(){}
+	Mesh::Mesh(){
+		MPI_Comm_rank(MPI_COMM_WORLD, &rank);	/* get current process id */
+		MPI_Comm_size(MPI_COMM_WORLD, &nproc);	/* get number of processes */
+	}
+	Mesh::~Mesh(){
+	}
 
 	void Mesh::createVertex(int ID, VertexInfo* vinfo){
 		VertexDB[ID] = vinfo;
@@ -298,10 +302,10 @@ namespace MeshDB{
 			tinfo = *iter;
 			getTetraVerticesCoords(tinfo,&p1,&p2,&p3,&p4);
 			v += R_Volume(p1,p2,p3,p4);
-			cout << "tetra volume [" << tinfo->id0 << " " << tinfo->id1 << " " << tinfo->id2 << " " << tinfo->id3 << "] = " << v << endl;
+			//cout << "tetra volume [" << tinfo->id0 << " " << tinfo->id1 << " " << tinfo->id2 << " " << tinfo->id3 << "] = " << v << endl;
 		}
 		tinfo=0;
-		cout << "Tetrahedral mesh volume: " << v <<  endl;
+		//cout << "Tetrahedral mesh volume: " << v <<  endl;
 	}
 }
 
