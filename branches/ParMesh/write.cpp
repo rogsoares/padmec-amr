@@ -9,8 +9,12 @@
 
 namespace MeshDB{
 	void Mesh::write(const char* filename){
+
+		char fname[512];
+		sprintf(fname,"%s-%d-of-%d.msh",filename,this->get_rank(),this->get_nproc());
+
 		ofstream fid;
-		fid.open(filename);
+		fid.open(fname);
 
 		int v_count = 0;
 		int e_count = 0;

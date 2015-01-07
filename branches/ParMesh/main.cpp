@@ -1,6 +1,7 @@
 #include "mesh.h"
 
 int main(int argc, char** argv){
+	MPI_Init(&argc, &argv);
 	MeshDB::Mesh* mesh = new MeshDB::Mesh;
 	if (argc!=4){
 		cout << "\nERROR\n\nYou MUST type: executable mesh_file(IN) #ref_level mesh_file(OUT)\nExiting...\n";
@@ -9,5 +10,6 @@ int main(int argc, char** argv){
 	mesh->read(argv[1]);
 	mesh->refine_mesh( atoi(argv[2]) );
 	mesh->write(argv[3]);
+	MPI_Finalize();
 	return 0;
 }

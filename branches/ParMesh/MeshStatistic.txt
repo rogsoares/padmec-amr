@@ -1,5 +1,5 @@
 Mesh statistics:
-Number of vertices           : 16283
+Number of vertices           : 908809
 Number of edges over geometry: 0
 Number of triangles          : 3460
-Number of tetrahedra         : 80960
+Number of tetrahedra         : 5181440
