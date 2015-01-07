@@ -10,6 +10,7 @@ int main(int argc, char** argv){
 	mesh->read(argv[1]);
 	mesh->refine_mesh( atoi(argv[2]) );
 	mesh->write(argv[3]);
+	mesh->printMeshStatistic(argv[3]);
 	MPI_Finalize();
 	return 0;
 }

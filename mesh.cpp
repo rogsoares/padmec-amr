@@ -88,25 +88,60 @@ namespace MeshDB{
 		}
 	}
 
-	int Mesh::getNumVertices() const{
-		return  (int)VertexDB.size();
-	}
-
-	int Mesh::getNumEdges() const{
-		int k = 0;
-		std::map<int, std::map<int, EdgeInfo*> >::const_iterator iter1;
-		for(iter1=EdgeDB.begin(); iter1!=EdgeDB.end(); iter1++){
-			k += (int)iter1->second.size();
+	int Mesh::getNumVertices(REF_MOMENT rm) const{
+		int n;
+		switch(rm){
+		case BEFORE:
+			n = numVertices_before;
+			break;
+		case AFTER:
+			n = (int)VertexDB.size();
+			break;
 		}
-		return k;
+		return n;
 	}
 
-	int Mesh::getNumTriangles() const{
-		return (int)TriangleDB.size();
+	int Mesh::getNumEdges(REF_MOMENT rm) const{
+		int n;
+		switch(rm){
+		case BEFORE:
+			n = numEdges_before;
+			break;
+		case AFTER:
+			n = 0;
+			std::map<int, std::map<int, EdgeInfo*> >::const_iterator iter1;
+			for(iter1=EdgeDB.begin(); iter1!=EdgeDB.end(); iter1++){
+				n += (int)iter1->second.size();
+			}
+			break;
+		}
+		return n;
 	}
 
-	int Mesh::getNumTetras() const{
-		return (int)TetraDB.size();
+	int Mesh::getNumTriangles(REF_MOMENT rm) const{
+		int n;
+		switch(rm){
+		case BEFORE:
+			n = numTriangles_before;
+			break;
+		case AFTER:
+			n = (int)TriangleDB.size();
+			break;
+		}
+		return n;
+	}
+
+	int Mesh::getNumTetras(REF_MOMENT rm) const{
+		int n;
+		switch(rm){
+		case BEFORE:
+			n = numTetra_before;
+			break;
+		case AFTER:
+			n = (int)TetraDB.size();
+			break;
+		}
+		return n;
 	}
 
 	void Mesh::getEdge(int id0, int id1, EdgeInfo** einfo){
@@ -155,56 +190,6 @@ namespace MeshDB{
 		}
 	}
 
-	void Mesh::printMeshStatistic() const{
-		ofstream fid;
-		fid.open("MeshStatistic.txt");
-		fid << "Mesh statistics:\n";
-		fid << "Number of vertices           : " << getNumVertices() << endl;
-		fid << "Number of edges over geometry: " << getNumEdges() << endl;
-		fid << "Number of triangles          : " << getNumTriangles() << endl;
-		fid << "Number of tetrahedra         : " << this->getNumTetras() << endl;
-//		printVertexList(fid);
-//		printEdgeList(fid);
-//		printTriangleList(fid);
-//		cout << "\n";
-	}
-
-	void Mesh::printVertexList(ofstream& fid) const{
-		fid << "Vertices:\n";
-		VertexInfo *vinfo;
-		std::map<int, VertexInfo*>::const_iterator iter = VertexDB.begin();
-		for(;iter!=VertexDB.end();iter++){
-			vinfo = iter->second;
-			fid << iter->first << " " << "coords: " << vinfo->coords[0] << " " << vinfo->coords[1] << " " << vinfo->coords[2] << " G:" << vinfo->geom << " P:" << vinfo->physical << "\n";
-		}
-	}
-
-	void Mesh::printEdgeList(ofstream& fid) const{
-		int id0, k = 0;
-		std::map<int, std::map<int, EdgeInfo*> >::const_iterator iter1;
-		std::map<int, EdgeInfo*>::const_iterator iter2;
-		fid << "Edges:\n";
-		for(iter1 = EdgeDB.begin();iter1!=EdgeDB.end();iter1++){
-			id0 = iter1->first;
-			iter2 = iter1->second.begin();
-			for(;iter2!=iter1->second.end();iter2++){
-				EdgeInfo* einfo = iter2->second;
-				fid << ++k << ": " << id0 << " - " << iter2->first << " G:" << einfo->geom << " P:" << einfo->physical << endl;
-			}
-		}
-	}
-
-	void Mesh::printTriangleList(ofstream& fid) const{
-		int k = 0;
-		fid << "Triangles:\n";
-		std::list<TriInfo*>::const_iterator iter = TriangleDB.begin();
-		TriInfo* tinfo;
-		for(;iter!=TriangleDB.end();iter++){
-			tinfo = *iter;
-			fid << ++k << ": " << tinfo->id0 << " " << tinfo->id1 << " " << tinfo->id2 << " " << tinfo->geom << " " << tinfo->physical << endl;
-		}
-	}
-
 	void Mesh::createEdgeDataStructure(){
 		//cout << "Creaing edge data structure:\n";
 		if (getDim()==2){
@@ -234,6 +219,13 @@ namespace MeshDB{
 				}
 			}
 		}
+
+		if (!numEdges_before){
+			std::map<int, std::map<int, EdgeInfo*> >::const_iterator iter1;
+			for(iter1=EdgeDB.begin(); iter1!=EdgeDB.end(); iter1++){
+				numEdges_before += (int)iter1->second.size();
+			}
+		}
 	}
 
 	void Mesh::deleteEdgeDataStructure(){
@@ -260,6 +252,21 @@ namespace MeshDB{
 
 	ELEM_TYPE Mesh::getElemType() const{
 		return elem_type;
+	}
+
+	string Mesh::getElementType() const{
+		string etype;
+		switch(elem_type){
+		case TRI:
+			etype = "Triangles";
+			break;
+		case QUAD:
+			etype = "Quad";
+			break;
+		case TETRA:
+			etype = "Tetra";
+		}
+		return etype;
 	}
 
 	void Mesh::setElemType(ELEM_TYPE et){
@@ -308,22 +315,3 @@ namespace MeshDB{
 		//cout << "Tetrahedral mesh volume: " << v <<  endl;
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

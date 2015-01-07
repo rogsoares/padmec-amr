@@ -22,6 +22,7 @@ namespace MeshDB{
 			fid >> ID >> x >> y >> z;
 			createVertex(ID,x,y,z,-1,-1);
 		}
+		numVertices_before = NbNod;
 		fid.getline (line,256);
 		fid.getline (line,256);
 		fid.getline (line,256);
@@ -29,6 +30,11 @@ namespace MeshDB{
 		cout << "  Elements: " << NbNod << "\n\n";
 		int IDs[10];
 		int iNbNod,elemType,physical,iElm,geom;
+
+		numEdges_before = 0;
+		numQuad_before = 0;
+		numTriangles_before = 0;
+		numTetra_before = 0;
 
 		for (int i=0; i<NbNod; i++){
 			fid >> iElm >> elemType >> physical >> geom >> iNbNod;
@@ -48,16 +54,15 @@ namespace MeshDB{
 				// prescribed triangles
 			case 2:
 				createTriangle(IDs[0],IDs[1],IDs[2],physical,geom);
+				numTriangles_before++;
 				break;
 			case 4:
 				createTetrahedron(IDs[0],IDs[1],IDs[2],IDs[3],physical,geom);
+				numTetra_before++;
 				break;
 			}
 			//cout << "OK!\n";
 		}
 		setChacteristics();
-		printMeshStatistic();
-		cout << "Mesh  dimension: " << getDim() << "-D\n";
-		//throw 1;
 	}
 }

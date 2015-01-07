@@ -10,21 +10,14 @@
 namespace MeshDB{
 
 	void Mesh::refine_TETRA(){
-		VertexInfo* V1=0;
-		VertexInfo* V2=0;
-		VertexInfo* V_new=0;
-		EdgeInfo* einfo;
-
 		TetraInfo* tinfo=0;
-		TetraInfo* tinfo_new=0;
-
 		int I,J,K,L,R,S,T,U,V,X;
 
 		std::map<int, VertexInfo*>::const_iterator VIter = VertexDB.end();
 		int max_vertex_ID = VIter->first;
 
 		std::list<TetraInfo*>::iterator iter1 = TetraDB.begin();
-		int nelem = getNumTetras();
+		int nelem = getNumTetras(AFTER);
 		int elem_counter = 0;
 		while (elem_counter < nelem){
 			tinfo = *iter1;
@@ -34,180 +27,49 @@ namespace MeshDB{
 			L = tinfo->id3;
 
 			// get tetrahedron edges:
-			getEdge(I,J,&einfo);
-			if (einfo->MPV_id < 0){
-				++max_vertex_ID;
-				this->getVertex(I,&V1);
-				this->getVertex(J,&V2);
-				V_new = new VertexInfo;
-				V_new->coords = new Coords[3];
-				middlePoint(V1->coords,V2->coords,V_new->coords);
-				V_new->geom = einfo->geom;
-				V_new->physical = einfo->physical;
-				this->createVertex(max_vertex_ID,V_new);
-				einfo->MPV_id = max_vertex_ID;
-				V1 = V2 = 0;
-			}
-			S = einfo->MPV_id;
-
-			getEdge(I,K,&einfo);
-			if (einfo->MPV_id < 0){
-				++max_vertex_ID;
-				this->getVertex(I,&V1);
-				this->getVertex(K,&V2);
-				V_new = new VertexInfo;
-				V_new->coords = new Coords[3];
-				middlePoint(V1->coords,V2->coords,V_new->coords);
-				V_new->geom = einfo->geom;
-				V_new->physical = einfo->physical;
-				this->createVertex(max_vertex_ID,V_new);
-				einfo->MPV_id = max_vertex_ID;
-				V1 = V2 = 0;
-			}
-			R = einfo->MPV_id;
-
-			getEdge(J,K,&einfo);
-			if (einfo->MPV_id < 0){
-				++max_vertex_ID;
-				this->getVertex(J,&V1);
-				this->getVertex(K,&V2);
-				V_new = new VertexInfo;
-				V_new->coords = new Coords[3];
-				middlePoint(V1->coords,V2->coords,V_new->coords);
-				V_new->geom = einfo->geom;
-				V_new->physical = einfo->physical;
-				this->createVertex(max_vertex_ID,V_new);
-				einfo->MPV_id = max_vertex_ID;
-				V1 = V2 = 0;
-			}
-			V = einfo->MPV_id;
-
-			getEdge(I,L,&einfo);
-			if (einfo->MPV_id < 0){
-				++max_vertex_ID;
-				this->getVertex(I,&V1);
-				this->getVertex(L,&V2);
-				V_new = new VertexInfo;
-				V_new->coords = new Coords[3];
-				middlePoint(V1->coords,V2->coords,V_new->coords);
-				V_new->geom = einfo->geom;
-				V_new->physical = einfo->physical;
-				this->createVertex(max_vertex_ID,V_new);
-				einfo->MPV_id = max_vertex_ID;
-				V1 = V2 = 0;
-			}
-			T = einfo->MPV_id;
-
-			getEdge(J,L,&einfo);
-			if (einfo->MPV_id < 0){
-				++max_vertex_ID;
-				this->getVertex(J,&V1);
-				this->getVertex(L,&V2);
-				V_new = new VertexInfo;
-				V_new->coords = new Coords[3];
-				middlePoint(V1->coords,V2->coords,V_new->coords);
-				V_new->geom = einfo->geom;
-				V_new->physical = einfo->physical;
-				this->createVertex(max_vertex_ID,V_new);
-				einfo->MPV_id = max_vertex_ID;
-				V1 = V2 = 0;
-			}
-			X = einfo->MPV_id;
-
-			getEdge(L,K,&einfo);
-			if (einfo->MPV_id < 0){
-				++max_vertex_ID;
-				this->getVertex(L,&V1);
-				this->getVertex(K,&V2);
-				V_new = new VertexInfo;
-				V_new->coords = new Coords[3];
-				middlePoint(V1->coords,V2->coords,V_new->coords);
-				V_new->geom = einfo->geom;
-				V_new->physical = einfo->physical;
-				this->createVertex(max_vertex_ID,V_new);
-				einfo->MPV_id = max_vertex_ID;
-				V1 = V2 = 0;
-			}
-			U = einfo->MPV_id;
+			getVertexID_EdgeTetra(I,J,max_vertex_ID,S);
+			getVertexID_EdgeTetra(I,K,max_vertex_ID,R);
+			getVertexID_EdgeTetra(J,K,max_vertex_ID,V);
+			getVertexID_EdgeTetra(I,L,max_vertex_ID,T);
+			getVertexID_EdgeTetra(J,L,max_vertex_ID,X);
+			getVertexID_EdgeTetra(L,K,max_vertex_ID,U);
 
 			// create element: I-R-T-S | K-R-S-V | L-T-X-U | J-V-X-S | R-S-U-V | S-T-X-U | R-T-U-S | V-U-X-S
-			tinfo_new = new TetraInfo;
-			tinfo_new->geom = tinfo->geom;
-			tinfo_new->physical = tinfo->physical;
-			tinfo_new->id0 = I;
-			tinfo_new->id1 = R;
-			tinfo_new->id2 = T;
-			tinfo_new->id3 = S;
-			TetraDB.push_back(tinfo_new);
+			createTetrahedron(I,R,T,S,tinfo->physical,tinfo->geom);
+			createTetrahedron(K,R,U,V,tinfo->physical,tinfo->geom);
+			createTetrahedron(L,T,U,X,tinfo->physical,tinfo->geom);
+			createTetrahedron(J,V,X,S,tinfo->physical,tinfo->geom);
+			createTetrahedron(R,S,U,V,tinfo->physical,tinfo->geom);
+			createTetrahedron(S,T,U,X,tinfo->physical,tinfo->geom);
+			createTetrahedron(R,T,U,S,tinfo->physical,tinfo->geom);
+			createTetrahedron(V,U,X,S,tinfo->physical,tinfo->geom);
 
-			tinfo_new = new TetraInfo;
-			tinfo_new->geom = tinfo->geom;
-			tinfo_new->physical = tinfo->physical;
-			tinfo_new->id0 = K;
-			tinfo_new->id1 = R;
-			tinfo_new->id2 = U;
-			tinfo_new->id3 = V;
-			TetraDB.push_back(tinfo_new);
-
-			tinfo_new = new TetraInfo;
-			tinfo_new->geom = tinfo->geom;
-			tinfo_new->physical = tinfo->physical;
-			tinfo_new->id0 = L;
-			tinfo_new->id1 = T;
-			tinfo_new->id2 = U;
-			tinfo_new->id3 = X;
-			TetraDB.push_back(tinfo_new);
-
-			tinfo_new = new TetraInfo;
-			tinfo_new->geom = tinfo->geom;
-			tinfo_new->physical = tinfo->physical;
-			tinfo_new->id0 = J;
-			tinfo_new->id1 = V;
-			tinfo_new->id2 = X;
-			tinfo_new->id3 = S;
-			TetraDB.push_back(tinfo_new);
-
-			tinfo_new = new TetraInfo;
-			tinfo_new->geom = tinfo->geom;
-			tinfo_new->physical = tinfo->physical;
-			tinfo_new->id0 = R;
-			tinfo_new->id1 = S;
-			tinfo_new->id2 = U;
-			tinfo_new->id3 = V;
-			TetraDB.push_back(tinfo_new);
-
-//			// create element: I-R-T-S | K-R-S-V | L-T-X-U | J-V-X-S | R-S-U-V | S-T-X-U | R-T-U-S | V-U-X-S
-			tinfo_new = new TetraInfo;
-			tinfo_new->geom = tinfo->geom;
-			tinfo_new->physical = tinfo->physical;
-			tinfo_new->id0 = S;
-			tinfo_new->id1 = T;
-			tinfo_new->id2 = X;
-			tinfo_new->id3 = U;
-			TetraDB.push_back(tinfo_new);
-
-			tinfo_new = new TetraInfo;
-			tinfo_new->geom = tinfo->geom;
-			tinfo_new->physical = tinfo->physical;
-			tinfo_new->id0 = R;
-			tinfo_new->id1 = T;
-			tinfo_new->id2 = U;
-			tinfo_new->id3 = S;
-			TetraDB.push_back(tinfo_new);
-
-			tinfo_new = new TetraInfo;
-			tinfo_new->geom = tinfo->geom;
-			tinfo_new->physical = tinfo->physical;
-			tinfo_new->id0 = V;
-			tinfo_new->id1 = U;
-			tinfo_new->id2 = X;
-			tinfo_new->id3 = S;
-			TetraDB.push_back(tinfo_new);
-
-			//tinfo=0;
 			iter1 = TetraDB.erase(iter1);
 			elem_counter++;
 		}
+	}
+
+	void Mesh::getVertexID_EdgeTetra(int id0, int id1, int& max_vertex_ID, int& ID){
+		VertexInfo* V1=0;
+		VertexInfo* V2=0;
+		VertexInfo* V_new=0;
+		EdgeInfo* einfo;
+
+		getEdge(id0,id1,&einfo);
+		if (einfo->MPV_id < 0){
+			++max_vertex_ID;
+			getVertex(id0,&V1);
+			getVertex(id1,&V2);
+			V_new = new VertexInfo;
+			V_new->coords = new Coords[3];
+			middlePoint(V1->coords,V2->coords,V_new->coords);
+			V_new->geom = einfo->geom;
+			V_new->physical = einfo->physical;
+			createVertex(max_vertex_ID,V_new);
+			einfo->MPV_id = max_vertex_ID;
+			V1 = V2 = 0;
+		}
+		ID = einfo->MPV_id;
 	}
 }
 

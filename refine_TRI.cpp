@@ -22,7 +22,7 @@ void  Mesh::refine_TRI(){
 		int max_vertex_ID = VIter->first;
 
 		std::list<TriInfo*>::iterator iter1 = TriangleDB.begin();
-		int nelem = getNumTriangles();
+		int nelem = getNumTriangles(AFTER);
 		int elem_counter = 0;
 		while (elem_counter < nelem){
 			tinfo = *iter1;
