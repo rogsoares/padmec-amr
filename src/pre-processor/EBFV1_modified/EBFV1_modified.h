@@ -12,7 +12,7 @@
 #include "GeomData.h"
 #include "rockProp.h"
 
-void EBFV1_modified_preprocessor_2D();
+void EBFV1_modified_preprocessor_2D(pMesh theMesh, GeomData* pGCData);
 void assemblyMatrix_A(const double*, const double*, const double*, const double*, const double*, const double*,const double*, const double*, const double*,double*,double*, double*);
 void calculateGeomCoefficients(pEntity, double *, double *, double &);
 void calculateMatrix_F(pEntity, const double*, const double*, double, double*, double*, double*);

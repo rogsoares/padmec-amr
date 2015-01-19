@@ -26,35 +26,37 @@ namespace PRS{
 	// solves system of equation for pressure field
 	double MEBFV_elliptic::solver(pMesh theMesh){
 	#ifdef TRACKING_PROGRAM_STEPS
-		cout << "TRACKING_PROGRAM_STEPS: pressure solver\tIN\n";
+		cout << "TRACKING_PROGRAM_STEPS: pressure solver (MEBFV)\tIN\n";
 	#endif
 
-		Initialize();
+		Initialize(theMesh);
 		Assembly_A();
 		Assembly_b();
 		Solve();
 
 	#ifdef TRACKING_PROGRAM_STEPS
-		cout << "TRACKING_PROGRAM_STEPS: pressure solver\tOUT\n";
+		cout << "TRACKING_PROGRAM_STEPS: pressure solver (MEBFV)\tOUT\n";
 	#endif
 		return 0;
 	}
 
 	double MEBFV_elliptic::Solve(){
 		double startt = MPI_Wtime();
+		PetscInt its;
 		KSP ksp;
 		PC preconditioner;
 		KSPCreate(PETSC_COMM_WORLD,&ksp);
-		KSPSetOperators(ksp,A,A,DIFFERENT_NONZERO_PATTERN);
+		KSPSetOperators(ksp,A_free,A_free);
 		KSPSetType(ksp,KSPCG);
 		KSPGetPC(ksp,&preconditioner);
 		PCSetType(preconditioner,PCJACOBI);
 		KSPSetInitialGuessNonzero(ksp,PETSC_FALSE);
 		KSPSetFromOptions(ksp);
 		KSPSolve(ksp,b,x);
-		//KSPGetIterationNumber(ksp,&its);
-		KSPDestroy(ksp);
+		KSPGetIterationNumber(ksp,&its);
+		KSPDestroy(&ksp);
 		double endt = MPI_Wtime();
-		return endt-startt;
+		cout << "elliptic solver: iterations (" << its << ") cpu time (" << endt-startt << ")sec"<< endl;
+		return 0;
 	}
 }

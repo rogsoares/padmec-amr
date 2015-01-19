@@ -215,7 +215,7 @@ namespace PRS{
 			FIter_delete(fit);
 			numDomBDRYEdges[i] = (int)edgeList.size();
 			if (!numDomBDRYEdges[i]){
-				throw Exception(__LINE__,__FILE__,"Number of boundary faces: 0.");
+				throw Exception(__LINE__,__FILE__,"Number of boundary edges: 0. You must set the correct flag to ");
 			}
 			edgeList.clear();
 		}

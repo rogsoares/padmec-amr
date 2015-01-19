@@ -22,12 +22,12 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 		double calculatePressureGradient();
 
 		// solve system of equations: Ax=y
-		double KSP_solver(Mat A, Mat pcMatrix, Vec y, Vec x, SimulatorParameters *pSimPar, PetscTruth guessNonZero, KSPType ksptype, PCType pctype,PetscInt &its){
+		double KSP_solver(Mat A, Mat pcMatrix, Vec y, Vec x, SimulatorParameters *pSimPar, PetscBool guessNonZero, KSPType ksptype, PCType pctype,PetscInt &its){
 			double startt = MPI_Wtime();
 			KSP ksp;
 			PC preconditioner;
 			KSPCreate(PETSC_COMM_WORLD,&ksp);
-			KSPSetOperators(ksp,A,pcMatrix,DIFFERENT_NONZERO_PATTERN);
+			KSPSetOperators(ksp,A,pcMatrix);
 			KSPSetType(ksp,ksptype);
 			KSPGetPC(ksp,&preconditioner);
 			PCSetType(preconditioner,pctype);
@@ -37,7 +37,7 @@ namespace PRS           // PRS: Petroleum Reservoir Simulator
 			KSPSetFromOptions(ksp);
 			KSPSolve(ksp,y,x);
 			KSPGetIterationNumber(ksp,&its);
-			KSPDestroy(ksp);
+			KSPDestroy(&ksp);
 			double endt = MPI_Wtime();
 			return endt-startt;
 		}

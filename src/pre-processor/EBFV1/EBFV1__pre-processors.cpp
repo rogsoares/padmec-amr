@@ -200,7 +200,7 @@ void generateFilename(string directory, const string &meshFilename, char *filena
 	sprintf(filename,"%s%s-%d-of-%d%s",directory.c_str(),buffer,P_pid(),P_size(),fileextension.c_str());
 }
 
-void generateFilename(const string &meshFilename, char *filename, PetscTruth& flg){
+void generateFilename(const string &meshFilename, char *filename, PetscBool& flg){
 	string str(meshFilename);
 	string::size_type start = str.find_last_of("/");
 	start = (start == string::npos)?0:start;
@@ -226,7 +226,7 @@ void generateFilename(const string &meshFilename, char *filename, PetscTruth& fl
 // setOfDomains - set container containing flags associaated to all sub-domains
 // OUT
 void exportCoefficients(pMesh theMesh, const int &meshDim, set<int> &setOfDomains,
-		const char *meshFilename, GeomData *pGCData,PetscTruth flg){
+		const char *meshFilename, GeomData *pGCData,PetscBool flg){
 	//	PetscPrintf(PETSC_COMM_WORLD,"Exporting coefficients... \n");MPI_Barrier(MPI_COMM_WORLD);
 	//	ofstream fid;
 	//	fid.open(meshFilename);
@@ -581,6 +581,7 @@ void calculateEdgeLength(pMesh theMesh, GeomData *pGCData){
 	double elength, Lij[dim];
 	double Icoord[3], Jcoord[3];
 	double delta_x = 1e30; // infinity delta_x
+	double versor[3];
 	int i,j;
 	dblarray vec(3);
 	EIter eit = M_edgeIter(theMesh);
@@ -608,7 +609,9 @@ void calculateEdgeLength(pMesh theMesh, GeomData *pGCData){
 			for (i=0; i<dim; i++){
 				vec[i] /= elength;
 			}
-			pGCData->setEdgeVec_Unitary(edge,vec);
+			//pGCData->setEdgeVec_Unitary(edge,vec);
+			versor[0] = vec[0]; versor[1] = vec[1]; versor[2] = vec[2];
+			pGCData->setVersor(edge,versor);
 
 			// get the smallest one
 			if (delta_x > elength){

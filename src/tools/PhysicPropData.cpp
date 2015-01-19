@@ -109,6 +109,9 @@ namespace PRS{
 	}
 
 	void PhysicPropData::initialize(MeshData *pMData, SimulatorParameters *pSimPar, pMesh theMesh, bool isUpdate, GeomData* pGCData){
+		if (pSimPar->getEllipticSolver()==2){
+			return;
+		}
 		allocateData(pSimPar,pGCData,M_numVertices(theMesh));
 		Swr = pSimPar->Swr();				// Irreducible water saturation
 		Sor = pSimPar->Sor();				// Residual oil saturation

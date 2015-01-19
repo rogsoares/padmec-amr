@@ -5,17 +5,18 @@
  *      Author: rogerio
  */
 
+
 #include "rockProp.h"
 
 void getRockPropertyFuncPointer(RockPropFuncPointer* pFunc){
 
-#ifdef HOMOGENEOUSPERMEABILITY
-	pFunc = homogeneousPermeability;
+#ifdef CASE_Homogeneous2D
+	return Homogeneous2D;
 #endif
 
 }
 
-void homogeneousPermeability(pEntity face, int dim, double* K){
+void Homogeneous2D(pEntity e, double* K){
 	K[0] = 1.0; K[1] = 0.0;
 	K[2] = 0.0; K[3] = 1.0;
 }

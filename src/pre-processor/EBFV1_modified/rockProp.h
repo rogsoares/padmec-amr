@@ -14,6 +14,8 @@
 //		1) absolute permeability tensor
 //		2) porosity
 
+#include "auxiliar.h"
+
 // RPFP: Rock property function pointer
 typedef void (*RockPropFuncPointer)(pEntity,int,double*);
 
@@ -24,6 +26,6 @@ void getRockPropertyFuncPointer(RockPropFuncPointer*);
  * USERS MUST DEFINE THEIR FUNCTION BELOW
  */
 
-void homogeneousPermeability(pEntity,int,double*);
+void Homogeneous2D(pEntity e, double* K);
 
 #endif /* ROCKPROP_H_ */

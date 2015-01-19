@@ -22,8 +22,8 @@ namespace PRS{
 		char filename[256];
 		sprintf(filename,"%s-%d-of-%d.dat",fname.c_str(),P_pid(),P_size());
 		//cout << "pre-processor file: " << filename << endl;
-		PetscSynchronizedPrintf(PETSC_COMM_WORLD,"pre-processor file: %s\n",filename);
-		PetscSynchronizedFlush(PETSC_COMM_WORLD);
+		///PetscSynchronizedPrintf(PETSC_COMM_WORLD,"pre-processor file: %s\n",filename);
+		//PetscSynchronizedFlush(PETSC_COMM_WORLD);
 		MPI_Barrier(PETSC_COMM_WORLD);
 
 

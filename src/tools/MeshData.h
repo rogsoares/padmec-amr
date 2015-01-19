@@ -72,6 +72,7 @@ namespace PRS
 		// returns a map iterator to access all dirichlet nodes and their prescribed values
 		inline MIter dirichletBegin() const { return dirichlet.begin(); }
 		inline MIter dirichletEnd() const { return dirichlet.end(); }
+		void findDirichletNodes();
 
 		// return mapped position for all nodes
 		inline int FPArray(int pos) const { return FP_Array[pos]; }
@@ -149,15 +150,26 @@ namespace PRS
 		int nrows() const;					// number of mesh nodes
 		int ncols() const;					// number of mesh nodes
 		int numFreeNodes() const; 			// number of mesh free nodes
-
-		void mapNodeID(pMesh);				// gives a sequential numbering for all mesh node IDs. From 0 to N-1,
+		void createGlobalNodeIDMapping();	// create all mapping needed to assembly matrices and vectors
+		void mapNodeID();					// gives a sequential numbering for all mesh node IDs. From 0 to N-1,
 											// where N is the number of mesh nodes
 
-		void getMappedIndices_free(int i_th_element, int i_th_edge, int* idxm_IJ, int* idxn_IJ);	// indices for A matrix
-		void getMappedIndices_dirichlet(int i_th_element, int* idx_IJ, int* idx_JK, int idx_IK);	// indices for dirichlet matrix
+		// for global matrix assembly
+		void getArrays_free(int& freeRows_size, int** freeRows_array);
+		void getGlobalIndices(int ith_elem, int ith_edge, int* idxm, int* idxn);
+		void setGlobalIndices();
 
+		// for matrix solver assembly: extracts rows and columns from global matrix A related to free vertices
+		IS IS_getFreeRows() const;
+		IS IS_getFreeCols() const;
+
+		// for RHS assembly only
+		void getArrays_dirichlet(int& dirichletCols_size, int** dirichletCols_array, std::set<pEntity>& dirichletnodes_set);
+		void initDirichletVectors(std::set<pEntity>& dirichletnodes_set);
 		const int* getDirichlet_idx() const;		// return pointer of indices for prescribed mesh nodes
 		const double* getDirichlet_data() const;	// return pointer of prescribed values assigned to mesh nodes
+		IS IS_getDirichletRows() const;					// from global matrix
+		IS IS_getDirichletCols() const;					// from global matrix
 
 
 	private:
@@ -216,19 +228,22 @@ namespace PRS
 		// MEBFV:
 		/***********************************************************************************************/
 		std::map<int,int> nodeID_map;
-		int* dirichlet_idx;
+
+		int* dirichlet_idx;		// a vector to assembly rhs direchlet part: rhs = sst - dirichlet, sst=source/sink term
+								// it's size is the number of free nodes and store: 0, 1, 2, ..., n-1, n: number fo free vertices
 		double* dirichlet_data;
 		int msize;		// number of mesh nodes
 		int nfreen;		// number of free (not prescribed) mesh nodes
 		int nnfreen;	// number of not free (prescribed) mesh nodes
 
-		// matrix to store indices (free and not free) which are used to assembly Stiffness matrix and Dirichlet Matrix
-		// rows_cols_indices_mat:
-		//                           (first edge)                           (second edge)                       (third edge)
-		//			ith_row: idxm_0 idxm_1 idxn_0 idxn_1 idxn_2   idxm_0 idxm_1 idxn_0 idxn_1 idxn_2   idxm_0 idxm_1 idxn_0 idxn_1 idxn_2
-		Matrix<int> rows_cols_indices_free_mat;
-		Matrix<int> rows_cols_indices_nfree_mat;
-
+		// stores indices for sub-matrices related to element
+		//                                0      1      2       3      4
+		// 2-D (triangles): MatIndices: idxm_0 idxm_1 idxn_0 idxn_1 idxn_2
+		Matrix<int> MatIndices;
+		IS IS_freeRows;
+		IS IS_freeCols;
+		IS IS_dirichletRows;
+		IS IS_dirichletCols;
 	};
 }
 #endif /*MESHDATA_H_*/

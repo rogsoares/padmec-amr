@@ -51,7 +51,7 @@ namespace PRS{
 		~GeomData();
 
 		void initilize(pMesh);
-		void initilize(pMesh, const std::set<int>&);
+		void initilize(pMesh, const std::set<int>&, int FVM);
 		void dataTransfer(pMesh);
 		void transferCijData(pMesh);
 		void transferDijData(pMesh);
@@ -198,6 +198,9 @@ namespace PRS{
 		void setElementMatrices(int row, const double* Aij, const double* Ajk, const double* Aik);
 		void getElementMatrices(int row, double* Aij, double* Ajk, double* Aik);
 		void getVolume_MEBFV(int,double&);
+
+		void setVersor(pEntity edge, double* versor);
+		void getVersor(pEntity edge, double* versor) const;
 
 	private:
 		int _ndom;

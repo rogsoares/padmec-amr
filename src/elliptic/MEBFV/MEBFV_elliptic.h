@@ -27,7 +27,7 @@ namespace PRS{
 		~MEBFV_elliptic();
 
 		double solver(pMesh);	// virtual function implementation for solving Ax=b
-		void Initialize();		// allocate memory for all matrices and vector needed by elliptic term
+		void Initialize(pMesh);		// allocate memory for all matrices and vector needed by elliptic term
 		void setSST();			// fill SST vector with source/sink terms (Neumann boundary values)
 		void setdirichletVec();	// fill vector with prescribed values for corresponding node index
 		void Assembly_A();		// assembly global stiffness matrix
@@ -39,6 +39,7 @@ namespace PRS{
 	private:
 
 		Mat A;				// Stiffness matrix
+		Mat A_free;			// Global matrix for free vertices
 		Vec b;				// Right hand side (rhs) vector
 		Vec x;				// Solution vector
 

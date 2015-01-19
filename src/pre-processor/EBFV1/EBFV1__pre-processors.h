@@ -12,7 +12,7 @@ struct PP_Parameters{
 	const char *meshFilename;
 	const char* exportFilename;
 	GeomData *pGCData;
-	PetscTruth flg;
+	PetscBool flg;
 	int dim;
 };
 
@@ -35,9 +35,9 @@ void AllgatherDomains(std::set<int> &);
 
 void generateFilename(string,const string&,char*,string);
 
-void generateFilename(const string&,char*,PetscTruth&);
+void generateFilename(const string&,char*,PetscBool&);
 
-void exportCoefficients(pMesh, const int&, set<int>&, const char*, GeomData *,PetscTruth);
+void exportCoefficients(pMesh, const int&, set<int>&, const char*, GeomData *,PetscBool);
 
 void saveMesh_gmsh1(pMesh, const char*);
 

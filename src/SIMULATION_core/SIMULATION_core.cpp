@@ -28,7 +28,7 @@ namespace PRS {
 		}
 
 		simFlag = atoi(argv[1]);
-		int FVM_formulation = atoi(argv[2]);
+		//int FVM_formulation = atoi(argv[2]);
 		printSimulationHeader();
 
 		// Initialize simulation pointers
@@ -93,10 +93,12 @@ namespace PRS {
 		 *  	- physical properties
 		 *  	- boundary and initial conditions, mapping
 		 */
-		pGCData->initilize(theMesh,pSimPar->setOfDomains);
+		pGCData->initilize(theMesh,pSimPar->setOfDomains,pSimPar->getEllipticSolver());
 		pSimPar->initialize(pGCData,theMesh);
 		pPPData->initialize(pMData,pSimPar,theMesh,false,pGCData);
-		pMData->initialize(theMesh,pGCData);
+		if (pSimPar->getEllipticSolver()==1){
+			pMData->initialize(theMesh,pGCData);
+		}
 
 		// Oil production output
 		string path = pSimPar->getOutputPathName();
@@ -159,8 +161,8 @@ namespace PRS {
 		// Write to file oil production output. Only rank 0 is in charge of it.
 		string path = pSimPar->getOutputPathName();
 
-		char tmp[256]; sprintf(tmp,"%s_PETSc_summary_nproc%d.log",path.c_str(),P_size());
-		PetscErrorCode ierr = PetscLogPrintSummary(MPI_COMM_WORLD,tmp); CHKERRQ(ierr);
+		//char tmp[256]; sprintf(tmp,"%s_PETSc_summary_nproc%d.log",path.c_str(),P_size());
+		//PetscErrorCode ierr = PetscLogPrintSummary(MPI_COMM_WORLD,tmp); CHKERRQ(ierr);
 
 		// free memory
 		delete pElliptic_eq;

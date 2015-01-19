@@ -60,7 +60,6 @@ namespace PRS{
 				RIter_delete(rit);
 			}
 
-
 			// get external boundary edges/faces only: It's for saturation gradient calculation
 			if (extElem){
 				i = 0;
