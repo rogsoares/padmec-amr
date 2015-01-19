@@ -12,8 +12,8 @@ namespace PRS{
 
 	void MeshData::destroyPointers(){
 		if (P_pid()>=1 && rowToImport){
-			MatDestroy(joinNodes);
-			MatDestroy(updateValues);
+			MatDestroy(&joinNodes);
+			MatDestroy(&updateValues);
 		}
 		if (pMS)         { delete pMS; pMS = 0; }
 		if (rowToImport){ delete[] rowToImport; rowToImport = 0; }
@@ -28,7 +28,7 @@ namespace PRS{
 		setOfDomains.clear();
 		localIDNumbering.clear();
 		mapPB_nodes.clear();
-		AODestroy(ao);
+		AODestroy(&ao);
 	}
 
 	MeshData::MeshData(SimulatorParameters *sp, pMesh mesh){
@@ -355,7 +355,7 @@ namespace PRS{
 	 * */
 	int MeshData::rowsToImport(pMesh theMesh, int &nrows, int *&rows){
 		Mat temp;
-		PetscErrorCode ierr = MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,numGF,numGF,0,PETSC_NULL,0,PETSC_NULL,&temp);
+		PetscErrorCode ierr = MatCreateAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,numGF,numGF,0,PETSC_NULL,0,PETSC_NULL,&temp);
 
 		// get range of local owned rows of each process
 		const PetscInt *ranges[P_size()];
@@ -381,7 +381,7 @@ namespace PRS{
 		const int from = ranges[0][P_pid()];
 		const int to = ranges[0][P_pid()+1];
 		//printf("[%d] - from %d  to %d\n",P_pid(),from,to); exit(1);
-		ierr = MatDestroy(temp); CHKERRQ(ierr);
+		ierr = MatDestroy(&temp); CHKERRQ(ierr);
 
 		
 		// Inform which ROWS from A, on processor p, must be copied to assembly LHS matrix (free nodes). For each rank, the number of 
@@ -541,141 +541,141 @@ namespace PRS{
 			                              GeomData* pGCData, int dom,
 			                              bool onlyRemoteNodesOnBoundaries){
 
-		if (P_size()==1) return 0;
-
-		char tag[8]; sprintf(tag,"%d",dom);
-		pMS->tag = tag;
-		pMS->onlyRNOB = onlyRemoteNodesOnBoundaries;
-		pMS->dom = dom;
-		pMS->dim = pGCData->getMeshDim();
-		pMS->pFunc_getVector = pFunc_getVector;
-		pMS->pFunc_setVector = pFunc_setVector;
-
-		// unify for each vector coordinate
-		for (int i = 0; i < pMS->dim; i++){
-			pMS->coord_xyz = i;
-			unifyScalarsOnMeshNodes(0,0,pGCData,pMS);
-		}
+//		if (P_size()==1) return 0;
+//
+//		char tag[8]; sprintf(tag,"%d",dom);
+//		pMS->tag = tag;
+//		pMS->onlyRNOB = onlyRemoteNodesOnBoundaries;
+//		pMS->dom = dom;
+//		pMS->dim = pGCData->getMeshDim();
+//		pMS->pFunc_getVector = pFunc_getVector;
+//		pMS->pFunc_setVector = pFunc_setVector;
+//
+//		// unify for each vector coordinate
+//		for (int i = 0; i < pMS->dim; i++){
+//			pMS->coord_xyz = i;
+//			unifyScalarsOnMeshNodes(0,0,pGCData,pMS);
+//		}
 		return 0;
 	}
 
 	int MeshData::unifyScalarsOnMeshNodes(double(*pFunc_getScalar)(pEntity),
 			                               void (*pFunc_setScalar)(pEntity,double),
 			                               GeomData* pGCData, void *ptr){
-		if (P_size()==1) return 0;
-
-		// STEP 1
-		// use a map to store only nodes with remote copies (this number is unknown)
-		map<int,double>::iterator mit;
-		pEntity node,face;
-		int ID,i,m,n,k,row;
-
-		if (structsCreation){
-
-			/*
-			 * pMS->onlyRNOB means one desires to unify vectors only nodes on boundaries
-			 */
-			if (ptr && pMS->onlyRNOB){
-				FIter fit = M_faceIter(theMesh);
-				while ( (face = FIter_next(fit)) ){
-					for (i=0;i<3;i++){
-						node = (pEntity)face->get(0,i);
-						if (0){
-							ID = get_AppToPETSc_Ordering(EN_id(node));					// node ID
-							//mapPB_nodes[ID] = (!ptr)?pFunc_getScalar(node):getScalar(node,pMS);
-							row = pSimPar->getLocalNodeIDNumbering(node,pMS->tag);
-							mapPB_nodes[ID] = (!ptr)?pFunc_getScalar(node):getScalar(row,pMS);
-
-
-						}
-					}
-				}
-				FIter_delete(fit);
-			}
-			else{
-				VIter vit = M_vertexIter(theMesh);
-				while ( (node = VIter_next(vit)) ){
-					if (0){
-						ID = get_AppToPETSc_Ordering(EN_id(node));					// node ID
-						//mapPB_nodes[ID] = (!ptr)?pFunc_getScalar(node):getScalar(node,pMS);
-						row = pSimPar->getLocalNodeIDNumbering(node,pMS->tag);
-						mapPB_nodes[ID] = (!ptr)?pFunc_getScalar(node):getScalar(row,pMS);
-					}
-				}
-				VIter_delete(vit);
-			}
-		}
-		else{
-			for(mit = mapPB_nodes.begin(); mit != mapPB_nodes.end(); mit++){
-				ID = get_PETScToApp_Ordering(mit->first);
-				node = (pEntity)theMesh->getVertex(ID);
-				if (!node) throw Exception(__LINE__,__FILE__,"Null vertex!\n");
-				//mit->second = (!ptr)?pFunc_getScalar(node):getScalar(node,pMS);
-				row = pSimPar->getLocalNodeIDNumbering(node,pMS->tag);
-				mit->second = (!ptr)?pFunc_getScalar(node):getScalar(row,pMS);
-			}
-		}
-
-		// STEP 2
-		// number of nodes on partition bdry
-		int numPB_Nodes = mapPB_nodes.size();
-		// nodes on partition bdry are now known. Let's transfer them to a PETSc column
-		// matrix to sum the contribution from all processor that share the same node.
-
-		int np = getNum_GNodes();
-		if (structsCreation){
-			ierr = MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,
-					PETSC_DECIDE,np,1,0,PETSC_NULL,0,PETSC_NULL,&joinNodes);CHKERRQ(ierr);
-		}
-		else{
-			ierr = MatZeroEntries(joinNodes);CHKERRQ(ierr);
-		}
-
-		int col = 0;
-		double data;
-		for(mit = mapPB_nodes.begin(); mit != mapPB_nodes.end(); mit++){
-			int row = mit->first-1;				// -1 to satisfy C/C++ index style
-			data = mit->second;
-			ierr = MatSetValues(joinNodes,1,&row,1,&col,&data,ADD_VALUES); CHKERRQ(ierr);
-		}
-		ierr = MatAssemblyBegin(joinNodes,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-		ierr = MatAssemblyEnd(joinNodes,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-
-
-		// STEP 3
-		// which rows from global matrix each rank must import
-		i = 0;
-		if (structsCreation){
-			rowToImport = new int[numPB_Nodes];
-			for (mit=mapPB_nodes.begin();mit!=mapPB_nodes.end();mit++)
-				rowToImport[i++] = mit->first-1;
-		}
-
-		if (structsCreation){
-			ierr = MatGetSubMatrixRaw(joinNodes,numPB_Nodes,rowToImport,1,&col,
-					PETSC_DECIDE,MAT_INITIAL_MATRIX,&updateValues); CHKERRQ(ierr);
-		}
-		else{
-			ierr = MatGetSubMatrixRaw(joinNodes,numPB_Nodes,rowToImport,1,&col,
-					PETSC_DECIDE,MAT_REUSE_MATRIX,&updateValues); CHKERRQ(ierr);
-		}
-
-		ierr = MatGetOwnershipRange(updateValues,&m,&n); CHKERRQ(ierr);
-		k = m;
-
-		for (i=0; i<numPB_Nodes; i++){
-			ierr = MatGetValues(updateValues,1,&k,1,&col,&data); CHKERRQ(ierr);
-			ID = rowToImport[i] + 1;
-			node = theMesh->getVertex( get_PETScToApp_Ordering(ID) );
-			if (!ptr)
-				pFunc_setScalar(node,data);
-			else{
-				row = pSimPar->getLocalNodeIDNumbering(node,pMS->tag);
-				setScalar(row,data,pMS);
-			}
-			k++;
-		}
-		structsCreation = false;
+//		if (P_size()==1) return 0;
+//
+//		// STEP 1
+//		// use a map to store only nodes with remote copies (this number is unknown)
+//		map<int,double>::iterator mit;
+//		pEntity node,face;
+//		int ID,i,m,n,k,row;
+//
+//		if (structsCreation){
+//
+//			/*
+//			 * pMS->onlyRNOB means one desires to unify vectors only nodes on boundaries
+//			 */
+//			if (ptr && pMS->onlyRNOB){
+//				FIter fit = M_faceIter(theMesh);
+//				while ( (face = FIter_next(fit)) ){
+//					for (i=0;i<3;i++){
+//						node = (pEntity)face->get(0,i);
+//						if (0){
+//							ID = get_AppToPETSc_Ordering(EN_id(node));					// node ID
+//							//mapPB_nodes[ID] = (!ptr)?pFunc_getScalar(node):getScalar(node,pMS);
+//							row = pSimPar->getLocalNodeIDNumbering(node,pMS->tag);
+//							mapPB_nodes[ID] = (!ptr)?pFunc_getScalar(node):getScalar(row,pMS);
+//
+//
+//						}
+//					}
+//				}
+//				FIter_delete(fit);
+//			}
+//			else{
+//				VIter vit = M_vertexIter(theMesh);
+//				while ( (node = VIter_next(vit)) ){
+//					if (0){
+//						ID = get_AppToPETSc_Ordering(EN_id(node));					// node ID
+//						//mapPB_nodes[ID] = (!ptr)?pFunc_getScalar(node):getScalar(node,pMS);
+//						row = pSimPar->getLocalNodeIDNumbering(node,pMS->tag);
+//						mapPB_nodes[ID] = (!ptr)?pFunc_getScalar(node):getScalar(row,pMS);
+//					}
+//				}
+//				VIter_delete(vit);
+//			}
+//		}
+//		else{
+//			for(mit = mapPB_nodes.begin(); mit != mapPB_nodes.end(); mit++){
+//				ID = get_PETScToApp_Ordering(mit->first);
+//				node = (pEntity)theMesh->getVertex(ID);
+//				if (!node) throw Exception(__LINE__,__FILE__,"Null vertex!\n");
+//				//mit->second = (!ptr)?pFunc_getScalar(node):getScalar(node,pMS);
+//				row = pSimPar->getLocalNodeIDNumbering(node,pMS->tag);
+//				mit->second = (!ptr)?pFunc_getScalar(node):getScalar(row,pMS);
+//			}
+//		}
+//
+//		// STEP 2
+//		// number of nodes on partition bdry
+//		int numPB_Nodes = mapPB_nodes.size();
+//		// nodes on partition bdry are now known. Let's transfer them to a PETSc column
+//		// matrix to sum the contribution from all processor that share the same node.
+//
+//		int np = getNum_GNodes();
+//		if (structsCreation){
+//			ierr = MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,
+//					PETSC_DECIDE,np,1,0,PETSC_NULL,0,PETSC_NULL,&joinNodes);CHKERRQ(ierr);
+//		}
+//		else{
+//			ierr = MatZeroEntries(joinNodes);CHKERRQ(ierr);
+//		}
+//
+//		int col = 0;
+//		double data;
+//		for(mit = mapPB_nodes.begin(); mit != mapPB_nodes.end(); mit++){
+//			int row = mit->first-1;				// -1 to satisfy C/C++ index style
+//			data = mit->second;
+//			ierr = MatSetValues(joinNodes,1,&row,1,&col,&data,ADD_VALUES); CHKERRQ(ierr);
+//		}
+//		ierr = MatAssemblyBegin(joinNodes,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+//		ierr = MatAssemblyEnd(joinNodes,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+//
+//
+//		// STEP 3
+//		// which rows from global matrix each rank must import
+//		i = 0;
+//		if (structsCreation){
+//			rowToImport = new int[numPB_Nodes];
+//			for (mit=mapPB_nodes.begin();mit!=mapPB_nodes.end();mit++)
+//				rowToImport[i++] = mit->first-1;
+//		}
+//
+//		if (structsCreation){
+//			ierr = MatGetSubMatrixRaw(joinNodes,numPB_Nodes,rowToImport,1,&col,
+//					PETSC_DECIDE,MAT_INITIAL_MATRIX,&updateValues); CHKERRQ(ierr);
+//		}
+//		else{
+//			ierr = MatGetSubMatrixRaw(joinNodes,numPB_Nodes,rowToImport,1,&col,
+//					PETSC_DECIDE,MAT_REUSE_MATRIX,&updateValues); CHKERRQ(ierr);
+//		}
+//
+//		ierr = MatGetOwnershipRange(updateValues,&m,&n); CHKERRQ(ierr);
+//		k = m;
+//
+//		for (i=0; i<numPB_Nodes; i++){
+//			ierr = MatGetValues(updateValues,1,&k,1,&col,&data); CHKERRQ(ierr);
+//			ID = rowToImport[i] + 1;
+//			node = theMesh->getVertex( get_PETScToApp_Ordering(ID) );
+//			if (!ptr)
+//				pFunc_setScalar(node,data);
+//			else{
+//				row = pSimPar->getLocalNodeIDNumbering(node,pMS->tag);
+//				setScalar(row,data,pMS);
+//			}
+//			k++;
+//		}
+//		structsCreation = false;
 		return 0;
 	}
 }

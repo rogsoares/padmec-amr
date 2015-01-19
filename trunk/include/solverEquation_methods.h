@@ -7,7 +7,7 @@
 #define _SOLVEREQUATION_METHODS_H_
 
 // includes for elliptic equation
-#include "EBFV1_elliptic.h"
+#include "../src/elliptic/EBFV/EBFV1_elliptic.h"
 #include "MEBFV_elliptic.h"
 
 // includes for hyperbolic equation

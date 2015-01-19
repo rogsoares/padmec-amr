@@ -19,12 +19,14 @@
 #    NOADAPTATION			: Compile code without mesh adaptation feature
 #
 
+include Makefile.in
+
 CXXFLAGS=-g -DNOADAPTATION -DPARALLEL
 #CXXFLAGS=-DPARALLEL -g -DNOADAPTATION -Wunused-local-typedefs -D_SEEKFORBUGS_ -DTRACKING_PROGRAM_STEPS
 #CXXFLAGS=-DPARALLEL -g -Wall -Wunused -D__ADAPTATION_DEBUG__ -D__ERROR_ANALYSIS_DEBUG__ -D_SEEKFORBUGS_ -DTRACKING_PROGRAM_STEPS -DFVPO
 # scientific_application folder is where libraries are installed 
-APP_DIR=$(HOME)/scientific_applications
-PROJ_DIR=$(HOME)/projetos/GOOGLE_CODES/padmec-amr/trunk
+APP_DIR=$(HOME)/applications
+PROJ_DIR=$(HOME)/projetos/padmec-amr/trunk
 GMSH_DIR=$(APP_DIR)/gmshGMSH
 
 # compilers
@@ -35,17 +37,17 @@ INCLUDES=-I$(PROJ_DIR)/include \
 	-I$(PROJ_DIR)/src/adaptation -I$(PROJ_DIR)/src/adaptation/adaptive-remeshing -I$(PROJ_DIR)/src/adaptation/h-refinement \
 	-I$(PROJ_DIR)/src/adaptation/rh-refinement -I$(APP_DIR)/MAdLib_no_gmsh/include \
 	-I$(PROJ_DIR)/src/elliptic -I$(PROJ_DIR)/src/elliptic/MEBFV -I$(PROJ_DIR)/src/hyperbolic \
-	-I$(PROJ_DIR)/src/error-analysis -I$(PROJ_DIR)/src/interpolation -I$(PROJ_DIR)/src/pre-processor/EBFV1 \
+	-I$(PROJ_DIR)/src/error-analysis -I$(PROJ_DIR)/src/interpolation -I$(PROJ_DIR)/src/pre-processor/EBFV1 -I$(PROJ_DIR)/src/pre-processor/EBFV1_modified \
 	-I$(PROJ_DIR)/src/SIMULATION_core \
 	-I$(PROJ_DIR)/src/tools -I$(PROJ_DIR)/src/tools/GeomData \
 	-I$(GMSH_DIR)/build/Common -I$(GMSH_DIR)/Common -I$(GMSH_DIR)/Geo -I$(GMSH_DIR)/Mesh -I$(GMSH_DIR)/Numeric -I$(GMSH_DIR)/Parser -I$(GMSH_DIR)/Plugin -I$(GMSH_DIR)/Post \
- 	-I$(APP_DIR)/autopack/include -I$(APP_DIR)/FMDB-2011/include
+ 	-I$(APP_DIR)/autopack/include -I$(APP_DIR)/FMDB-2011/include -I$(APP_DIR)/petsc-3.5.2/include -I$(APP_DIR)/petsc-3.5.2/linux-gnu-c-opt/include
 
 LIBS1=-L$(APP_DIR)/FMDB-2011/lib -lFMDB-O \
      -L$(APP_DIR)/ParMetis-3.1/lib -lparmetis -lmetis \
      -L$(APP_DIR)/autopack/lib -lautopack-O
 
-ifeq (,$(findstring NOADAPTATION,$(CXXFLAGS)))
+ifeq (,$(findstring NOADAPTATION,$(CXXFLAGS) $(ROCKPROP)))
 LIBS2=-L$(APP_DIR)/gmshGMSH/lib -lGmsh
 endif
 
@@ -58,7 +60,7 @@ OBJ_DIR=$(PROJ_DIR)/objs
 # paths for each program source part
 # ==================================
 SRC_DIR1=$(PROJ_DIR)/src
-SRC_DIR2=$(PROJ_DIR)/src/elliptic
+SRC_DIR2=$(PROJ_DIR)/src/elliptic/EBFV
 SRC_DIR21=$(PROJ_DIR)/src/elliptic/MEBFV
 SRC_DIR4=$(PROJ_DIR)/src/hyperbolic
 SRC_DIR5=$(PROJ_DIR)/src/pre-processor/EBFV1
@@ -90,9 +92,9 @@ OBJS_GEOMDATA=$(OBJ_DIR)/GeomData.o $(OBJ_DIR)/GeomData2.o $(OBJ_DIR)/GeomData3.
 OBJS_PREPROCESSOR=$(OBJ_DIR)/Calculate-Cij-parallel.o $(OBJ_DIR)/Calculate-Vi-parallel.o $(OBJ_DIR)/EBFV1__pre-processors.o \
 	              $(OBJ_DIR)/EBFV1-2D-pp.o $(OBJ_DIR)/EBFV1-3D-pp.o $(OBJ_DIR)/setCorrectNumberOfRemoteCopies.o $(OBJ_DIR)/validate-EBFV1.o \
 	              $(OBJ_DIR)/assemblyMatrix_A.o $(OBJ_DIR)/calculateGeomCoefficients.o $(OBJ_DIR)/Matrix_E.o $(OBJ_DIR)/Matrix_G.o $(OBJ_DIR)/Matrix_F.o \
-	              $(OBJ_DIR)/EBFV1_modified.o 
+	              $(OBJ_DIR)/EBFV1_modified.o $(OBJ_DIR)/rockProp.o
 
-ifeq (,$(findstring NOADAPTATION,$(CXXFLAGS)))
+ifeq (,$(findstring NOADAPTATION,$(CXXFLAGS) $(ROCKPROP)))
 OBJS_ADAPTATION=$(OBJ_DIR)/CalculateDegreeOfRefinement_2D.o $(OBJ_DIR)/AdaptiveRemeshing.o \
     $(OBJ_DIR)/H_Refinement.o $(OBJ_DIR)/H_Refinement_2D.o \
     $(OBJ_DIR)/CalculateElementsError_2D.o $(OBJ_DIR)/CalculateGlobalError.o \
@@ -107,72 +109,74 @@ OBJECTS=$(OBJS_MAIN) $(OBJS_PREPROCESSOR) $(OBJS_ELLIPTIC) $(OBJS_HYPERBOLIC) $(
 
 EXEC=PADMEC_AMR.exe
 all:	$(EXEC)
-include ${PETSC_DIR}/bmake/common/base
+#include ${PETSC_DIR}/bmake/common/base
+include ${PETSC_DIR}/conf/variables
+include ${PETSC_DIR}/conf/rules
 
 $(EXEC):	$(OBJECTS) chkopts
 	@echo "Linking objects..."
 	-$(CXX) -o $(EXEC) $(OBJECTS) $(LIBS) $(PETSC_LIB)	
 
 $(OBJ_DIR)/%.o:	$(SRC_DIR1)/%.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES)  -c $< ${PETSC_INCLUDE}
+	$(CXX) $(CXXFLAGS) $(ROCKPROP)  $(INCLUDES)  -c $<
 	@mv *.o $(OBJ_DIR)
 	
 $(OBJ_DIR)/%.o:	$(SRC_DIR2)/%.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES)  -c $< ${PETSC_INCLUDE}
+	$(CXX) $(CXXFLAGS) $(ROCKPROP) $(INCLUDES)  -c $<
 	@mv *.o $(OBJ_DIR)
 	
 $(OBJ_DIR)/%.o:	$(SRC_DIR21)/%.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES)  -c $< ${PETSC_INCLUDE}
+	$(CXX) $(CXXFLAGS) $(ROCKPROP) $(INCLUDES)  -c $< 
 	@mv *.o $(OBJ_DIR)
 	
 $(OBJ_DIR)/%.o:	$(SRC_DIR4)/%.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES)  -c $< ${PETSC_INCLUDE}
+	$(CXX) $(CXXFLAGS) $(ROCKPROP) $(INCLUDES)  -c $< 
 	@mv *.o $(OBJ_DIR)
 	
 $(OBJ_DIR)/%.o:	$(SRC_DIR5)/%.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES)  -c $< ${PETSC_INCLUDE}
+	$(CXX) $(CXXFLAGS) $(ROCKPROP) $(INCLUDES)  -c $< 
 	@mv *.o $(OBJ_DIR)
 	
 $(OBJ_DIR)/%.o:	$(SRC_DIR51)/%.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES)  -c $< ${PETSC_INCLUDE}
+	$(CXX) $(CXXFLAGS) $(ROCKPROP) $(INCLUDES)  -c $< 
 	@mv *.o $(OBJ_DIR)
 
 $(OBJ_DIR)/%.o:	$(SRC_DIR6)/%.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES)  -c $< ${PETSC_INCLUDE}
+	$(CXX) $(CXXFLAGS) $(ROCKPROP) $(INCLUDES)  -c $< 
 	@mv *.o $(OBJ_DIR)
 
 $(OBJ_DIR)/%.o:	$(SRC_DIR7)/%.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES)  -c $< ${PETSC_INCLUDE}
+	$(CXX) $(CXXFLAGS) $(ROCKPROP) $(INCLUDES)  -c $< 
 	@mv *.o $(OBJ_DIR)
 	
 $(OBJ_DIR)/%.o:	$(SRC_DIR71)/%.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES)  -c $< ${PETSC_INCLUDE}
+	$(CXX) $(CXXFLAGS) $(ROCKPROP) $(INCLUDES)  -c $< 
 	@mv *.o $(OBJ_DIR)
 
-ifeq (,$(findstring NOADAPTATION,$(CXXFLAGS)))
+ifeq (,$(findstring NOADAPTATION,$(CXXFLAGS) $(ROCKPROP)))
 $(OBJ_DIR)/%.o:	$(SRC_DIR8)/%.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES)  -c $< ${PETSC_INCLUDE}
+	$(CXX) $(CXXFLAGS) $(ROCKPROP) $(INCLUDES)  -c $< 
 	@mv *.o $(OBJ_DIR)
 		
 $(OBJ_DIR)/%.o:	$(SRC_DIR9)/%.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES)  -c $< ${PETSC_INCLUDE}
+	$(CXX) $(CXXFLAGS) $(ROCKPROP) $(INCLUDES)  -c $< 
 	@mv *.o $(OBJ_DIR)
 	
 $(OBJ_DIR)/%.o:	$(SRC_DIR10)/%.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES)  -c $< ${PETSC_INCLUDE}
+	$(CXX) $(CXXFLAGS) $(ROCKPROP) $(INCLUDES)  -c $< 
 	@mv *.o $(OBJ_DIR)
 
 $(OBJ_DIR)/%.o:	$(SRC_DIR11)/%.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES)  -c $< ${PETSC_INCLUDE}
+	$(CXX) $(CXXFLAGS) $(ROCKPROP) $(INCLUDES)  -c $< 
 	@mv *.o $(OBJ_DIR)
 
 $(OBJ_DIR)/%.o:	$(SRC_DIR12)/%.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES)  -c $< ${PETSC_INCLUDE}
+	$(CXX) $(CXXFLAGS) $(ROCKPROP) $(INCLUDES)  -c $< 
 	@mv *.o $(OBJ_DIR)
 endif
 
 #$(OBJ_DIR)/%.o:	$(SRC_DIR13)/%.cpp
-#	$(CXX) $(CXXFLAGS) $(INCLUDES)  -c $< ${PETSC_INCLUDE}
+#	$(CXX) $(CXXFLAGS) $(ROCKPROP) $(INCLUDES)  -c $< 
 #	@mv *.o $(OBJ_DIR)
 	
 rebuild:

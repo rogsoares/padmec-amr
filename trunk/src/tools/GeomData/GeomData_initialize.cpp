@@ -12,7 +12,7 @@ namespace PRS{
 	/*
 	 * Based on pre-processor data, matrix structure is created and data transferred
 	 */
-	void GeomData::initilize(pMesh theMesh, const std::set<int> &setOfDomain){
+	void GeomData::initilize(pMesh theMesh, const std::set<int> &setOfDomain, int FVM){
 		// number of domains stay the same no matter how many adaptations happen
 		int i = 0;
 		int ndom = (int)setOfDomain.size();
@@ -33,7 +33,12 @@ namespace PRS{
 			elemtype = 4;
 		}
 
-		initilize(theMesh);							//every new mesh adaptation, mesh data structure changes
+		// FVM:
+		// CASE 1: classical edge based Finite Volume Formulation
+		// CASE 2: modified  CASE 1 (highly heterogeneous porous media)
+		if (FVM==1){
+			initilize(theMesh);				//every new mesh adaptation, mesh data structure changes
+		}
 	}
 
 	void GeomData::initilize(pMesh theMesh){

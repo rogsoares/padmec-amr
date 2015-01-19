@@ -2,7 +2,7 @@
 
 
 
-void calculateMatrix_G(pEntity face, const double* K, GeomData* pGCData, const double* Cij, double* G_ij, double* G_jk, double* G_ik){
+void calculateMatrix_G(pEntity face, GeomData* pGCData, const double* K, const double* Cij, double* G_ij, double* G_jk, double* G_ik){
 	calculeMatrix_G((pEntity)F_edge(face,0),pGCData,K,Cij,G_ij);
 	calculeMatrix_G((pEntity)F_edge(face,1),pGCData,K,Cij,G_jk);
 	calculeMatrix_G((pEntity)F_edge(face,2),pGCData,K,Cij,G_ik);
@@ -21,7 +21,7 @@ void calculeMatrix_G(pEntity edge, GeomData* pGCData, const double* K, const dou
 	}
 
 	pGCData->getEdgeLength(edge,length);
-	pGCData->getEdgeVec_Unitary(edge,versor);
+	pGCData->getVersor(edge,versor);
 	for (i=0; i<dim; i++){
 		versor[i] *= sign;
 	}

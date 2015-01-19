@@ -345,7 +345,7 @@ int printMatrixToFile(Mat& m,const char* filename){
 	PetscViewer viewer;
 	PetscViewerASCIIOpen(PETSC_COMM_WORLD,filename,&viewer);
 	MatView(m,viewer);
-	PetscViewerDestroy(viewer);
+	PetscViewerDestroy(&viewer);
 	return 0;
 }
 
@@ -353,7 +353,7 @@ int printVectorToFile(Vec& v,const char* filename){
 	PetscViewer viewer;
 	PetscViewerASCIIOpen(PETSC_COMM_WORLD,filename,&viewer);
 	VecView(v,viewer);
-	PetscViewerDestroy(viewer);
+	PetscViewerDestroy(&viewer);
 	return 0;
 }
 

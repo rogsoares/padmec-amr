@@ -32,4 +32,16 @@ namespace PRS{
 	void GeomData::getVolume_MEBFV(int id, double &Vi){
 		Vi = volume_MEBFV[id-1];
 	}
+
+	void GeomData::setVersor(pEntity edge, double* versor){
+		EN_attachDataDbl((pEdge)edge, MD_lookupMeshDataId("versor_x"), versor[0]);
+		EN_attachDataDbl((pEdge)edge, MD_lookupMeshDataId("versor_y"), versor[1]);
+		EN_attachDataDbl((pEdge)edge, MD_lookupMeshDataId("versor_z"), versor[2]);
+	}
+
+	void GeomData::getVersor(pEntity edge, double* versor) const{
+		EN_getDataDbl((pEdge)edge, MD_lookupMeshDataId("versor_x"), &versor[0]);
+		EN_getDataDbl((pEdge)edge, MD_lookupMeshDataId("versor_y"), &versor[1]);
+		EN_getDataDbl((pEdge)edge, MD_lookupMeshDataId("versor_z"), &versor[2]);
+	}
 }

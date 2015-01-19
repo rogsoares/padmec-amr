@@ -7,6 +7,7 @@
 
 #include "SimulatorParameters.h"
 #include "EBFV1__pre-processors.h"
+#include "EBFV1_modified.h"
 #include <sstream>
 
 namespace PRS{
@@ -81,7 +82,9 @@ namespace PRS{
 		getDomains();
 		getWells(theMesh,pGCData->getMeshDim());
 		weightWellFlowRateByVolume(theMesh,pGCData);
-		setInitialOilVolume(theMesh,pGCData);
+		if (getEllipticSolver()==1){
+			setInitialOilVolume(theMesh,pGCData);
+		}
 #ifdef TRACKING_PROGRAM_STEPS
 		cout << "TRACKING_PROGRAM_STEPS: SimulatorParameters::initialize\tOUT\n";
 #endif
@@ -94,35 +97,33 @@ namespace PRS{
 	}
 
 	void SimulatorParameters::load_preprocessorData(void *pData){
-		switch ( getEllipticSolver() ){
-		case 1:{
-			int ndom;
-			ifstream fid;
-			fid.open(prepFilename().c_str());
-			if ( !fid.is_open() ){
-				char msg[256]; sprintf(msg,"File: %s \ncould not be opened or it doesn't exist. Verify if path is correct.\n",prepFilename().c_str());
-				throw Exception(__LINE__,__FILE__,msg);
-			}
-			fid.close();
 
-			// load mesh using FMDB
-			M_load(theMesh,prepFilename().c_str());
-			
+		int ndom;
+		ifstream fid;
+		fid.open(prepFilename().c_str());
+		if ( !fid.is_open() ){
+			char msg[256]; sprintf(msg,"File: %s \ncould not be opened or it doesn't exist. Verify if path is correct.\n",prepFilename().c_str());
+			throw Exception(__LINE__,__FILE__,msg);
+		}
+		fid.close();
+		M_load(theMesh,prepFilename().c_str());		// load mesh using FMDB
+
+		switch ( getEllipticSolver() ){
+		case 1:	//.............................................. EBFV1
 			if (theMesh->getDim()==2){
 				EBFV1_preprocessor_2D(theMesh,pData,ndom);
 			}
 			else{
 				EBFV1_preprocessor_3D(theMesh,pData,ndom);
 			}
-
-			if (ndom != getNumDomains()){
-				char msg[256]; sprintf(msg,"Number of domains do not match."
-						" Domains: %d (physical.dat) %d (pre-processor)\n",getNumDomains(),ndom);
+		case 2:	//.............................................. EBFV1 MODIFIED
+			if (theMesh->getDim()==3){
+				throw Exception(__LINE__,__FILE__,"MEBFV1 method is available for 2-D domains only.");
 			}
+			EBFV1_modified_preprocessor_2D(theMesh,(GeomData*)pData);
 			break;
-		}
 		default:
-			throw Exception(__LINE__,__FILE__,"Only case 1 for elliptic solver is implemented.\n");
+			throw Exception(__LINE__,__FILE__,"Available methods: 1 - EBFV1 and 2 - MEBFV1.");
 		}
 	}
 
@@ -141,17 +142,20 @@ namespace PRS{
 
 		// start reading file
 		// -------------------------------------------------------------------------
-		setPositionToRead(fid,"type method ID right above:");
+		setPositionToRead(fid,"type method ID right below:");
 		fid >> ellipticSolver;
 
-		setPositionToRead(fid,"type method ID right above:");
+		setPositionToRead(fid,"type method ID right below:");
 		fid >> hyperbolicSolver;
 
 		setPositionToRead(fid,"Use high order approximation:");
 		fid >> str;
-		if (!str.compare("yes")) setUseHOApproximation();
 
-		setPositionToRead(fid,"C.F.L (courant-friedilich-lendroff number):");
+		if (!str.compare("yes")){
+			setUseHOApproximation();
+		}
+
+		setPositionToRead(fid,"C.F.L (Courant-Friedilich-Lendroff):");
 		fid >> _CFL;
 
 		setPositionToRead(fid,"Discretization time on production well:");
