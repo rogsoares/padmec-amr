@@ -9,24 +9,24 @@
 * NOTE: flag and method must match with souce code flags
 */
 
-Chosse one of the methods availables above to solve the elliptic equation:
+Chosse one of the methods availables below to solve the elliptic equation:
 1 -> EBFV1
 2 -> EBFV1-local
 
-type method ID right above:
+type method ID right below:
 1
 
-Chosse one of the methods availables above to solve the hyperbolic equation:
+Chosse one of the methods availables below to solve the hyperbolic equation:
 1 -> EBFV1
 2 -> EBFV1_adaptative
 
-type method ID right above:
+type method ID right below:
 1
 
 Use high order approximation:
 no
 
-C.F.L (courant-friedilich-lendroff number):
+C.F.L (Courant-Friedilich-Lendroff):
 0.7
 
 Discretization time on production well:
@@ -40,7 +40,7 @@ mesh filename:
 /home/rogerio/projetos/GOOGLE_CODES/padmec-amr/trunk/simulation-parameters/3D_simulations/FS3D-Helmig/pp-data-files/FS3D_Helmig.msh
 
 export filename (to VTK format without extension .vtk):
-/home/rogerio/projetos/GOOGLE_CODES/padmec-amr/trunk/simulation-parameters/3D_simulations/FS3D-Helmig/results/FS3D-Helmig-dvtol1e-3
+/home/rogerio/projetos/GOOGLE_CODES/padmec-amr/trunk/simulation-parameters/3D_simulations/FS3D-Helmig/results/FS3D-Helmig
 
 Start simulation from <restart> file?
 no

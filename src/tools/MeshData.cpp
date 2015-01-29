@@ -68,12 +68,12 @@ namespace PRS{
 		pEntity node;
 		VIter vit = M_vertexIter(theMesh);
 		while ( (node=VIter_next(vit)) ){
-			if ( pFunc_numRemoteCopies(node) ){
-				remoteNodesSet.insert(EN_id(node));
-			}
-			else{
+//			if ( pFunc_numRemoteCopies(node) ){
+//				remoteNodesSet.insert(EN_id(node));
+//			}
+//			else{
 				numUniqueNodes++;
-			}
+//			}
 		}
 
 		i = 0;
@@ -145,19 +145,19 @@ namespace PRS{
 		vit = M_vertexIter(theMesh);
 		while ( (node=VIter_next(vit)) ){
 			ID = EN_id(node);
-			if ( pFunc_numRemoteCopies(node) ){
-				Iter = remoteNodesLowSet.find( ID );
-				if ( Iter != remoteNodesLowSet.end() ){
-					apOrdering[j] = ID;
-					petscOrdering[j] = i++;
-					j++;
-				}
-			}
-			else{
+//			if ( pFunc_numRemoteCopies(node) ){
+//				Iter = remoteNodesLowSet.find( ID );
+//				if ( Iter != remoteNodesLowSet.end() ){
+//					apOrdering[j] = ID;
+//					petscOrdering[j] = i++;
+//					j++;
+//				}
+//			}
+//			else{
 				apOrdering[j] = ID;
 				petscOrdering[j] = i++;
 				j++;
-			}
+//			}
 		}
 		remoteNodesLowSet.clear();
 		delete[] recvNs;
@@ -259,28 +259,53 @@ namespace PRS{
 		EIter_delete(eit);
 
 		// search for flagged faces (on boundary only)
-		// =========================================================================
+		// -------------------------------------------------------
 		if (theMesh->getDim()==3){
-			FIter fit = M_faceIter( theMesh );
-			while ( (face = FIter_next(fit)) ){
-				if (!theMesh->getRefinementDepth(face)){
-					int flag = EN_getFlag(face);
-					//printf("face flag: %d\n",flag);
-					if ( !pSimPar->isNodeFree(flag) ){
-						for (i=0; i<3; i++){
-							ID = get_AppToPETSc_Ordering(EN_id(face->get(0,i)));
-							dirichlet[ID] = pSimPar->getBC_Value(flag);
+
+			// External boundary condition defined
+			// -------------------------------------------------------
+			if (pSimPar->SimulationHas_BC_ExternalDefinition()){
+				double coords[3], x, y, z;
+				FIter fit = M_faceIter( theMesh );
+				while ( (face = FIter_next(fit)) ){
+					if (!theMesh->getRefinementDepth(face)){
+						int flag = EN_getFlag(face);
+						if ( !pSimPar->isNodeFree(flag) ){
+							for (i=0; i<3; i++){
+								ID = EN_id(face->get(0,i));
+								pVertex v = (pVertex)theMesh->getVertex(ID);
+								ID = get_AppToPETSc_Ordering(ID);
+
+								V_coord(v,coords);
+								x = coords[0];
+								y = coords[1];
+								z = coords[2];
+
+								dirichlet[ID] = pSimPar->exact_solution(x,y,z);
+							}
 						}
 					}
 				}
+				FIter_delete(fit);
 			}
-			FIter_delete(fit);
+			else{
+				// conventional (Dirichlet) boundary condition: specified in numeric.dat
+				// --------------------------------------------------------------------
+				FIter fit = M_faceIter( theMesh );
+				while ( (face = FIter_next(fit)) ){
+					if (!theMesh->getRefinementDepth(face)){
+						int flag = EN_getFlag(face);
+						if ( !pSimPar->isNodeFree(flag) ){
+							for (i=0; i<3; i++){
+								ID = get_AppToPETSc_Ordering(EN_id(face->get(0,i)));
+								dirichlet[ID] = pSimPar->getBC_Value(flag);
+							}
+						}
+					}
+				}
+				FIter_delete(fit);
+			}
 		}
-
-		for (MIter iter = dirichletBegin(); iter!=dirichletEnd(); iter++){
-			//printf("\nid[%d] - %.6f",iter->first,iter->second);
-		}
-//		throw 1;
 
 		if (!P_getSumInt(dirichlet.size()) ){
 			throw Exception(__LINE__,__FILE__,"Prescribed (dirichlet) nodes were not found. Simulation cannot proceed.\n");

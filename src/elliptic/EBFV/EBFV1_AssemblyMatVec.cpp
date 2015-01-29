@@ -101,14 +101,23 @@ namespace PRS{
 			pMData->createVectorsForMatrixF(F[0]);
 		}
 
+		IS rows_F, cols_F, rows_E, cols_E;
+		ISCreateGeneral(PETSC_COMM_WORLD,pMData->get_F_nrows(),pMData->get_F_rows_ptr(),PETSC_COPY_VALUES,&rows_F);
+		ISCreateGeneral(PETSC_COMM_WORLD,numGF,pMData->get_F_cols_ptr(),PETSC_COPY_VALUES,&cols_F);
+		ISCreateGeneral(PETSC_COMM_WORLD,nrows,rows,PETSC_COPY_VALUES,&rows_E);
+		ISCreateGeneral(PETSC_COMM_WORLD,np*dim,pMData->get_pos_ptr(),PETSC_COPY_VALUES,&cols_E);
+
 		for (i=0; i<ndom; i++){
-			//MatGetSubMatrixRaw(F[i],pMData->get_F_nrows(),pMData->get_F_rows_ptr(),numGF,pMData->get_F_cols_ptr(),PETSC_DECIDE,MAT_INITIAL_MATRIX,&matvec_struct->F[i]);
-			//MatGetSubMatrixRaw(E[i],nrows,rows,np*dim,pMData->get_pos_ptr(),PETSC_DECIDE,MAT_INITIAL_MATRIX,&matvec_struct->E[i]);
-			// MatGetSubMatrix(Mat mat,IS isrow,IS iscol,MatReuse cll,Mat *newmat);
-			throw Exception(__LINE__,__FILE__,"YOU MUST FIX THIS!!!!");
+			MatGetSubMatrix(F[i],rows_F,cols_F,MAT_INITIAL_MATRIX,&matvec_struct->F[i]);
+			MatGetSubMatrix(E[i],rows_E,cols_E,MAT_INITIAL_MATRIX,&matvec_struct->E[i]);
 			MatDestroy(&E[i]);
 			MatDestroy(&F[i]);
 		}
+
+		ISDestroy(&rows_F);
+		ISDestroy(&cols_F);
+		ISDestroy(&rows_E);
+		ISDestroy(&cols_E);
 
 		// Create the output vector
 		VecCreate(PETSC_COMM_WORLD,&output);
@@ -135,6 +144,12 @@ namespace PRS{
 		int nrows = matvec_struct->nrows;
 		int *rows = matvec_struct->rows;
 
+		IS rowsToImport;
+		ISCreateGeneral(PETSC_COMM_WORLD,nrows,rows,PETSC_COPY_VALUES,&rowsToImport);
+
+		IS colsToImport;
+		ISCreateGeneral(PETSC_COMM_WORLD,numGF,pMData->get_idxFreecols_ptr(),PETSC_COPY_VALUES,&colsToImport);
+
 #ifdef _SEEKFORBUGS_
 		if (!nrows){
 			throw Exception(__LINE__,__FILE__,"nrows NULL!");
@@ -145,9 +160,7 @@ namespace PRS{
 #endif
 
 		if (assemblyLHS){
-			//MatGetSubMatrixRaw(A,nrows,rows,numGF,pMData->get_idxFreecols_ptr(),PETSC_DECIDE,MAT_INITIAL_MATRIX,&LHS);
-			// MatGetSubMatrix(Mat mat,IS isrow,IS iscol,MatReuse cll,Mat *newmat);
-			throw Exception(__LINE__,__FILE__,"YOU MUST FIX THIS!!!!");
+			MatGetSubMatrix(A,rowsToImport,colsToImport,MAT_INITIAL_MATRIX,&LHS);
 		}
 
 		// --------------------------- ASSEMBLY RHS VECTOR -------------------------
@@ -156,11 +169,13 @@ namespace PRS{
 		if (assemblyRHS){
 			Mat rhs;
 			int m,n;
-			//MatGetSubMatrixRaw(A,nrows,rows,numGP,pMData->get_idxn_ptr(),PETSC_DECIDE,MAT_INITIAL_MATRIX,&rhs);
-			// MatGetSubMatrix(Mat mat,IS isrow,IS iscol,MatReuse cll,Mat *newmat);
-			throw Exception(__LINE__,__FILE__,"YOU MUST FIX THIS!!!!");
 
+			IS colsToImport_dirichlet;
+			ISCreateGeneral(PETSC_COMM_WORLD,numGP,pMData->get_idxn_ptr(),PETSC_COPY_VALUES,&colsToImport_dirichlet);
+			MatGetSubMatrix(A,rowsToImport,colsToImport_dirichlet,MAT_INITIAL_MATRIX,&rhs);
 			MatDestroy(&A);
+			ISDestroy(&colsToImport_dirichlet);
+
 			VecCreate(PETSC_COMM_WORLD,&RHS);
 			VecSetSizes(RHS,PETSC_DECIDE,numGF);
 			VecSetFromOptions(RHS);
@@ -189,6 +204,8 @@ namespace PRS{
 			MatDestroy(&rhs);
 		}
 		rows = 0;
+		ISDestroy(&rowsToImport);
+		ISDestroy(&colsToImport);
 		return 0;
 	}
 
