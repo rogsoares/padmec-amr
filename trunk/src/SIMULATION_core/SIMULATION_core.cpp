@@ -109,6 +109,9 @@ namespace PRS {
 		// Initialize elliptic and hyperbolic solver pointers
 		pElliptic_eq = init_EllipticSolverPointer( pSimPar->getEllipticSolver() );
 		pHyperbolic_eq = init_HyperbolicSolverPointer( pSimPar->getHyperbolicSolver() );
+
+		// define how the dirichlet and neumann values will be evaluated (from numeric.dat file or from Boundary_conditions.h)
+		pSimPar->defineExactSolution();
 		return 0;
 	}
 

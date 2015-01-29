@@ -67,24 +67,28 @@ namespace PRS{
 		Mat mSol,mLSol;
 		
 		// create a column matrix to receive output vector values (mSol)
-		MatCreateAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,numGN,1,0,PETSC_NULL,0,PETSC_NULL,&mSol);
+		MatCreateAIJ(PETSC_COMM_WORLD,numGN,1,numGN,1,0,PETSC_NULL,0,PETSC_NULL,&mSol);
+		MatSetUp(mSol);
+		MatSetOption(mSol, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
 		
 		int nLIDs, *IDs_ptr;
 		pMData->getRemoteIDs(nLIDs,&IDs_ptr);
 		
 		// transference process: from vector to column matrix
 		VecGetArray(output,&sol);
+
 		MatSetValues(mSol,matvec_struct->nrows,matvec_struct->rows,1,&col,sol,INSERT_VALUES);
 		VecRestoreArray(output,&sol);
 		MatAssemblyBegin(mSol,MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(mSol,MAT_FINAL_ASSEMBLY);
-		//VecView(output,PETSC_VIEWER_STDOUT_WORLD); //throw 1;
+		//VecView(output,PETSC_VIEWER_STDOUT_WORLD); //
 		
 		// remote values cannot be gotten from remote matrix positions. transfer (via MatGetSubMatrixRaw) necessary remote values 
 		// to each process to a second column matrix (mLSol).
-		// MatGetSubMatrixRaw(mSol,nLIDs,IDs_ptr,1,&col,PETSC_DECIDE,MAT_INITIAL_MATRIX,&mLSol);
-		// MatGetSubMatrix(Mat mat,IS isrow,IS iscol,MatReuse cll,Mat *newmat);
-		throw Exception(__LINE__,__FILE__,"YOU MUST FIX THIS!!!!");
+		IS rows, cols;
+		ISCreateGeneral(PETSC_COMM_WORLD,nLIDs,IDs_ptr,PETSC_COPY_VALUES,&rows);
+		ISCreateGeneral(PETSC_COMM_WORLD,1,&col,PETSC_COPY_VALUES,&cols);
+		MatGetSubMatrix(mSol,rows,cols,MAT_INITIAL_MATRIX,&mLSol);
 		MatDestroy(&mSol);
 		MatGetOwnershipRange(mLSol,&m,&n);
 		

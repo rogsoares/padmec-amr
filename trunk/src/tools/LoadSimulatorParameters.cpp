@@ -106,8 +106,11 @@ namespace PRS{
 			throw Exception(__LINE__,__FILE__,msg);
 		}
 		fid.close();
+
 		M_load(theMesh,prepFilename().c_str());		// load mesh using FMDB
 
+
+		cout << "Eliptic solver: " << getEllipticSolver() << endl;
 		switch ( getEllipticSolver() ){
 		case 1:	//.............................................. EBFV1
 			if (theMesh->getDim()==2){
@@ -116,6 +119,7 @@ namespace PRS{
 			else{
 				EBFV1_preprocessor_3D(theMesh,pData,ndom);
 			}
+			break;
 		case 2:	//.............................................. EBFV1 MODIFIED
 			if (theMesh->getDim()==3){
 				throw Exception(__LINE__,__FILE__,"MEBFV1 method is available for 2-D domains only.");

@@ -4,6 +4,7 @@
 #include "GeomData.h"
 #include "pre-processorList.h"
 #include "SimParStrucs.h"
+#include "Boundary_Conditions.h"
 
 
 typedef std::set<int> setNodes;
@@ -282,7 +283,21 @@ public:
 		return remeshing_param3;
 	}
 
+	bool SimulationHas_BC_ExternalDefinition() const{
+		return bc_external_definition;
+	}
+
+	// function pointer for exact solution
+	double (*exact_solution)(double x, double y, double z);
+
+	void defineExactSolution();
+
 private:
+
+	bool bc_external_definition;
+	char** __argv;
+	int    __argc;
+
 
 	RefinementStrategies refstrategy;
 

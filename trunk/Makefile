@@ -25,8 +25,8 @@ CXXFLAGS=-g -DNOADAPTATION -DPARALLEL
 #CXXFLAGS=-DPARALLEL -g -DNOADAPTATION -Wunused-local-typedefs -D_SEEKFORBUGS_ -DTRACKING_PROGRAM_STEPS
 #CXXFLAGS=-DPARALLEL -g -Wall -Wunused -D__ADAPTATION_DEBUG__ -D__ERROR_ANALYSIS_DEBUG__ -D_SEEKFORBUGS_ -DTRACKING_PROGRAM_STEPS -DFVPO
 # scientific_application folder is where libraries are installed 
-APP_DIR=$(HOME)/applications
-PROJ_DIR=$(HOME)/projetos/padmec-amr/trunk
+APP_DIR=$(HOME)/scientific_applications
+PROJ_DIR=$(HOME)/projetos/GOOGLE_CODES/padmec-amr/trunk
 GMSH_DIR=$(APP_DIR)/gmshGMSH
 
 # compilers
@@ -41,7 +41,7 @@ INCLUDES=-I$(PROJ_DIR)/include \
 	-I$(PROJ_DIR)/src/SIMULATION_core \
 	-I$(PROJ_DIR)/src/tools -I$(PROJ_DIR)/src/tools/GeomData \
 	-I$(GMSH_DIR)/build/Common -I$(GMSH_DIR)/Common -I$(GMSH_DIR)/Geo -I$(GMSH_DIR)/Mesh -I$(GMSH_DIR)/Numeric -I$(GMSH_DIR)/Parser -I$(GMSH_DIR)/Plugin -I$(GMSH_DIR)/Post \
- 	-I$(APP_DIR)/autopack/include -I$(APP_DIR)/FMDB-2011/include -I$(APP_DIR)/petsc-3.5.2/include -I$(APP_DIR)/petsc-3.5.2/linux-gnu-c-opt/include
+ 	-I$(APP_DIR)/autopack/include -I$(APP_DIR)/FMDB-2011/include -I$(PETSC_DIR)/include -I$(PETSC_DIR)/linux-c-opt/include
 
 LIBS1=-L$(APP_DIR)/FMDB-2011/lib -lFMDB-O \
      -L$(APP_DIR)/ParMetis-3.1/lib -lparmetis -lmetis \
@@ -84,7 +84,8 @@ OBJS_HYPERBOLIC=$(OBJ_DIR)/EBFV1_velocityField.o $(OBJ_DIR)/EBFV1_hyperbolic.o $
                 $(OBJ_DIR)/EBFV1_advanceSaturation.o $(OBJ_DIR)/SaturationGradient.o
 
 OBJS_TOOLS=$(OBJ_DIR)/MeshData.o $(OBJ_DIR)/MeshData2.o $(OBJ_DIR)/OilProductionManagement.o $(OBJ_DIR)/LoadMeshAdaptationParameters.o  $(OBJ_DIR)/load_EBFV1_PreProcessorData.o $(OBJ_DIR)/auxiliar.o \
-           $(OBJ_DIR)/SimulatorParameters.o $(OBJ_DIR)/Exception.o $(OBJ_DIR)/exportVTK.o $(OBJ_DIR)/PhysicPropData.o $(OBJ_DIR)/PhysicPropData2.o $(OBJ_DIR)/LoadSimulatorParameters.o
+           $(OBJ_DIR)/SimulatorParameters.o $(OBJ_DIR)/SimulatorParameters2.o $(OBJ_DIR)/Exception.o $(OBJ_DIR)/exportVTK.o $(OBJ_DIR)/PhysicPropData.o $(OBJ_DIR)/PhysicPropData2.o $(OBJ_DIR)/LoadSimulatorParameters.o \
+           $(OBJ_DIR)/Boundary_Conditions.o
 
 OBJS_GEOMDATA=$(OBJ_DIR)/GeomData.o $(OBJ_DIR)/GeomData2.o $(OBJ_DIR)/GeomData3.o $(OBJ_DIR)/GeomData_initialize.o $(OBJ_DIR)/GeomData_calculate.o $(OBJ_DIR)/GeomData_Mapping.o \
               $(OBJ_DIR)/GeomData_AllocateMemory.o $(OBJ_DIR)/GeomData_TransferData.o 
