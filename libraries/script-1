@@ -23,12 +23,11 @@ echo ' ' >> $HOME/.bashrc
 
 echo ' ' >> $HOME/.bashrc 
 echo '# PETSc evn variables' >> $HOME/.bashrc 
-echo 'export PETSC_DIR=$INSTALL_APP_DIR/petsc-2.3.3-p15-opt' >> $HOME/.bashrc 
-echo 'export PETSC_ARCH=linux-gnu-c-opt' >> $HOME/.bashrc 
+echo 'export PETSC_DIR=$INSTALL_APP_DIR/petsc-3.5.2' >> $HOME/.bashrc 
+echo 'export PETSC_ARCH=linux-c-opt' >> $HOME/.bashrc 
 
 echo ' ' >> $HOME/.bashrc 
 echo '# Update LD_LIBRARY_PATH ' >> $HOME/.bashrc 
-#echo 'export LD_LIBRARY_PATH=$HOME/applications/gsl-1.9/dir-install/lib:$LD_LIBRARY_PATH' >> $HOME/.bashrc
-echo 'export PATH=$HOME/applications/mpich2-1.4/dir-install/bin:$PATH' >> $HOME/.bashrc
+echo 'export PATH=$HOME/applications/mpich-3.1.3/build/bin:$PATH' >> $HOME/.bashrc
 
 
