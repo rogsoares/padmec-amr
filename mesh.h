@@ -17,13 +17,21 @@ struct VertexInfo{
 	int physical;
 	int geom;
 	int numRCopies;
+
+	// Geometric Coefficients
+	double volume;
 };
 
 struct EdgeInfo{
 	int MPV_id;		// Middle Point Vertex ID: for refinement purposes
 	int physical;	// physical flag: dirichlet, neumann, etc
 	int geom;		// geometry identification
-	int numRCopies;
+	int numRCopies;	// parallel computing only
+
+	// Geometric Coefficients
+	std::map<int, double*> Cij;
+
+	double* Dij;
 };
 
 struct TriInfo{
@@ -53,7 +61,7 @@ struct TetraInfo{
 	int physical;
 };
 
-enum ELEM_TYPE{TRI, QUAD, TETRA};
+enum ELEM_TYPE{TRI/*triangle*/, QUAD, TETRA};
 enum REF_MOMENT{BEFORE, AFTER};
 
 namespace MeshDB{
@@ -65,18 +73,19 @@ namespace MeshDB{
 
 		void createVertex(int ID, VertexInfo* vinfo);
 		void createVertex(int ID, double x, double y, double z, int physical=0, int geom=0);
-		void getVertex(int ID,VertexInfo** vinfo);
 		void createEdge(int id0, int id1, int physical, int geom);
 		void createEdgeDataStructure();
 		void deleteEdgeDataStructure();
 		void createTriangle(int id0, int id1, int id2, int physical, int geom);
-		void setVertex(int ID, int physical, int geom);
+		void createQuad(int id0, int id1, int id2, int id3, int physical, int geom);
 		void createTetrahedron(int id0, int id1, int id2, int id3, int physical, int geom);
 
+		void setVertex(int ID, int physical, int geom);
+		void getVertex(int ID,VertexInfo** vinfo);
 		int getNumVertices(REF_MOMENT rm) const;
 		int getNumEdges(REF_MOMENT rm) const;
 		int getNumTriangles(REF_MOMENT rm) const;
-		int getNumQuad() const { return 0; }
+		int getNumQuad(REF_MOMENT rm) const;
 		int getNumTetras(REF_MOMENT rm) const;
 
 		void refine_mesh(int refLevel);
@@ -91,24 +100,25 @@ namespace MeshDB{
 
 		ELEM_TYPE getElemType() const;
 		string getElementType() const;
-		void setElemType(ELEM_TYPE et);
 
-		void setChacteristics();
+		void setElemType(int eType);
 
 		void read(const char* filename);
 		void write(const char* filename);
+
+		void quad_preprocessor();
 
 	private:
 
 		int dim;
 		ELEM_TYPE elem_type;
 
-		int numVertices_before;
-		int numVertices_after;
-		int numEdges_before;
-		int numTriangles_before;
-		int numQuad_before;
-		int numTetra_before;
+		int numVertices_before;		// number of vertices before refinement (original)
+		int numVertices_after;		// number of vertices after refinement (new mesh)
+		int numEdges_before;		// number of edges before refinement (original)
+		int numTriangles_before;	// number of triangles before refinement (original)
+		int numQuad_before;			// number of quads before refinement (original)
+		int numTetra_before;		// number of tetrahedra before refinement (original)
 
 		int _refLevel;
 
@@ -117,6 +127,7 @@ namespace MeshDB{
 		std::map<int, std::map<int, EdgeInfo*> >  EdgeDB;
 		std::list<TriInfo*> TriangleDB;
 		std::list<TetraInfo*> TetraDB;
+		std::list<QuadInfo*> QuadDB;
 
 		void printVertexList(ofstream& fid) const;
 		void printEdgeList(ofstream& fid) const;
