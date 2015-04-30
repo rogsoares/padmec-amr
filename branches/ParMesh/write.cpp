@@ -19,7 +19,7 @@ namespace MeshDB{
 		int v_count = 0;
 		int e_count = 0;
 		int f_count = getNumTriangles(AFTER);
-		int q_count = getNumQuad();
+		int q_count = getNumQuad(AFTER);
 		int t_count = getNumTetras(AFTER);
 
 
@@ -123,6 +123,7 @@ namespace MeshDB{
 		fid << "Number of vertices           : " << getNumVertices(BEFORE) << "      " << getNumVertices(AFTER) << endl;
 		fid << "Number of edges over geometry: " << getNumEdges(BEFORE) << "      " << getNumEdges(AFTER) << endl;
 		fid << "Number of triangles          : " << getNumTriangles(BEFORE) << "      " << getNumTriangles(AFTER) << endl;
+		fid << "Number of quad               : " << getNumQuad(BEFORE) << "      " << getNumQuad(AFTER) << endl;
 		fid << "Number of tetrahedra         : " << getNumTetras(BEFORE) << "      " << getNumTetras(AFTER) << endl;
 
 	}

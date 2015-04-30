@@ -36,6 +36,8 @@ namespace MeshDB{
 		numTriangles_before = 0;
 		numTetra_before = 0;
 
+		int eType;
+
 		for (int i=0; i<NbNod; i++){
 			fid >> iElm >> elemType >> physical >> geom >> iNbNod;
 			for(int i=0;i<iNbNod;i++){
@@ -54,15 +56,23 @@ namespace MeshDB{
 				// prescribed triangles
 			case 2:
 				createTriangle(IDs[0],IDs[1],IDs[2],physical,geom);
+				eType = 2;
 				numTriangles_before++;
+				break;
+			case 3:
+				createQuad(IDs[0],IDs[1],IDs[2],IDs[3],physical,geom);
+				eType = 3;
+				numQuad_before++;
 				break;
 			case 4:
 				createTetrahedron(IDs[0],IDs[1],IDs[2],IDs[3],physical,geom);
+				eType = 4;
 				numTetra_before++;
 				break;
 			}
 			//cout << "OK!\n";
 		}
-		setChacteristics();
+		this->setElemType(eType);
+		this->setDim(eType);
 	}
 }
