@@ -15,21 +15,12 @@ void printCellTypeList(ofstream &, int, int);
 void printPressure(ofstream &, pMesh, PRS::PhysicPropData*);
 void printSaturation(ofstream &, pMesh, PRS::PhysicPropData*);
 void printSaturation(ofstream &, pMesh, PRS::PhysicPropData*, PRS::GeomData*);
+void printPressureGradient(ofstream& fid, PRS::GeomData* pGCData, PRS::PhysicPropData *pPPData);
 
-void printDegreeOfRefinement(ofstream &, pMesh, ErrorAnalysis*);
-void printCharacteristicLentgh(ofstream &fid, pMesh theMesh);
-void print_hNew(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis);
-void print_hOld(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis);
-void print_ElementsToBeRemoved(ofstream &fid, pMesh theMesh);
-void print_hnew_hold_percentual(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis);
-
-void printElementError(ofstream &, pMesh, ErrorAnalysis*);
-void printCharac_Lenth(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis);
-void print_Swgrad(ofstream &fid, pMesh theMesh, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData);
-void print_pw_GradientNorm(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData);
-void print_Sw_GradientNorm(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData);
-void print_Sw_GradientNorm2(ofstream &fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis, PRS::SimulatorParameters *pSimPar, PRS::PhysicPropData *pPPData);
-void print_SingularElements(ofstream& fid, pMesh theMesh, ErrorAnalysis *pErrorAnalysis);
+//void printElementError(ofstream &, pMesh, ErrorAnalysis*);
+void printElementError(ofstream&, GeomData*, ErrorAnalysis*);
+void print_h_ratio(ofstream &, GeomData*, ErrorAnalysis*);
+void print_singular_regions(ofstream &, GeomData*, ErrorAnalysis*);
 
 // New VTK source file
 // --------------------------------------------------------------

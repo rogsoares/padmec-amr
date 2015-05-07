@@ -8,6 +8,19 @@
 #include "GeomData.h"
 
 namespace PRS{
+
+	double GeomData::getElem_CDL(int i) const{
+		return elem_CDL[i];
+	}
+
+	int GeomData::getNumNodes() const{
+		return numNodes;
+	}
+
+	int GeomData::getNumElemPerDomain(int i) const{
+		return numDomElem[i];
+	}
+
 	int GeomData::getNumEdgesPerDomain(int i) const{
 		return numDomEdges[i];
 	}
@@ -24,7 +37,11 @@ namespace PRS{
 		return numNodesPerDomain[i];
 	}
 
-	void GeomData::GeomData::getEdge(int dom, int row, int &idx_0, int &idx_1, int &idx0_global, int &idx1_global){
+	void GeomData::getEdge(int dom, int row, const int* &ptr){
+		ptr = edges[dom].getrowconst(row);
+	}
+
+	void GeomData::getEdge(int dom, int row, int &idx_0, int &idx_1, int &idx0_global, int &idx1_global){
 		idx_0 = edges[dom].getValue(row,0);
 		idx_1 = edges[dom].getValue(row,1);
 		idx0_global = edges[dom].getValue(row,2);
@@ -61,6 +78,10 @@ namespace PRS{
 		volumeJ = volume[dom].getValue(idx_1);
 	}
 
+	int GeomData::getNodeID(int i_th) const{
+		return pNodeID[i_th];
+	}
+
 	void GeomData::getID(int dom, int idx_0, int idx_1, int& id0, int &id1){
 		id0 = ID[dom].getValue(idx_0);
 		id1 = ID[dom].getValue(idx_1);
@@ -90,6 +111,17 @@ namespace PRS{
 		idx0_global = faces_bdry[dom].getValue(row,6);	// global index number for vertex ID
 		idx1_global = faces_bdry[dom].getValue(row,7);	// idem
 		idx2_global = faces_bdry[dom].getValue(row,8);	// idem
+	}
+
+	void GeomData::getElement(int dom, int row, const int* &idx){
+		idx = elem[dom].getrowconst(row);
+	}
+
+	void GeomData::getElement(int dom, int row, int* idx){
+		for(int i=0;i<dim+1;i++){
+			idx[i] = elem[dom].getValue(row,i);
+			idx[i+dim+1] = elem[dom].getValue(row,i+dim+1);
+		}
 	}
 
 	// get control volume for one vertex
@@ -174,6 +206,15 @@ namespace PRS{
 		flag2 = external_bdry_elem[0].getValue(idx,3);
 	}
 
+	void GeomData::getExternalBdryFaces(int idx, int &idx0_global, int &idx1_global, int &idx2_global, int &flag1, int &flag2, int &flag3){
+		idx0_global = external_bdry_elem[0].getValue(idx,0);
+		idx1_global = external_bdry_elem[0].getValue(idx,1);
+		idx2_global = external_bdry_elem[0].getValue(idx,2);
+		flag1 = external_bdry_elem[0].getValue(idx,3);
+		flag2 = external_bdry_elem[0].getValue(idx,4);
+		flag3 = external_bdry_elem[0].getValue(idx,5);
+	}
+
 	int GeomData::getNumEBE() const{
 		return numExtBdryEdges;
 	}
@@ -216,10 +257,14 @@ namespace PRS{
 		}
 	}
 
-	void GeomData::getCoordinates(int row, int *coords){
+	void GeomData::getCoordinates(int row, double *coords){
 		for(int i=0; i<3; i++){
 			coords[i] = pCoords->getValue(row,i);
 		}
+	}
+
+	void GeomData::getCoordinates(int row, const double* &coords){
+		coords = pCoords->getrowconst(row);
 	}
 
 	void GeomData::getCij(int dom, int row, double* cij){
@@ -227,6 +272,11 @@ namespace PRS{
 		cij[1] = Cij[dom].getValue(row,1);
 		cij[2] = Cij[dom].getValue(row,2);
 	}
+
+	void GeomData::getCij(int dom, int row, const double* &cij){
+		cij = Cij[dom].getrowconst(row);
+	}
+
 	void GeomData::setCij(int dom, int row, double* cij){
 		Cij[dom].setValue(row,0,cij[0]);
 		Cij[dom].setValue(row,1,cij[1]);
@@ -238,9 +288,18 @@ namespace PRS{
 		dij[1] = Dij[dom].getValue(row,1);
 		dij[2] = Dij[dom].getValue(row,2);
 	}
+
+	void GeomData::getDij(int dom, int row, const double* &dij){
+		dij = Dij[dom].getrowconst(row);
+	}
+
 	void GeomData::setDij(int dom, int row, double* dij){
 		Dij[dom].setValue(row,0,dij[0]);
 		Dij[dom].setValue(row,1,dij[1]);
 		Dij[dom].setValue(row,2,dij[2]);
+	}
+
+	int GeomData::getNumFacesSharingVertex(int node) const{
+		return numElemSharingVertex[node];
 	}
 }

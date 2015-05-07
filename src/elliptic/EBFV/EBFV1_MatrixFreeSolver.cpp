@@ -52,8 +52,11 @@ namespace PRS{           // PRS: Petroleum Reservoir Simulator
 		}
 		guess_sol = true;
 
+
+
 		// call PETSc to solver system of equation
 		KSP_solver(matrix,matvec_struct->G,matvec_struct->RHS,output,pSimPar,guessNonZero,KSPBCGS,PCASM,_KSPiter);
+		//printVectorToFile(matvec_struct->RHS,"output.txt");
 
 		if (_KSPiter >= 10000){
 			throw Exception(__LINE__,__FILE__,"Number of KSP iterations reached the maximum number allowed: 10.000 iterations."

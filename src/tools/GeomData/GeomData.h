@@ -117,14 +117,15 @@ namespace PRS{
 		void getSumIJ(pEntity,DataArray&);
 
 		void getCij(int dom, int row, double* cij);
+		void getCij(int dom, int row, const double* &cij);
 		void setCij(int dom, int row, double* cij);
 		void getDij(int dom, int row, double* dij);
+		void getDij(int dom, int row, const double* &dij);
 		void setDij(int dom, int row, double* dij);
 		void calculateNumEdges(pMesh);
-		void calculateNumFaces(pMesh);
+		void calculateNumElements(pMesh);
 		void calculateNumFacesTmp(pMesh);
 		void calculateNumBDRYEdges(pMesh);
-		void calculateNumTetras(pMesh);
 		void calculateNumBDRYFaces(pMesh);
 		void calculateNumNodes(pMesh);
 		void calculateNumBdryNodes(pMesh );
@@ -134,21 +135,30 @@ namespace PRS{
 		void allocatePointers(int,int);
 		void deallocatePointers(int);
 		int getNumEdgesPerDomain(int i) const;
+		int getNumElemPerDomain(int i) const;
 		int getNumBDRYEdgesPerDomain(int i) const;
 		int getNumBdryFacesPerDomain(int i) const;
 		int getNumNodesPerDomain(int i) const;
+		int getNumNodes() const;
 		void cleanData(pMesh);
 		// needed to create an indexed data structured and though get fast access (direct access, O(1)) to any data.
 		void mappingNodesIds(pMesh theMesh);
 		// creates a mapping for saturation and pressure solution based in a new mesh (the adapted mesh)
 		void mappingNodesIds_Tmp(pMesh theMesh);
+
+		void getEdge(int dom, int row, const int* &ptr);
 		void getEdge(int dom, int row, int &idx_0, int &idx_1, int &idx0_global, int &idx1_global);
 		void getEdge(int dom, int row, int &idx_0, int &idx_1, int &idx0_global, int &idx1_global, int &flag1, int &flag2);
+
 		void getNodeIdx_Global(int dom, int i, int &idx);
 		void setVolume(int idx, double v);
 		void getVolume(int idx,double &v);
 		void getVolume(int dom, int idx, double& vol);
 		void getVolume(int dom, int idx_0, int idx_1, double& volumeI, double& volumeJ);
+
+		// return the i_th global node ID
+		int getNodeID(int i_th) const;
+
 		void getID(int dom, int idx_0, int idx_1, int& id0, int &id1);
 		void getID(int dom, int idx, int& id);
 		void getBdryEdge(int dom, int row, int &idx_0, int &idx_1);
@@ -178,9 +188,12 @@ namespace PRS{
 		void setCij_norm(int dom, int idx, double val);
 		void getCij_norm(int dom, int idx, double &val);
 		void getVersor_ExternalBdryElement(int idx, double* versor);
+
 		// Used by Saturation Gradient
 		void getExternalBdryEdges(int idx, int &idx0_global, int &idx1_global, int &flag1, int &flag2);
-		int getNumEBE() const;
+		void getExternalBdryFaces(int idx, int &idx0_global, int &idx1_global, int &idx2_global, int &flag1, int &flag2, int &flag3);
+		int getNumEBE() const;	// number if external boundary elements
+
 		void setTotalNumberOfEdges(int n);
 		void getTotalNumberOfEdges(int &n) const;
 		void setMeshNodes(int n);
@@ -191,7 +204,8 @@ namespace PRS{
 		const int* getDomainList() const;
 		int getNumElements() const;
 		void getConnectivities(int row, int *connectivities);
-		void getCoordinates(int row, int *coords);
+		void getCoordinates(int row, double *coords);
+		void getCoordinates(int row, const double* &coords);
 
 		/*MEBFV: function for the Modified EBFV*/
 		void initializeElementMatrix(int numElements);
@@ -202,6 +216,38 @@ namespace PRS{
 		void setVersor(pEntity edge, double* versor);
 		void getVersor(pEntity edge, double* versor) const;
 
+		// idx is an array of size 2*(dim+1) which stores local and global indices for an element
+		// if triangle: 3 locals and 3 globals: total = 2*(2+1) = 6 indices
+		// if tetra: 4 locals and 4 globals:    total = 2*(3+1) = 8 indices
+		void getElement(int dom, int row, int* idx);
+
+		void getElement(int dom, int row, const int* &idx);
+
+		// calculate number of elements sharing the same vertex for all mesh vertices
+		void calculateNumElemSharingVertex();
+
+		// return number of elements sharing a vertex
+		int getNumFacesSharingVertex(int elem) const;
+
+
+		// calculate characteristic dimesion lentgh (CDL) of an element
+		// it simply consists to compute the arithmetic mean of all element's edges lengths
+		void calculate_CDL();
+		double getElem_CDL(int i) const;
+
+		// after calculate_CDL has been called, calculate an average CDL per node
+		void calculate_NodeAverage_CDL();
+
+		// return element height: h_new/h_old
+		double getElem_HR(int i) const{
+			return elem_HR[i];
+		}
+
+		// element height ratio: h_new/h_old
+		void setElem_HR(int i, double hr){
+			elem_HR[i] = hr;
+		}
+
 	private:
 		int _ndom;
 		int* domainList;
@@ -211,16 +257,21 @@ namespace PRS{
 		double smallestEdge;
 		int numGEdges;					// number or global edges
 		int* numDomEdges;				// number of edges per domain
-		int* numDomFaces;				// number of face per domain
-		int* numDomTetras;				// number of tetrahedra per domain
+		int* numDomElem;				// number of elements per domain
 		int* numDomFaces_tmp;			// number of face per domain adapted mesh
 		int* numDomBDRYEdges;			// number of edges per domain
 		int* numDomBDRYFaces;			// number of edges per domain
 		int* numNodesPerDomain;			// number of nodes per domain
 		int* numBdryNodesPerDomain;		// number of nodes per domain
+		int* numElemSharingVertex;		// number of elements sharing a vertex for all mesh vertices
 		int numExtBdryEdges;
 		int numExtBdryFaces;
-		int numNodes;
+		int numNodes;					// total number of mesh nodes
+		double* elem_CDL;				// characteristic dimension length of an element
+		double* node_CDL;
+		double* elem_HR;				// store element height ration: h_new/h_old
+
+		int* pNodeID;
 
 		int elemtype;					// elemtype = 3 (2-D triangle: 3 nodes), elemtype = 4 (3-D tetrahedron: 4 nodes)
 		int numElem;					// number of mesh elements (2D/3D)
@@ -229,7 +280,7 @@ namespace PRS{
 
 		Matrix<int> *ID;				// node ID per domain
 		Matrix<int> *edges;				// edges id0-id1 per domain, where id0 and id1 are array indices and not node IDs.
-		Matrix<int> *faces;				// stores local (per domain) and global indices for face node's IDs
+		Matrix<int> *elem;				// stores local (per domain) and global indices for face node's IDs
 		Matrix<int> *faces_tmp;			// (for interpolation):stores local (per domain) and global indices for face node's IDs
 		Matrix<int> *nodes;				// same as edges
 		Matrix<double>* volume;			//node volumes per domain

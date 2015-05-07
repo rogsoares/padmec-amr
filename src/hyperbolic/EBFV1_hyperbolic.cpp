@@ -43,9 +43,9 @@ namespace PRS{
 			calculateVelocityField(dom,dim);
 		}
 		// calculate saturation gradient if adaptation or high order approximation were required
-		if (  pSimPar->userRequiresAdaptation() || pSimPar->useHOApproximation()){
-			calculateSaturationGradient(theMesh);
-		}
+		//if (  pSimPar->userRequiresAdaptation() || pSimPar->useHOApproximation()){
+			calculateSaturationGradient();
+		//}
 		pPPData->resetNonvisc(alpha_max);
 		for (int dom=0; dom<ndom; dom++){
 			calculateIntegralAdvectiveTerm(dom,timeStep);
@@ -68,7 +68,7 @@ namespace PRS{
 			timestep_counter = 0;
 		}
 
-		pSimPar->printOutVTK(theMesh,pPPData,pEA,pSimPar,pGCData,exportSolutionToVTK);
+		//pSimPar->printOutVTK(theMesh,pPPData,pEA,pSimPar,pGCData,exportSolutionToVTK);
 		if (!P_pid()) std::cerr << "done.\n\n";
 		return 0;
 	}

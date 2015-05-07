@@ -8,64 +8,52 @@
 #include "GeomData.h"
 
 namespace PRS{
-	void GeomData::calculateNumFaces(pMesh theMesh){
-		if (theMesh->getDim()==3){
-			return;
-		}
-
-		int ndom = getNumDomains();
-		const int* domlist = getDomainList();
+	void GeomData::calculateNumElements(pMesh theMesh){
 		int dim = theMesh->getDim();
-		numDomFaces = new int[ndom];
-		pEntity face;
+		int ndom = getNumDomains();
 
-		for (int i=0; i<ndom; i++){
-			int counter = 0;
-			FIter fit = M_faceIter(theMesh);
-			while ( (face = FIter_next(fit)) ){
-				int flag1 = getFaceFlag(face);
-				int flag2 = domainList[i];
-				if (flag1==flag2){
-					counter++;
+		numDomElem = new int[ndom];
+		pEntity face, tetra;
+		if (dim==2){
+			for (int i=0; i<ndom; i++){
+				int counter = 0;
+				FIter fit = M_faceIter(theMesh);
+				while ( (face = FIter_next(fit)) ){
+					int flag1 = getFaceFlag(face);
+					int flag2 = domainList[i];
+					if (flag1==flag2){
+						counter++;
+					}
+				}
+				FIter_delete(fit);
+				numDomElem[i] = counter;
+				if (!numDomElem[i]){
+					throw Exception(__LINE__,__FILE__,"Number of element: 0.");
 				}
 			}
-			FIter_delete(fit);
-			numDomFaces[i] = counter;
-			if (!numDomFaces[i]){
-				throw Exception(__LINE__,__FILE__,"Number of faces: 0.");
-			}
 		}
-	}
-
-	void GeomData::calculateNumTetras(pMesh theMesh){
-		if (theMesh->getDim()==2){
-			return;
-		}
-
-		int ndom = getNumDomains();
-		const int* domlist = getDomainList();
-		int dim = theMesh->getDim();
-		numDomTetras = new int[ndom];
-		pEntity tetra;
-
-		for (int i=0; i<ndom; i++){
-			int counter = 0;
-			RIter rit = M_regionIter(theMesh);
-			while ( (tetra = RIter_next(rit)) ){
-				int flag1 = getTetraFlag(tetra);
-				int flag2 = domainList[i];
-				if (flag1==flag2){
-					counter++;
+		else{
+			for (int i=0; i<ndom; i++){
+				int counter = 0;
+				RIter rit = M_regionIter(theMesh);
+				while ( (tetra = RIter_next(rit)) ){
+					int flag1 = getTetraFlag(tetra);
+					int flag2 = domainList[i];
+					if (flag1==flag2){
+						counter++;
+					}
+				}
+				RIter_delete(rit);
+				numDomElem[i] = counter;
+				if (!numDomElem[i]){
+					throw Exception(__LINE__,__FILE__,"Number of element: 0.");
 				}
 			}
-			RIter_delete(rit);
-			numDomTetras[i] = counter;
 		}
 	}
 
 	void GeomData::calculateNumNodes(pMesh theMesh){
 		int ndom = getNumDomains();
-		const int* domlist = getDomainList();
 		int dim = theMesh->getDim();
 		setMeshNodes(M_numVertices(theMesh));
 		numNodesPerDomain = new int[ndom];
@@ -105,7 +93,6 @@ namespace PRS{
 
 	void GeomData::calculateNumBdryNodes(pMesh theMesh){
 		int ndom = getNumDomains();
-		const int* domlist = getDomainList();
 		int dim = theMesh->getDim();
 		numBdryNodesPerDomain = new int[ndom];
 		pEntity face, tetra;
@@ -150,7 +137,6 @@ namespace PRS{
 	void GeomData::calculateNumEdges(pMesh theMesh){
 		int dim = theMesh->getDim();
 		int ndom = getNumDomains();
-		const int* domlist = getDomainList();
 		numDomEdges = new int[ndom];
 		//this->domainList = new int[ndom];
 		//		for (int i=0; i<ndom; i++){
@@ -196,7 +182,6 @@ namespace PRS{
 		}
 
 		int ndom = getNumDomains();
-		const int* domlist = getDomainList();
 		numDomBDRYEdges = new int[ndom];
 		pEntity edge, face;
 		std::set<pEntity> edgeList;
@@ -235,7 +220,6 @@ namespace PRS{
 		}
 
 		int ndom = getNumDomains();
-		const int* domlist = getDomainList();
 		numDomBDRYFaces = new int[ndom];
 		pEntity tetra, face;
 		std::set<pEntity> faceList;
@@ -278,8 +262,7 @@ namespace PRS{
 
 	void GeomData::calculateEdgeProperties(pMesh theMesh){
 		int ndom = getNumDomains();
-		const int* domlist = getDomainList();
-		double c1[3], c2[3], vec[3];
+		double vec[3];
 		double elength, Lij[3];
 		double Icoord[3], Jcoord[3];
 		double delta_x = 1e30;
@@ -364,6 +347,122 @@ namespace PRS{
 			this->setTotalNumberOfEdges(tnedges);
 		}
 		else{
+		}
+	}
+
+	void GeomData::calculate_NodeAverage_CDL(){
+		int i,dom, row;
+		const int* indices = NULL;
+
+		// initialize CDL per node
+		for(i=0; i<numNodes; i++){
+			node_CDL[i] = 0;
+		}
+
+		// loop over elements
+		int k = 0;
+		for (dom=0; dom<_ndom; dom++){
+			int nelements = numDomElem[dom];
+
+			// loop over domains' elements
+			for (row=0; row<nelements; row++){
+				getElement(dom,row,indices);
+				node_CDL[indices[3]] += elem_CDL[k];
+				node_CDL[indices[4]] += elem_CDL[k];
+				node_CDL[indices[5]] += elem_CDL[k];
+			}
+		}
+
+		// average node CDL by number of sharing faces
+		for(i=0; i<numNodes; i++){
+			node_CDL[i] /= numElemSharingVertex[i];
+		}
+	}
+
+	void GeomData::calculate_CDL(){
+		int i,dom, row;
+		const int* indices = NULL;
+
+		// elements' coordinates
+		const double* coords[4] = {NULL,NULL,NULL,NULL};
+
+		// vector created over elements' edges
+		int num_edges = 3*(dim-1);
+		double* vectors[6];
+		for (i=0;i<num_edges;i++){
+			vectors[i] = new double[dim];
+		}
+
+		// indices to automate edge vectors creation
+		int idx[6][2] = {{0,1},{1,2},{2,0},{0,3},{1,3},{2,3}};
+
+		// Auxiliary variable
+		int pos = dim+1;
+
+		int k = 0;
+		for (dom=0; dom<_ndom; dom++){
+			int nelements = numDomElem[dom];
+
+			// loop over domains' elements
+			for (row=0; row<nelements; row++){
+				getElement(dom,row,indices);
+
+				// get vertices coordinates
+				for (i=0; i<pos; i++){
+					getCoordinates(indices[i+pos],coords[i]);
+				}
+
+				// create edge vectors
+				for (i=0; i<num_edges; i++){
+					const double* vtx1 = coords[ idx[i][0] ];
+					const double* vtx2 = coords[ idx[i][1] ];
+					for (int j=0; j<dim; j++){
+						(vectors[i])[j] = vtx1[j] - vtx2[j];
+					}
+				}
+
+				// vectors lengths summation
+				for (i=0; i<num_edges; i++){
+					elem_CDL[k] = sqrt( inner_product(vectors[i],vectors[i],dim) );
+				}
+
+				// take average lenght
+				elem_CDL[k] /= pos;
+				k++;
+			}
+		}
+		for (i=0;i<num_edges;i++){
+			delete[] vectors[i]; vectors[i] = 0;
+		}
+	}
+
+	void GeomData::calculateNumElemSharingVertex(){
+		int i,j,dom;
+		const int *idx = NULL;
+
+		// initialize
+		for (i=0; i<numNodes; i++){
+			numElemSharingVertex[i] = 0;
+		}
+
+		/* ----------------------------------------------------
+					 2-D (triangle)			   3-D (tetrahedra)
+				idx[0]	: local index		idx[0]	: local index
+				idx[1]	: local index		idx[1]	: local index
+											idx[2]	: local index
+
+				idx[2]	: global index		idx[3]	: global index
+				idx[3]	: global index		idx[4]	: global index
+											idx[5]	: global index
+				---------------------------------------------------- */
+
+		for (dom=0; dom<_ndom; dom++){
+			for (i=0; i<numDomElem[dom]; i++){
+				idx = elem[dom].getrowconst(i);
+				for (j=0; j<dim; j++){
+					numElemSharingVertex[ idx[dim+j] ]++;
+				}
+			}
 		}
 	}
 }

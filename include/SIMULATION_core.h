@@ -28,6 +28,8 @@ void initializeParameters(pMesh theMesh, ErrorAnalysis* pErrorAnalysis, AMR* pMe
 		 */
 		int initialize(int argc, char **argv);
 
+		void initialize_adaptation(int argc, char **argv);
+
 		/*! Call it when performing mesh adaptation. After mesh has been modified, many informations (e.g. number of degrees of freedom) must be recalculated.
 		 */
 		void updatePointersData(pMesh);

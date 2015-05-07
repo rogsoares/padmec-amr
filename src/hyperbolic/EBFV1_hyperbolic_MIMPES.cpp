@@ -64,7 +64,7 @@ namespace PRS{
 		do{     // keep velocity field constant if possible
 			// calculate saturation gradient if adaptation or high order approximation were required
 			if (  pSimPar->userRequiresAdaptation() || pSimPar->useHOApproximation()){
-				calculateSaturationGradient(theMesh);
+				calculateSaturationGradient();
 			}
 
 			timeStep = 1.0e+10;

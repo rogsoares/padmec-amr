@@ -24,7 +24,10 @@ namespace PRS{
 	}
 
 	void EBFV1_elliptic::calc_p_grad_1(int dom, int dim){
-		double Cij[3], p_grad_I[3], p_grad_J[3], p_I, p_J, val;
+		double p_I, p_J, val;
+		const double* Cij = NULL;
+		double* p_grad_I = NULL;
+		double* p_grad_J = NULL;
 		int i,j,nedges, edge, idx0, idx1, idx0_global, idx1_global, id0, id1, dom_flag;
 		nedges = pGCData->getNumEdgesPerDomain(dom);
 		for (edge=0; edge<nedges; edge++){
@@ -50,7 +53,12 @@ namespace PRS{
 	}
 
 	void EBFV1_elliptic::calc_p_grad_2(int dom, int dim){
-		double Dij[3], p_grad_I[3], p_grad_J[3], p_grad_K[3], p_I, p_J, p_K;
+		const double* Dij = NULL;
+		double* p_grad_I = NULL;
+		double* p_grad_J = NULL;
+		double* p_grad_K = NULL;
+
+		double p_I, p_J, p_K;
 		int i,j,nedges, nfaces, edge, idx0, idx1, idx2, idx0_global, idx1_global, idx2_global;
 
 		if (dim==2){
@@ -106,8 +114,10 @@ namespace PRS{
 	}
 
 	void EBFV1_elliptic::calc_p_grad_3(int dim){
-		double p_grad_tmp[3], p_grad[3], vol;
+		double* p_grad = NULL;
+		double vol;
 		int i, dom, ndom, nnodes, node, idx;
+
 		ndom = (int)pSimPar->setOfDomains.size();
 		for (dom=0; dom<ndom; dom++){
 			nnodes = pGCData->getNumNodesPerDomain(dom);

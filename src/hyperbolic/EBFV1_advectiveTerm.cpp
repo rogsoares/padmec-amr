@@ -8,10 +8,11 @@ namespace PRS{
 		int dim = pGCData->getMeshDim();
 
 		pEntity edge;
+		const double* Cij = NULL;
 		double Sw_I, Sw_J, fwII, fwJJ, fwIJ, df_dsIJ, n, alpha;
 		double  non_visc_fv, non_visc_ad, nonvisc_I, nonvisc_J;
 		double courant, phi, length, norm;
-		double Cij[3], vel[3], FluxIJ[3], Cij_norm, versor[3], edIJ[3], Sw_grad_I[3], Sw_grad_J[3];
+		double vel[3], FluxIJ[3], Cij_norm, versor[3], edIJ[3], Sw_grad_I[3], Sw_grad_J[3];
 		int i,j,idx0_global, idx1_global, idx0, idx1, id0, id1,flag1,flag2;
 		double sign, koef = (double)1./3.;
 

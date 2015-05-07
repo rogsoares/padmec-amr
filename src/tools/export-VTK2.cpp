@@ -30,7 +30,8 @@ void print_headers(ofstream &fid, int numNodes){
 }
 
 void print_Coordinates(ofstream &fid, const GeomData* pGCData){
-	double coords[3];
+	//double coords[3];
+	const double* coords = NULL;
 	int nnodes;
 	pGCData->getMeshNodes(nnodes);
 	for(int i=0; i<nnodes; i++){

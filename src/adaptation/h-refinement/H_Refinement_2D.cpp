@@ -46,7 +46,7 @@ void H_Refinement_2D::refreshDataStructure(pMesh theMesh){
 }
 
 void H_Refinement_2D::elementsFlagsCorrection(ErrorAnalysis* pErrorAnalysis, pMesh theMesh){
-	pErrorAnalysis->calculate_MaxMinErrorData(theMesh);
+	//pErrorAnalysis->calculate_MaxMinErrorData(theMesh);
 	int maxDepth = pErrorAnalysis->getMaxDepth();
 	int max      = pErrorAnalysis->getMaxRefinementFlag();
 	int min      = pErrorAnalysis->getMinRefinementFlag();

@@ -11,7 +11,7 @@
 
 namespace PRS{
 //	int EBFV1_elliptic::divergence_G(Mat G, pEntity edge, const int &dom, int dim, double *Cij){
-int EBFV1_elliptic::divergence_G(Mat G, double *Cij, int edge, int dom, int dom_flag, int idx0_global, int idx1_global, int id0, int id1, int dim){
+int EBFV1_elliptic::divergence_G(Mat G, const double *Cij, int edge, int dom, int dom_flag, int idx0_global, int idx1_global, int id0, int id1, int dim, int counter){
 		int i, j;
 		double versor[3], length, sign = 1.0;
 		if (id0 > id1){
@@ -25,13 +25,6 @@ int EBFV1_elliptic::divergence_G(Mat G, double *Cij, int edge, int dom, int dom_
 
 		// permeability tensor
 		const double *Permeability = pSimPar->getPermeability(dom_flag);
-
-		double Sw_I, Sw_J, MobI, MobJ, MobIJ;
-		pPPData->getSaturation(idx0_global,Sw_I);
-		pPPData->getSaturation(idx1_global,Sw_J);
-		MobI = pPPData->getTotalMobility(Sw_I);
-		MobJ = pPPData->getTotalMobility(Sw_J);
-		MobIJ = 0.5*(MobI + MobJ);
 
 		pGCData->getLength(dom,edge,length);
 		pGCData->getVersor(dom,edge,versor);
@@ -61,19 +54,11 @@ int EBFV1_elliptic::divergence_G(Mat G, double *Cij, int edge, int dom, int dom_
 		double aux = .0;
 		for (i=0; i<dim; i++) aux += Cij[i]*KL[i];
 		aux /= -length;
-		double nrc = 1.0;
-		//			// if an edge is on partition boundary, the result from all processors
-		//			//  contribution for this edge must be equal as if was ran in serial
-		//			// Gij (serial) = Gij (parallel) if edge is on partition boundary
-		aux /= nrc;
 
-		double Gij_I[2] = { MobIJ*aux,-MobIJ*aux};
-		double Gij_J[2] = {-MobIJ*aux, MobIJ*aux};
-		int rows[2] = {id0-1,id1-1};	// where Gij must be assembled in global G
-		int cols[2] = {id0-1,id1-1};	// where Gij must be assembled in global G
-
-		MatSetValues(G,1,&rows[0],2,cols,Gij_I,ADD_VALUES);
-		MatSetValues(G,1,&rows[1],2,cols,Gij_J,ADD_VALUES);
+		pMAS->Gij[counter][0] = aux;
+		pMAS->Gij[counter][1] = -aux;
+		pMAS->Gij[counter][2] = -aux;
+		pMAS->Gij[counter][3] = aux;
 		return 0;
 	}
 }

@@ -10,18 +10,6 @@
 
 namespace PRS{
 
-	/*
-	Based on a vertex centered and edge based data structured finite volume formulation, elliptic equation is calculated through a linear
-	system of equation where the stiffness matrix depends on three other matrices:
-
-	Ax=b
-
-	where,
-
-	A = E*F + G
-	For more details about physical/numerical meaning of all these matrices see: http://www.repositorio.ufpe.br/handle/123456789/5336
-	*/
-
 	double EBFV1_elliptic::assembly_EFG_RHS(pMesh mesh){
 		CPU_Profile::Start();
 		int np = pMData->getNum_GNodes();
@@ -37,32 +25,60 @@ namespace PRS{
 		matvec_struct->F_nrows = np*dim;
 		matvec_struct->F_ncols = np;
 
-		// these matrices take all mesh vertices and will be delete very soon.
-		Mat G_tmp, E[ndom], F[ndom];
-
-		// Create matrix G.
-		double Cij[3];
+		//double Cij[3];
+		const double* Cij = NULL;
+		const int* indices = NULL;
 		int i,j,nedges, dom, idx0, idx1,idx0_global, idx1_global, id0, id1, dom_flag;
-		MatCreateAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np,np,80,PETSC_NULL,80,PETSC_NULL,&G_tmp);
-		for (dom=0; dom<ndom; dom++){
-			MatCreateAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np,np*dim,100,PETSC_NULL,100,PETSC_NULL,&E[dom]);
-			MatCreateAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np*dim,np,100,PETSC_NULL,100,PETSC_NULL,&F[dom]);
-			nedges = pGCData->getNumEdgesPerDomain(dom);
-			dom_flag = pGCData->getDomFlag(dom);
-			for (i=0; i<nedges; i++){
-				pGCData->getCij(dom,i,Cij);
-				pGCData->getEdge(dom,i,idx0,idx1,idx0_global,idx1_global);
-				pGCData->getID(dom,idx0,idx1,id0,id1);
-				divergence_E(E[dom],Cij,i,dom,dom_flag,idx0_global,idx1_global,id0,id1,dim);
-				divergence_G(G_tmp,Cij,i,dom,dom_flag,idx0_global,idx1_global,id0,id1,dim);
-				gradient_F_edges(F[dom],Cij,dom,idx0,idx1,id0,id1,dim);
-			}
-			gradient_F_bdry(F[dom],dom);
-			assemblyMatrix(F[dom]);
-			assemblyMatrix(E[dom]);
-		}
-		assemblyMatrix(G_tmp);
 
+		// Matrices assembly based only on geometric data
+		// --------------------------------------------------------------------------
+		if (Perform_Assembling){
+			E = new Mat[ndom];
+			F = new Mat[ndom];
+			MatCreateAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np,np,100,PETSC_NULL,100,PETSC_NULL,&G_tmp);
+			for (dom=0; dom<ndom; dom++){
+				MatCreateAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np,np*dim,100,PETSC_NULL,100,PETSC_NULL,&E[dom]);
+				MatCreateAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np*dim,np,100,PETSC_NULL,100,PETSC_NULL,&F[dom]);
+			}
+		}
+
+		int counter = 0;
+		if (Perform_Assembling){
+			for (dom=0; dom<ndom; dom++){
+				nedges = pGCData->getNumEdgesPerDomain(dom);
+				dom_flag = pGCData->getDomFlag(dom);
+				for (i=0; i<nedges; i++){
+					pGCData->getCij(dom,i,Cij);
+					pGCData->getEdge(dom,i,indices);
+					// idx0        = indices[0]
+					// idx1        = indices[1]
+					// idx0_global = indices[2]
+					// idx1_global = indices[3]
+
+					//pGCData->getEdge(dom,i,idx0,idx1,idx0_global,idx1_global);
+					pGCData->getID(dom,indices[0],indices[1],id0,id1);
+					//divergence_E(E[dom],Cij,i,dom,dom_flag,idx0_global,idx1_global,id0,id1,dim,counter);
+					divergence_E(E[dom],Cij,i,dom,dom_flag,indices[2],indices[3],id0,id1,dim,counter);
+					divergence_G(G_tmp,Cij,i,dom,dom_flag,indices[2],indices[3],id0,id1,dim,counter);
+					gradient_F_edges(F[dom],Cij,dom,indices[0],indices[1],id0,id1,dim);
+					setMASindices(counter,id0,id1);
+					counter++;
+				}
+				gradient_F_bdry(F[dom],dom);
+				assemblyMatrix(F[dom]);
+			}
+			Perform_Assembling = false;
+		}
+		CPU_Profile::End("MatricesAssembly-01");
+
+		multiplyMatricesbyMobility();
+		G_assembly(G_tmp);
+		counter = 0;
+		for (dom=0; dom<ndom; dom++){
+			E_assembly(E[dom],dom,counter);
+		}
+
+		CPU_Profile::Start();
 		// Get from matrix G its contribution to RHS. matvec_struct->G correspond to all free nodes
 		set_SOE(mesh,G_tmp,matvec_struct->G,true,matvec_struct->RHS,true,true);
 
@@ -71,14 +87,10 @@ namespace PRS{
 		Vec EF_rhs;
 		for (i=0; i<ndom; i++){
 			MatMatMult(E[i],F[i],MAT_INITIAL_MATRIX,1.0,&EF);
-			if (pSimPar->useDefectCorrection()){
-				//set_SOE(mesh,EF,EF_multiDom[i],true,EF_rhs,true,false);
-			}
-			else{
-				set_SOE(mesh,EF,tmp,false,EF_rhs,true,false);		// EF matrix is destroyed inside set_SOE function
-			}
+			set_SOE(mesh,EF,tmp,false,EF_rhs,true,false);		// EF matrix is destroyed inside set_SOE function
 			VecAXPY(matvec_struct->RHS,1.0,EF_rhs);
 			VecDestroy(&EF_rhs);
+			MatDestroy(&EF);
 		}
 
 		// Create E and F matrices related to free nodes only. Note that they were been created using all mesh nodes.
@@ -100,7 +112,9 @@ namespace PRS{
 		else{
 			pMData->createVectorsForMatrixF(F[0]);
 		}
+		CPU_Profile::End("MatricesAssembly-02");
 
+		CPU_Profile::Start();
 		IS rows_F, cols_F, rows_E, cols_E;
 		ISCreateGeneral(PETSC_COMM_WORLD,pMData->get_F_nrows(),pMData->get_F_rows_ptr(),PETSC_COPY_VALUES,&rows_F);
 		ISCreateGeneral(PETSC_COMM_WORLD,numGF,pMData->get_F_cols_ptr(),PETSC_COPY_VALUES,&cols_F);
@@ -110,8 +124,6 @@ namespace PRS{
 		for (i=0; i<ndom; i++){
 			MatGetSubMatrix(F[i],rows_F,cols_F,MAT_INITIAL_MATRIX,&matvec_struct->F[i]);
 			MatGetSubMatrix(E[i],rows_E,cols_E,MAT_INITIAL_MATRIX,&matvec_struct->E[i]);
-			MatDestroy(&E[i]);
-			MatDestroy(&F[i]);
 		}
 
 		ISDestroy(&rows_F);
@@ -119,11 +131,16 @@ namespace PRS{
 		ISDestroy(&rows_E);
 		ISDestroy(&cols_E);
 
+		MatZeroEntries(G_tmp);
+		for (i=0; i<ndom; i++){
+			MatZeroEntries(E[i]);
+		}
+
 		// Create the output vector
 		VecCreate(PETSC_COMM_WORLD,&output);
 		VecSetSizes(output,PETSC_DECIDE,numGF);
 		VecSetFromOptions(output);
-		CPU_Profile::End("MatricesAssembly");
+		CPU_Profile::End("MatricesAssembly-03");
 		return 0;
 	}
 
@@ -173,7 +190,7 @@ namespace PRS{
 			IS colsToImport_dirichlet;
 			ISCreateGeneral(PETSC_COMM_WORLD,numGP,pMData->get_idxn_ptr(),PETSC_COPY_VALUES,&colsToImport_dirichlet);
 			MatGetSubMatrix(A,rowsToImport,colsToImport_dirichlet,MAT_INITIAL_MATRIX,&rhs);
-			MatDestroy(&A);
+			//MatDestroy(&A);
 			ISDestroy(&colsToImport_dirichlet);
 
 			VecCreate(PETSC_COMM_WORLD,&RHS);
@@ -181,6 +198,7 @@ namespace PRS{
 			VecSetFromOptions(RHS);
 
 			// fill RHS vector with values from rhs matrix. entries from this matrix are multiplied by their corresponding prescribed values
+			//printMatrixToFile(rhs,"rhs_nondirichlet.txt");
 			MatGetOwnershipRange(rhs,&m,&n);
 			for (i=m; i<n; i++){
 				double sum = .0;
@@ -189,135 +207,104 @@ namespace PRS{
 					int col = j;
 					double val=.0;
 					MatGetValues(rhs,1,&i,1,&col,&val);
-					//printf("sum_old = %f  ",sum);
 					sum += -val*prescribedIter->second;
-					//printf("val: %f  prescVal: %f     sum = %f\n",val,prescribedIter->second,sum);
 				}
 				VecSetValue(RHS,i,sum,ADD_VALUES);
+
 			}
 
 			if ( includeWell ){
-				wellsContributionToRHS(mesh,RHS);
+				wells_RHS_Assembly__Wells(mesh,RHS);
 			}
 			VecAssemblyBegin(RHS);
 			VecAssemblyEnd(RHS);
 			MatDestroy(&rhs);
 		}
-		rows = 0;
 		ISDestroy(&rowsToImport);
 		ISDestroy(&colsToImport);
 		return 0;
 	}
 
+	void EBFV1_elliptic::multiplyMatricesbyMobility(){
+		int i, idx_I, idx_J;
+		double Sw_0, Sw_1;
 
-	// NOTE: mapNodesOnWells should not be available in the way it appears here. Some function should be implemented inside SimulatorParameters
-	// to provide only the data required.
-	int EBFV1_elliptic::wellsContributionToRHS(pMesh mesh, Vec &RHS){
-		int node_ID, row;
-		double Vt, Vi, Qi, Qt;
-
-		if (!pSimPar->mapNodesOnWell.size()){
-			throw Exception(__LINE__,__FILE__,"No wells found!");
+		int nedges = 0;
+		int ndom = pGCData->getNumDomains();
+		for(i=0; i<ndom; i++){
+			nedges += pGCData->getNumEdgesPerDomain(i);
 		}
 
-		// for each well flag
-		map<int,set<int> >::iterator mit = pSimPar->mapNodesOnWell.begin();
-		for (; mit!=pSimPar->mapNodesOnWell.end(); mit++){
-			int well_flag = mit->first;
-			// source/sink term
-			Qt = pSimPar->getFlowrateValue(well_flag);
-			if ( fabs(Qt)<=1e-7 ){
-				throw Exception(__LINE__,__FILE__,"Flow rate NULL!");
-			}
+		for (i=0; i<nedges; i++){
+			idx_I = pMAS->indices[i][0] - 1;					// it return global vertex ID
+			idx_J = pMAS->indices[i][1] - 1;					// it return global vertex ID
+			pPPData->getSaturation(idx_I,Sw_0);
+			pPPData->getSaturation(idx_J,Sw_1);
+			pMAS->edge_lambda[i] = 0.5*(pPPData->getTotalMobility(Sw_0) + pPPData->getTotalMobility(Sw_1));
+		}
+	}
 
-			//cout << "well-flag: " << well_flag << endl;
+	int EBFV1_elliptic::G_assembly(Mat G){
+		int i, j, k;
+		double Gij[4];
+		int indices[2];
+		int ndom = pGCData->getNumDomains();
+		int counter = 0;
+		for(i=0; i<ndom; i++){
+			int nedges = pGCData->getNumEdgesPerDomain(i);
+			for(j=0; j<nedges; j++){
+				indices[0] = pMAS->indices[counter][0] - 1;
+				indices[1] = pMAS->indices[counter][1] - 1;
 
-			// get all flagged node IDs for that well
-			if (!mit->second.size()){
-				throw Exception(__LINE__,__FILE__,"No wells found!");
-			}
-			SIter sit = mit->second.begin();
-			for (; sit!=mit->second.end(); sit++){
-				Vt = pSimPar->getWellVolume(well_flag);
-				#ifdef _SEEKFORBUGS_
-					if ( Vt<1e-12 ){
-						char msg[256]; sprintf(msg,"Well with null volume V = %.6f. Vertex (%d)",Vt,node_ID);
-						throw Exception(__LINE__,__FILE__,msg);
-					}
-				#endif //_SEEKFORBUGS_
-
-				Vi = .0;
-				node_ID = *sit;
-				for (SIter_const dom=pSimPar->setDomain_begin(); dom!=pSimPar->setDomain_end(); dom++){
-					pVertex node = (mEntity*)mesh->getVertex( node_ID );
-					Vi += pGCData->getVolume(node,*dom);
+				for(k=0; k<4; k++){
+					Gij[k] = pMAS->Gij[counter][k]*pMAS->edge_lambda[counter];
 				}
-
-				// for node i, Q is a fraction of total well flow rate
-				Qi = Qt*(Vi/Vt);
-
-				// FPArray ('F'ree 'P'rescribed array) maps node id: node_ID -> row
-				// row: position in Petsc GlobalMatrix/RHSVBector where node must be assembled
-				node_ID = pMData->get_AppToPETSc_Ordering(node_ID);
-				row = pMData->FPArray(node_ID-1);
-
-				/*
-				 * Do not include well flux on nodes with prescribed pressure
-				 */
-				if (pSimPar->isNodeFree(well_flag)){
-// 										cout << "---------------------------------------------\n";
-// 										cout << setprecision(8);
-// 										cout << "Node = " << node_ID << endl;
-// 										cout << "Qt = " << Qt << endl;
-// 										cout << "Qi = " << Qi << endl;
-// 										cout << "Vt = " << Vt << endl;
-// 										cout << "Vi = " << Vi << endl;
-// 									//	cout << "row = " << row << endl;
-// 										cout << "---------------------------------------------\n";
-					VecSetValue(RHS,row,Qi,ADD_VALUES);
-
-				}
-				//printf("well contribution to RHS: node %d -> row %d\n",node_ID,row);
-				//printf("[%d] - Qi = %f on row: %d \n",P_pid(),Qi,row);
-				//
-				////				throw Exception(__LINE__,__FILE__,"Favor consertar gambiarra!");
-				//				}
+				MatSetValues(G,2,indices,2,indices,Gij,ADD_VALUES);
+				counter++;
 			}
 		}
-		/*
-		 * This is a way to use the simulator to evaluate elliptic equation without screw-up
-		 * the input data procedure.
-		 * Treating source/sink terms:
-		 */
-	#ifdef CRUMPTON_EXAMPLE
-		double x,y,coord[3];
-		double srcsnk, vol1, vol2, f_xy1, f_xy2;
+		assemblyMatrix(G);
+	}
 
-		int nrows = matvec_struct->nrows;	// number of free nodes
-		int *rows = matvec_struct->rows;	// free nodes indices
-		/*
-		 *  1 - Take only free nodes
-		 *  2 - This a specific problem with only two sub-domains flagged as 3300 and 3301.
-		 *  3 - A node located on boundary domains has two control-volumes, each one associated to a sub-domain
-		 *      Source/sink term must be applied to both
-		 *  4 - When a node's volume is entirely located in a sub-domain, vol1 or vol2 will be equal to zero.
-		 */
-		for (int i=0; i<nrows; i++){
-			pVertex vertex = mesh->getVertex(rows[i]+1);
-			if (vertex){
-				V_coord(vertex,coord); x = coord[0]; y = coord[1];
-				vol1 = pGCData->getVolume(vertex,3300); 			// it supposes coord_x <= 0
-				vol2 = pGCData->getVolume(vertex,3301); 			// it supposes coord_x  > 0
-				f_xy1 = -(2.*sin(y) + cos(y))*ALPHA*x - sin(y);		// source/sink for coord_x <= 0
-				f_xy2 = 2.*ALPHA*exp(x)*cos(y);						// source/sink for coord_x  > 0
-				srcsnk = vol1*f_xy1 + vol2*f_xy2;					// source/sink term
-				node_ID = pMData->get_AppToPETSc_Ordering(rows[i]+1);
-				row = pMData->FPArray(node_ID-1);
-				VecSetValue(RHS,row,-srcsnk,ADD_VALUES);
+	int EBFV1_elliptic::E_assembly(Mat E, int dom, int &counter){
+		int i,j,k;
+		int dim = pGCData->getMeshDim();
+		double Eij[4*dim];
+		int idxn[2*dim];
+		int idxm[2];
+		int pos1, pos2;
+
+		int nrows = 2;
+		int ncols = 2*dim;
+
+		int nedges = pGCData->getNumEdgesPerDomain(dom);
+		for(j=0; j<nedges; j++){
+			// define where to assembly sub-matrix
+			idxm[0] = pMAS->indices[counter][0] - 1;
+			idxm[1] = pMAS->indices[counter][1] - 1;
+			pos1 = dim*idxm[0];
+			pos2 = dim*idxm[1];
+			for (k=0; k<dim; k++){
+				idxn[k] = pos1+k;
+				idxn[dim+k] = pos2+k;
 			}
+
+			// assembly sub-matrix
+			for(k=0; k<4*dim; k++){
+				Eij[k] = pMAS->Eij[counter][k]*pMAS->edge_lambda[counter];
+			}
+			MatSetValues(E,nrows,idxm,ncols,idxn,Eij,ADD_VALUES);
+			counter++;
 		}
-	#endif
-		return 0;
+		assemblyMatrix(E);
+	}
+
+	void EBFV1_elliptic::setMASindices(int count, int id0, int id1){
+		if (id0 > id1){
+			std::swap(id0,id1);
+		}
+		pMAS->indices[count][0] = id0;
+		pMAS->indices[count][1] = id1;
 	}
 }
 

@@ -63,11 +63,11 @@ namespace PRS{
 		ErrorAnalysis *pEA;
 
 		// Saturation gradient is calculated for all domains at once. Nodes on boundary domains contains one gradient vector for each domain.
-		void calculateSaturationGradient(pMesh);
+		void calculateSaturationGradient();
 
 	private:
 		// every new time-step, nodal gradient must be set to zero and start a new calculation
-		void resetSaturationGradient(pMesh theMesh);
+		void resetSaturationGradient();
 		
 		// loop over all edges (omega domain
 		void calc_Sw_grad_1(int, int);
@@ -76,7 +76,7 @@ namespace PRS{
 		void calc_Sw_grad_2(int, int);
 		
 		// Averaging by Total Volume in 3-D (area in 2-D problems)
-		void calc_Sw_grad_3(pMesh theMesh, int);
+		void calc_Sw_grad_3(int);
 
 		// Imposition of Homogeneus Neumman Boundary Conditions
 		void calc_Sw_grad_4(int);

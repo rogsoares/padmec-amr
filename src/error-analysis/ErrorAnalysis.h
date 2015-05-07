@@ -19,100 +19,46 @@ using namespace PRS;
 
 class ErrorAnalysis;
 
-/*! \brief: Main function in the error analysis process.
- * \param ErrorAnalysis* polymorphic object pointer to ErrorAnalysis_2D or ErrorAnalysis_3D class
- * \param pMesh FMDB mesh object
- * \param double error tolerance for all mesh elements
- * \param double error tolerance for all mesh elements excluding singularities
- * \param GetPFuncGrad* pointer to an array of function pointers to get nodal gradients (0 - p_grad, 1 - Sw_grad)
- * \param int size of GetPFuncGrad array
- */
+bool analyzeField(FIELD, ErrorAnalysis*, SimulatorParameters*, GeomData*, void(*)(FIELD,int,int,int,double*));
 
-bool calculate_ErrorAnalysis(ErrorAnalysis*, pMesh, SimulatorParameters*, GeomData*, FuncPointer_GetGradient);
+class ErrorAnalysis;
 
-/*! \class ErrorAnalysis
- *  \brief This class does some basic operations to perform error analysis and serves as base class for further implementation for 2-D and 3-D
- *  unstructured meshes. A polymorphic object must be allocated for 2-D (ErrorAnalysis_2D) or 3-D (ErrorAnalysis_3D) to perform the desired
- *  calculations.
- */
+
+bool calculate_ErrorAnalysis(ErrorAnalysis*, SimulatorParameters*, GeomData*, void(*)(FIELD,int,int,int,double*), std::list<int>&, std::map<int,double>&);
+
 class ErrorAnalysis{
 
 public:
 
-	ErrorAnalysis(){
-		elem_id = MD_lookupMeshDataId( "elem_error" );
-		levelRef_id = MD_lookupMeshDataId( "elem_ref" );
-		sing_id = MD_lookupMeshDataId( "elem_sing" );
-		cdl_id = MD_lookupMeshDataId( "elem_cdl" );
-	}
+	ErrorAnalysis(){}
 	~ErrorAnalysis(){}
 
-	/*
-	 * That the main function in the error analysis class. Once it has been called, user can use getLevelOfRefinement function to drive the
-	 * adaptations process.
-	 */
-	static double getElementError(pEntity elem){
-		double error = .0;
-		EN_getDataDbl(elem,MD_lookupMeshDataId( "elem_error" ),&error);
-		return error;
-	}
-
-	// set/get level of refinement
-	static int getLevelOfRefinement(pEntity elem){
-		int level;
-		EN_getDataInt(elem, MD_lookupMeshDataId( "elem_ref" ), &level);
-		return level;
-	}
-
 	//calculate functions
-	virtual void calculate_ElementsError(pMesh theMesh, SimulatorParameters *pSimPar, GeomData*, FuncPointer_GetGradient,FIELD) = 0;
-	virtual void calculate_SmoothedGradientNorm(pMesh, SimulatorParameters *pSimPar, GeomData*, FuncPointer_GetGradient, FIELD) = 0;
-	virtual void calculate_SmoothedGradientNorm_Singularity(pMesh, SimulatorParameters *pSimPar, GeomData*, FuncPointer_GetGradient, FIELD) = 0;
-	virtual void calculate_CharacteristicDimensionLength(pMesh) = 0;
-	virtual void calculate_DegreeOfRefinement(pMesh, SimulatorParameters *, bool) = 0;
+	void calculate_ElementsError(SimulatorParameters *pSimPar, GeomData*, void(*)(FIELD,int,int,int,double*), FIELD);
+	void calculate_SmoothedGradientNorm(SimulatorParameters *pSimPar, GeomData*, void(*)(FIELD,int,int,int,double*), FIELD);
+	void calculate_SmoothedGradientNorm_Singularity(SimulatorParameters *pSimPar, GeomData*, void(*)(FIELD,int,int,int,double*), FIELD);
+	void calculate_DegreeOfRefinement(GeomData*, RefinementStrategies, bool, FIELD);
 
-	void calculate_GlobalError(pMesh);
-	void calculate_GlobalError_Singularity(pMesh);
-	void calculate_AvgError(pMesh,double,bool);
-	void initializeParameters(pMesh);
+	double getElementError(int i) const{
+		return pElemError[i];
+	}
 
-	/*! \brief: Find max element depth and max and min refinement level.
-	 * \param pMesh FMDB mesh object
-	 */
-	void calculate_MaxMinErrorData(pMesh);
+	void calculate_GlobalError(GeomData* pGCData);
+	void calculate_GlobalError_Singularity(GeomData* pGCData);
+	void calculate_AvgError(int,double,bool);
+	void initialize(GeomData* pGCData, SimulatorParameters *pSimPar);
 
-	// Inline functions
-	void setMaxDepth(int depth) { maxDepth = depth; }
-	void setMaxRefinementFlag(int level) { maxRefFlag = level; }
-	void setMinRefinementFlag(int level) { minRefFlag = level; }
-
-	int getMaxDepth() const { return maxDepth; }
-	int getMaxRefinementFlag() const { return maxRefFlag; }
-	int getMinRefinementFlag() const { return minRefFlag; }
-
-	//!brief write on file error analysis data
-	void monitoring(FIELD, pMesh theMesh,double,double);
+	// returns a list of connectivities of elements to be removed/modified for mesh adaptation and its size as well.
+	void getElementsForAdaptation(double param1, double param2, GeomData* pGCData, std::list<int> &elemList);
 	
-	
-	// Remeshing: store h_new weighted per node (for multi-field problems: pressure, saturation, etc, it stores only the smallest)
-	void store_h_new(pMesh);
-	void update_h_new(pMesh);
+	// returns a map< vertex ID, weighted element heights> for all mesh nodes
+	void getNodesForAdaptation(GeomData*, std::map<int,double>& nodesMap);
+
 	void deletePointers();
 
-//protected:
+	void countElements(int nelem, bool seekforSingular);
 
-	/*! \brief: count total number of elements with depth=0 (without children) or the same but excluding singularities. Two variables are set here
-	 *          setNumFaces_excludingSingularities(numfaces_exSing) and setNumFaces(numfaces);
-	 * \param pMesh FMDB mesh object
-	 * \param bool says if must count all elements or excluding those on singularities regions
-	 */
-	void countElements(pMesh theMesh, bool excludingSingularities);
-
-	/*! \brief:
-	 * \param fine fine mesh
-	 * \param coarse coarse mesh.
-	 */
-	double calculate_ErrorSum(pMesh, bool excludingSingularities);
+	double calculate_ErrorSum(GeomData* pGCData, bool excludingSingularities);
 
 	// set/get functions
 	void setNumElements_Singularity(int n) { 
@@ -123,44 +69,45 @@ public:
 		return numElements_Singularity;
 	}
 
-	void setSmoothedGradNorm(double n) { SGN = n; }
-	double getSmoothedGradNorm() const { return SGN; }
+	void setSmoothedGradNorm(double n){
+		SGN = n;
+	}
 
-	void setSmoothedGradNorm_Singularity(double n) { SGN_sing = n; }
-	double getSmoothedGradNorm_Singularity() const { return SGN_sing; }
+	double getSmoothedGradNorm() const {
+		return SGN;
+	}
+
+	void setSmoothedGradNorm_Singularity(double n) {
+		SGN_sing = n;
+	}
+
+	double getSmoothedGradNorm_Singularity() const {
+		return SGN_sing;
+	}
 
 	void setNumElements(int n) {
 		numElements = n;
 	}
+
 	int getNumElements() const{
 		return numElements;
 	}
 
-	int isSingular(pEntity elem) const{
-		int sing;
-		EN_getDataInt(elem,sing_id,&sing);
-		return sing;
+	int isSingular(int i) const{
+		return isElementSingular[i];
 	}
 	
-	void setElementAsSingular(pEntity elem){
-		EN_attachDataInt(elem,sing_id,1);
+	void setElementAsSingular(int i){
+		isElementSingular[i] = true;
 	}
 
-	void resetElementAsSingular(pEntity elem){
-		EN_attachDataInt(elem,sing_id,0);
-	}
-
-	void resetAllElementsAsSingular(pMesh);
-
-	void setElementsAsSingular(std::list<pEntity> &singularElemList);
-
-	void resetElemHeightPerNode(pMesh);
-
-	void resetElemHeightPerNodeSingularity(pMesh);
+	// flag element as no singular, which means it not belongs to a region with high gradients
+	void setAllElementsAsNotSingular(int);
 
 	void setGlobalError(double ge){ 
 		globalError = ge;
 	}
+
 	double getGlobalError() const{
 		return globalError;
 	}
@@ -168,6 +115,7 @@ public:
 	void setGlobalError_Singularity(double ge){
 		globalError_Singularity = ge;
 	}
+
 	double getGlobalError_Singularity() const{
 		return globalError_Singularity;
 	}
@@ -175,6 +123,7 @@ public:
 	void setAverageError(double ae){
 		averageError = ae;
 	}
+
 	double getAverageError() const{
 		return averageError;
 	}
@@ -182,86 +131,57 @@ public:
 	void setAverageError_Singularity(double ae){ 
 		averageError_Singularity = ae;
 	}
+
 	double getAverageError_Singularity() const{
 		return averageError_Singularity;
 	}
 
-	void setElementError(pEntity elem, double error){
-		EN_attachDataDbl(elem,elem_id,error);
+	void setElementError(int i, double error){
+		pElemError[i] = error;
 	}
 
-	void setLevelOfRefinement(pEntity elem, int level){
-		EN_attachDataInt(elem,levelRef_id,level);
+	void set_h_min(GeomData* pGCData, SimulatorParameters* pSimPar);
+
+	void set_h_new(double h_new, int i, int j){
+		p_h_new->setValue(i,j,h_new);
 	}
 
-	// set characteristic Dimension Length
-	void setElement_CDL(pEntity elem, double cdl) {
-		EN_attachDataDbl(elem,cdl_id,cdl);
+	double get_h_new(int i, int j) const{
+		return p_h_new->getValue(i,j);
 	}
-
-	// get characteristic Dimension Length
-	double getElement_CDL(pEntity elem) const {
-		double CDL = .0;
-		EN_getDataDbl(elem,cdl_id,&CDL);
-		return CDL;
-	}
-
-	void calculate_height_ratio(pMesh);
-
-	bool checkMaximumNumberOfSubdivision(pMesh theMesh, const int &maxNumberOfSubdivision);
-
-	/*! \brief: returns a list of elements flagged to be (un)refine
-	 * \param theMesh mesh
-	 * \param elementList output
-	 * \param nodesBGMesh output
-	 */
-	void getRefUnrefElementsList(pMesh theMesh, std::list<pEntity> &elementList, std::set<pEntity>& nodesBGMesh);
-
-
-	/*! \brief: set the minimum element height used as lower limit for remeshing
-	 * \param theMesh mesh
-	 */
-	void set_h_min(pMesh theMesh);
 
 	double get_h_min() const{
 		return h_min;
 	}
-
-	void resetNumFacesAroundNode(pMesh);
-	void countNumFaceAroundNode(pMesh, bool);
-
-	SimulatorParameters *_pSimPar;
 	
+	bool isToRemove(int k) const{
+		return pElmToRemove[k];
+	}
+
 	bool adapt;
 	std::list<pEntity> singularElemList;
 
+	void calculate_heights(GeomData*, FIELD, bool);
+	void calculate_h_new(GeomData*, double, FIELD);
+	void identify_singular_regions(GeomData*, FIELD);
+	void calculate_h_ratio(GeomData*);
+
 private:
 
-	int singular;
-	int numElements;
-	int numElements_Singularity;
-	double SGN;
-	double SGN_sing;
+	int numElements;					// number or mesh's elements
+	int numElements_Singularity;		// number or mesh's elements excluding those flagged as singular
+	double SGN;							// Smoothed Gradient Norm
+	double SGN_sing;					// Smoothed Gradient Norm excluding singular elements
+	double globalError;					// global error for all mesh's element
+	double globalError_Singularity;		// global error for all mesh's element excluding those flagged as singular
+	double averageError;				// average global error for all mesh's element
+	double averageError_Singularity;	// average global error for all mesh's element excluding those flagged as singular
+	double h_min;						// minimum element height does not allow that elements smaller than h_min be removed from mesh
+	double* pElemError;					// where element error are stored
+	bool* isElementSingular;			// says if element is singular or not
+	Matrix<double>* p_h_new;			// save h_new for all elements for each field
 
-	double globalError;
-	double globalError_Singularity;
-	double averageError;
-	double averageError_Singularity;
-
-	pMeshDataId elem_id;
-	pMeshDataId levelRef_id;
-	pMeshDataId sing_id;
-	pMeshDataId cdl_id;
-
-	int maxDepth;		// says how many times an element has been subdivided
-	int maxRefFlag;		// says the highest element's level flag for refinement
-	int minRefFlag;		// says the lowest element's level flag for refinement
-	double h_min;		// minimum element height used as parameter for remeshing. It does not allow small elements to be removed.
-
-	ofstream fid;		// error analysis output
-	
-	double* pStore_h_new;	// store the smallest h_new for remeshing
-
+	bool* pElmToRemove;					// says if an element is to be removed or not
 };
 
 

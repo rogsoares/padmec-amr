@@ -15,6 +15,20 @@ struct PADMEC_mesh{
 	double *field2;
 };
 
+void open_file(ofstream& fid, string filename, int line, const char* sourcefile);
+
+void throw_exception(bool,string, int line, const char* sourcefile);
+
+// allocating memory
+// -----------------------------------------------
+void alloc_BOOL_vector(int LINE, const char* FILE, bool* &p, int size);
+void dealloc_BOOL_vector(bool* &p);
+
+void alloc_INT_vector(int LINE, const char* FILE, int* &p, int size);
+void dealloc_INT_vector(int* &p);
+void alloc_DOUBLE_vector(int LINE, const char* FILE, double* &p, int size);
+void dealloc_DOUBLE_vector(double* &p);
+
 enum FIELD {PRESSURE, SATURATION};
 
 const double pi = 3.14159265359;
@@ -39,15 +53,7 @@ int getVertexFlag(pVertex vertex);
 
 void makeVector(const double *A, const double *B, double *v);
 
-bool isEdgeExternal(int flag);
-
-bool isEdgeInternal(int flag);
-
-bool isFaceExternal(int flag);
-
-bool isFaceInternal(int flag);
-
-double* getIdentityMatrix(const int &dim);
+//double* getIdentityMatrix(const int &dim);
 
 double getSmallestEdgeLength(pMesh theMesh);
 
@@ -60,7 +66,7 @@ int getEntityFlag(int i, pEntity ent);
 void replaceAllOccurencesOnString(string &, string::size_type, string, string);
 void getIJnodes(pEdge, std::vector<pEntity>&);
 
-void F_getEdges(pMesh, pEntity, std::vector<pEntity> &);
+//void F_getEdges(pMesh, pEntity, std::vector<pEntity> &);
 
 const double qsi = 1e-10; // qsi is used to avoid division by zero
 
@@ -144,7 +150,7 @@ typedef SetPFuncScalar* SetFuncScalarArray;
 typedef GetPFuncGrad* GetFuncGradArray;
 typedef SetPFuncGrad* SetFuncGradArray;
 
-typedef void(*FuncPointer_GetGradient)(FIELD,int,int,int,double*);
+//typedef void(*FuncPointer_GetGradient)(FIELD,int,int,int,double*);
 
 /*! \brief: Get leaves of an edge with refinementDepth equal 1 (ONLY two children)
  * \param pEdge edge: edge where to get children from

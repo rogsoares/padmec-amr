@@ -10,7 +10,9 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 	PetscPrintf(PETSC_COMM_WORLD,"Starting EBFV1-3D pre-processor...");
 
 	GeomData *pGCData = (GeomData*)pData;
-	pGCData->setMeshDim(theMesh->getDim());
+	pGCData->setMeshDim(dim);
+
+
 	if (theMesh->getDim() != 3){
 		throw Exception(__LINE__,__FILE__,"Only 3-D meshes are allowed. Exiting...\n");
 	}
