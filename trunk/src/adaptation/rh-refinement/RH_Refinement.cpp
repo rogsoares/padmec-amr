@@ -46,7 +46,8 @@ RH_Refinement::~RH_Refinement() {
 }
 
 //Run the adaptation procedure
-void RH_Refinement::rodar(ErrorAnalysis *pErrorAnalysis, pMesh & theMesh) {
+//void RH_Refinement::rodar(ErrorAnalysis *pErrorAnalysis, pMesh & theMesh) {
+void RH_Refinement::run(pMesh theMesh, std::list<pEntity>& elementList, std::set<pEntity>& elementSet){
 	cout << endl << "=========================================";
 	cout << endl << "STARTING MADLIB MESH ADAPTATION PROCEDURE";
 	cout << endl << "=========================================" << endl;
@@ -57,10 +58,11 @@ void RH_Refinement::rodar(ErrorAnalysis *pErrorAnalysis, pMesh & theMesh) {
 		throw Exception(__LINE__,__FILE__,"NULL Mesh!");
 	}
 	
-	std::list<pEntity> elementList;
-	std::set<pEntity> elementSet;
-	pErrorAnalysis->getRefUnrefElementsList(theMesh,elementList,elementSet);
-	
+	// NAO CHAMAR ESTA FUNCAO DAQUI. JA VEM DE FORA
+//	std::list<pEntity> elementList;
+//	std::set<pEntity> elementSet;
+	//pErrorAnalysis->getRefUnrefElementsList(theMesh,elementList,elementSet);
+
 	cout << "Number of elements to be (un)refined: " << elementList.size() << endl;
 	
 	//Copy the mesh from a FMDB mesh to a MADMESH

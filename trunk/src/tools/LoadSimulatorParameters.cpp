@@ -13,6 +13,9 @@
 namespace PRS{
 
 	void SimulatorParameters::inputDataFromFiles(GeomData *pGCData){
+		// define how the dirichlet and neumann values will be evaluated (from numeric.dat file or from Boundary_conditions.h)
+		defineExactSolution();
+
 		getParametersDirectoryPath();
 		loadNumericParameters(pGCData);
 		load_preprocessorData(pGCData);
@@ -85,6 +88,7 @@ namespace PRS{
 		if (getEllipticSolver()==1){
 			setInitialOilVolume(theMesh,pGCData);
 		}
+
 #ifdef TRACKING_PROGRAM_STEPS
 		cout << "TRACKING_PROGRAM_STEPS: SimulatorParameters::initialize\tOUT\n";
 #endif
@@ -97,7 +101,6 @@ namespace PRS{
 	}
 
 	void SimulatorParameters::load_preprocessorData(void *pData){
-
 		int ndom;
 		ifstream fid;
 		fid.open(prepFilename().c_str());
@@ -108,12 +111,16 @@ namespace PRS{
 		fid.close();
 
 		M_load(theMesh,prepFilename().c_str());		// load mesh using FMDB
+		int dim = theMesh->getDim();
 
+		if (dim<2 || dim>3){
+			throw Exception(__LINE__,__FILE__,"Mesh dimension unknown.");
+		}
 
 		cout << "Eliptic solver: " << getEllipticSolver() << endl;
 		switch ( getEllipticSolver() ){
 		case 1:	//.............................................. EBFV1
-			if (theMesh->getDim()==2){
+			if (dim==2){
 				EBFV1_preprocessor_2D(theMesh,pData,ndom);
 			}
 			else{
@@ -121,7 +128,7 @@ namespace PRS{
 			}
 			break;
 		case 2:	//.............................................. EBFV1 MODIFIED
-			if (theMesh->getDim()==3){
+			if (dim==3){
 				throw Exception(__LINE__,__FILE__,"MEBFV1 method is available for 2-D domains only.");
 			}
 			EBFV1_modified_preprocessor_2D(theMesh,(GeomData*)pData);

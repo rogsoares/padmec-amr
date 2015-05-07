@@ -14,7 +14,15 @@
  * When prescribed value (Dirichlet) and prescribed flux (Neumann) were necessary, you MUST define them here.
  */
 
-/*Exact Solution (ES) for case 1:*/ double Benchmark3D_case1__ES(double x, double y, double z);
+enum BENCHMARK {CASE_1, CASE_5};
+
+/* Case 1: */
+/* Exact Solution  : */ double Benchmark3D_case1__ES(double x, double y, double z);
+/* Source/sink term: */ double Benchmark3D_case1__SST(double x, double y, double z);
+
+/* Case 5: */
+/* Exact Solution  : */ double Benchmark3D_case5__ES(double x, double y, double z);
+/* Source/sink term: */ double Benchmark3D_case5__SST(double x, double y, double z);
 
 
 #endif /* BOUNDARY_CONDITIONS_H_ */

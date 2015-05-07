@@ -26,6 +26,7 @@ Visit:		www.padmec.org
 #include <list>
 #include <numeric>
 #include <algorithm>
+#include <new>
 
 using namespace std;
 

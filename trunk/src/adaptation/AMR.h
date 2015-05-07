@@ -4,7 +4,7 @@
  * AMR.h
  *
  *  Created on: 24/01/2013
- *      Author: Prof. RogŽrio Soares
+ *      Author: Prof. Rogï¿½rio Soares
  */
 
 #ifndef AMR_H_
@@ -19,7 +19,7 @@ public:
 	AMR(){}
 	virtual ~AMR(){}
 
-	virtual void rodar(ErrorAnalysis *pErrorAnalysis, pMesh & theMesh)=0;
+	virtual void run(pMesh theMesh, std::list<pEntity>&, std::set<pEntity>&)=0;
 };
 
 

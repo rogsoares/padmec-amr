@@ -11,7 +11,12 @@ namespace PRS{
 
 	OilProductionManagement::OilProductionManagement(){}
 
-	OilProductionManagement::OilProductionManagement(string fname, double iov,double TotalInjectionFlowRate, bool restart){
+	OilProductionManagement::OilProductionManagement(string path, double iov,double TotalInjectionFlowRate, bool restart){
+
+		char tmp[256];
+		sprintf(tmp,"%s_oil-production-%d.csv",path.c_str(),P_size());
+		string fname(tmp);
+
 		IOV = iov;
 		TIFR = TotalInjectionFlowRate;
 

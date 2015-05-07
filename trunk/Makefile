@@ -1,14 +1,15 @@
-# ======================================================
+# ===============================================================
 # 			UNIVERSIDADE FEDERAL DE PERNANMBUCO
 #           DEPARTAMENTO DE ENGENHARIA MECANICA (DEMEC-CTG-UFPE)
 #			NUCLEO DE TECNOLOGIA (NT-CAA-UFPE)
 #
 # Authors: 	Rogerio Soares(rogerio.soaress@ufpe.br)
+#           Darlan Carvalho
 #			Saulo
 #			Guilherme Caminha
 #			Paulo Lyra
-# Created:	2008-2013
-# ======================================================
+# Created:	2008-2015
+# ===============================================================
 
 # FLAGS LEGENDS:
 # 	FVPO                   : For Visualization Purposes Only
@@ -19,14 +20,13 @@
 #    NOADAPTATION			: Compile code without mesh adaptation feature
 #
 
-include Makefile.in
-
-CXXFLAGS=-g -DNOADAPTATION -DPARALLEL
+CXXFLAGS=-g -Wall -DNOADAPTATION -DTRACKING_PROGRAM_STEPS -Wparentheses 
+#CXXFLAGS=-g -DNOADAPTATION -DPARALLEL -DTRACKING_PROGRAM_STEPS
 #CXXFLAGS=-DPARALLEL -g -DNOADAPTATION -Wunused-local-typedefs -D_SEEKFORBUGS_ -DTRACKING_PROGRAM_STEPS
 #CXXFLAGS=-DPARALLEL -g -Wall -Wunused -D__ADAPTATION_DEBUG__ -D__ERROR_ANALYSIS_DEBUG__ -D_SEEKFORBUGS_ -DTRACKING_PROGRAM_STEPS -DFVPO
 # scientific_application folder is where libraries are installed 
-APP_DIR=$(HOME)/scientific_applications
-PROJ_DIR=$(HOME)/projetos/GOOGLE_CODES/padmec-amr/trunk
+APP_DIR=$(HOME)/applications
+PROJ_DIR=$(HOME)/projetos/padmec-amr/trunk
 GMSH_DIR=$(APP_DIR)/gmshGMSH
 
 # compilers
@@ -41,11 +41,9 @@ INCLUDES=-I$(PROJ_DIR)/include \
 	-I$(PROJ_DIR)/src/SIMULATION_core \
 	-I$(PROJ_DIR)/src/tools -I$(PROJ_DIR)/src/tools/GeomData \
 	-I$(GMSH_DIR)/build/Common -I$(GMSH_DIR)/Common -I$(GMSH_DIR)/Geo -I$(GMSH_DIR)/Mesh -I$(GMSH_DIR)/Numeric -I$(GMSH_DIR)/Parser -I$(GMSH_DIR)/Plugin -I$(GMSH_DIR)/Post \
- 	-I$(APP_DIR)/autopack/include -I$(APP_DIR)/FMDB-2011/include -I$(PETSC_DIR)/include -I$(PETSC_DIR)/linux-c-opt/include
+ 	-I$(APP_DIR)/FMDB-2011/include -I$(PETSC_DIR)/include -I$(PETSC_DIR)/arch-linux2-c-opt/include 
 
-LIBS1=-L$(APP_DIR)/FMDB-2011/lib -lFMDB-O \
-     -L$(APP_DIR)/ParMetis-3.1/lib -lparmetis -lmetis \
-     -L$(APP_DIR)/autopack/lib -lautopack-O
+LIBS1=-L$(APP_DIR)/FMDB-2011/lib -lFMDB-O
 
 ifeq (,$(findstring NOADAPTATION,$(CXXFLAGS) $(ROCKPROP)))
 LIBS2=-L$(APP_DIR)/gmshGMSH/lib -lGmsh
@@ -74,9 +72,11 @@ SRC_DIR10=$(PROJ_DIR)/src/interpolation
 SRC_DIR11=$(PROJ_DIR)/src/adaptation/adaptive-remeshing
 SRC_DIR12=$(PROJ_DIR)/src/adaptation/h-refinement
 
-OBJS_MAIN=$(OBJ_DIR)/main.o $(OBJ_DIR)/SIMULATION_core.o $(OBJ_DIR)/SIMULATION_core__solvers.o $(OBJ_DIR)/SIMULATION_adaptation.o
+OBJS_MAIN=$(OBJ_DIR)/main.o $(OBJ_DIR)/SIMULATION_core.o $(OBJ_DIR)/SIMULATION_core__solvers.o $(OBJ_DIR)/SIMULATION_adaptation.o \
+          $(OBJ_DIR)/CalculateElementsError.o $(OBJ_DIR)/CalculateGlobalError.o $(OBJ_DIR)/ErrorAnalysis.o $(OBJ_DIR)/ErrorAnalysisAuxiliar.o \
+          $(OBJ_DIR)/CalculateSmoothGradientNorm.o $(OBJ_DIR)/Calculate_heights.o 
 	
-OBJS_ELLIPTIC=$(OBJ_DIR)/EBFV1_Elliptic_main.o $(OBJ_DIR)/EBFV1_AssemblyMatVec.o $(OBJ_DIR)/EBFV1_E.o $(OBJ_DIR)/EBFV1_G.o $(OBJ_DIR)/EBFV1_F_omega.o \
+OBJS_ELLIPTIC=$(OBJ_DIR)/EBFV1_Elliptic_main.o $(OBJ_DIR)/EBFV1_AssemblyMatVec.o $(OBJ_DIR)/EBFV1_E.o $(OBJ_DIR)/EBFV1_G.o $(OBJ_DIR)/EBFV1_F_omega.o  $(OBJ_DIR)/EBFV1_wells.o \
               $(OBJ_DIR)/EBFV1_F_gamma.o $(OBJ_DIR)/EBFV1_DefectCorrectionSolver.o $(OBJ_DIR)/EBFV1_MatrixFreeSolver.o $(OBJ_DIR)/EBFV1_PressureGradient.o \
 	          $(OBJ_DIR)/MEBFV_Assembly.o $(OBJ_DIR)/MEBFV_Elliptic_main.o $(OBJ_DIR)/MEBFV_Initialize.o
 
@@ -96,7 +96,7 @@ OBJS_PREPROCESSOR=$(OBJ_DIR)/Calculate-Cij-parallel.o $(OBJ_DIR)/Calculate-Vi-pa
 	              $(OBJ_DIR)/EBFV1_modified.o $(OBJ_DIR)/rockProp.o
 
 ifeq (,$(findstring NOADAPTATION,$(CXXFLAGS) $(ROCKPROP)))
-OBJS_ADAPTATION=$(OBJ_DIR)/CalculateDegreeOfRefinement_2D.o $(OBJ_DIR)/AdaptiveRemeshing.o \
+OBJS_ADAPTATION=$(OBJ_DIR)/AdaptiveRemeshing.o \
     $(OBJ_DIR)/H_Refinement.o $(OBJ_DIR)/H_Refinement_2D.o \
     $(OBJ_DIR)/CalculateElementsError_2D.o $(OBJ_DIR)/CalculateGlobalError.o \
     $(OBJ_DIR)/ErrorAnalysis.o $(OBJ_DIR)/ErrorAnalysisAuxiliar.o $(OBJ_DIR)/CalculateSmoothGradientNorm_2D.o \
@@ -153,11 +153,12 @@ $(OBJ_DIR)/%.o:	$(SRC_DIR7)/%.cpp
 $(OBJ_DIR)/%.o:	$(SRC_DIR71)/%.cpp
 	$(CXX) $(CXXFLAGS) $(ROCKPROP) $(INCLUDES)  -c $< 
 	@mv *.o $(OBJ_DIR)
-
-ifeq (,$(findstring NOADAPTATION,$(CXXFLAGS) $(ROCKPROP)))
+	
 $(OBJ_DIR)/%.o:	$(SRC_DIR8)/%.cpp
 	$(CXX) $(CXXFLAGS) $(ROCKPROP) $(INCLUDES)  -c $< 
 	@mv *.o $(OBJ_DIR)
+
+ifeq (,$(findstring NOADAPTATION,$(CXXFLAGS) $(ROCKPROP)))
 		
 $(OBJ_DIR)/%.o:	$(SRC_DIR9)/%.cpp
 	$(CXX) $(CXXFLAGS) $(ROCKPROP) $(INCLUDES)  -c $< 

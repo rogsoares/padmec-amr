@@ -43,9 +43,8 @@ namespace PRS{
 
 	void GeomData::initilize(pMesh theMesh){
 		calculateNumEdges(theMesh);					// calculate number of data to be stored
-		calculateNumFaces(theMesh);
+		calculateNumElements(theMesh);
 		calculateNumBDRYEdges(theMesh);
-		calculateNumTetras(theMesh);
 		calculateNumBDRYFaces(theMesh);
 		calculateNumNodes(theMesh);
 		calculateNumBdryNodes(theMesh);

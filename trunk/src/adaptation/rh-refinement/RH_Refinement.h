@@ -11,17 +11,18 @@
 #ifndef RH_Refinement_Include
 #define RH_Refinement_Include
 
-#include <map>
-#include <string>
-#include <list>
+#include "includes.h"
 
 #include "AMR.h"
+
 #ifndef NOADAPTATION
+//----------------------------------------------------------------
 #include "ModelInterface.h"
 #include "MeshDataBaseInterface.h"
 #include "AdaptInterface.h"
 #include "PWLinearSField.h"
 #include "MAdResourceManager.h"
+//----------------------------------------------------------------
 #endif
 
 #define MEM 1
@@ -33,7 +34,8 @@ public:
 	RH_Refinement(int argc, char* argv[]);
 	~RH_Refinement();
 	
-	void rodar(ErrorAnalysis *pErrorAnalysis, pMesh & theMesh);
+	//void rodar(ErrorAnalysis *pErrorAnalysis, pMesh & theMesh);
+	void run(pMesh theMesh, std::list<pEntity>&, std::set<pEntity>&);
 	
 #ifndef NOADAPTATION
 private:

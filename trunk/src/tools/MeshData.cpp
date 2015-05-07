@@ -225,11 +225,15 @@ namespace PRS{
 		}
 		VIter_delete(vit);
 
+//		theMesh->modifyState(3,1);
+//		theMesh->modifyState(1,3);
+
 		// search for flagged edges
 		EIter eit = M_edgeIter( theMesh );
 		while ( (edge = EIter_next(eit)) ){
 			if (!theMesh->getRefinementDepth(edge)){
 				int flag = EN_getFlag(edge);
+//				cout << flag << endl;
 				/*
 				 * This is a way to use the simulator to evaluate elliptic equation without screw-up the input data procedure.
 				 */
@@ -305,6 +309,11 @@ namespace PRS{
 				}
 				FIter_delete(fit);
 			}
+		}
+
+		cout << "size: " << dirichlet.size() << endl;
+		for(MIter mit = dirichlet.begin(); mit != dirichlet.end(); mit++){
+			//cout << "Node [" << mit->first << "]:\t " << mit->second << endl;
 		}
 
 		if (!P_getSumInt(dirichlet.size()) ){

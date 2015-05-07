@@ -1,5 +1,62 @@
 #include "auxiliar.h"
 
+void throw_exception(bool condition, string msg, int line, const char* sourcefile){
+	if (condition){
+		throw Exception(line,sourcefile,msg.c_str());
+	}
+}
+
+void open_file(ofstream& fid, string filename, int line, const char* sourcefile){
+
+	fid.open(filename.c_str());
+	char msg[512]; sprintf(msg,"File '%s' could not be opened or it does not exist.\n"
+			"\tCheck if directory was typed correctly.\n",filename.c_str());
+
+	if ( !fid.is_open() ){
+		throw Exception(line,sourcefile,msg);
+	}
+}
+
+void alloc_BOOL_vector(int LINE, const char* FILE, bool* &p, int size){
+	try{
+		p = new bool[size];
+	}
+	catch  (std::bad_alloc& ba){
+		throw Exception(LINE,FILE,"Memory allocation failed. Bad allocation.");
+	}
+}
+
+void dealloc_BOOL_vector(bool* &p){
+	delete[] p; p = 0;
+}
+
+void alloc_INT_vector(int LINE, const char* FILE, int* &p, int size){
+	try{
+		p = new int[size];
+	}
+	catch  (std::bad_alloc& ba){
+		throw Exception(LINE,FILE,"Memory allocation failed. Bad allocation.");
+	}
+}
+
+void dealloc_INT_vector(int* &p){
+	delete[] p; p = 0;
+}
+
+void alloc_DOUBLE_vector(int LINE, const char* FILE, double* &p, int size){
+	try{
+		p = new double[size];
+	}
+	catch  (std::bad_alloc& ba){
+		throw Exception(LINE,FILE,"Memory allocation failed. Bad allocation.");
+	}
+}
+
+void dealloc_DOUBLE_vector(double* &p){
+	delete[] p; p = 0;
+}
+
+
 void failOpeningFile(string filename, int line, const char* cppfile){
 	char msg[256]; sprintf(msg,"File '%s' could not be opened or do not exist.\n ",filename.c_str());
 	throw Exception(line,cppfile,msg);
@@ -67,31 +124,14 @@ void makeVector(const double *A, const double *B, double *v){
 	for (int i=0; i<3; i++) v[i] = B[i] - A[i];
 }
 
-bool isEdgeExternal(int flag){
-	return ( flag>=1000 && flag<=1499 );
-}
-
-bool isEdgeInternal(int flag){
-	return ( flag>=1500 && flag<=1999 );
-}
-
-bool isFaceExternal(int flag){
-	return ( flag>=2000 && flag<=2499 );
-}
-
-bool isFaceInternal(int flag){
-	return ( flag>=2500 && flag<=2999 );
-}
-
-
-double* getIdentityMatrix(const int &dim){
-	int i,j,k = 0;
-	double *Identity = new double[dim*dim];
-	for (i=0; i<dim; i++)
-		for (j=0; j<dim; j++)
-			Identity[k++] = (i==j)?1.0:.0;
-	return Identity;
-}
+//double* getIdentityMatrix(const int &dim){
+//	int i,j,k = 0;
+//	double *Identity = new double[dim*dim];
+//	for (i=0; i<dim; i++)
+//		for (j=0; j<dim; j++)
+//			Identity[k++] = (i==j)?1.0:.0;
+//	return Identity;
+//}
 
 int getVertexFlag(pVertex node){
 	return getEntityFlag(0,node);
@@ -161,19 +201,19 @@ void getIJnodes(pEdge edge, std::vector<pEntity> &vertex){
 	if (EN_id(vertex[0])>EN_id(vertex[1])) std::swap(vertex[0],vertex[1]);
 }
 
-void F_getEdges(pMesh theMesh, pEntity face, std::vector<pEntity> &edges){
-	std::vector<pVertex> vertex;
-	M_GetVertices(face,vertex);
-	int IDs[3]={EN_id(vertex[0]),EN_id(vertex[1]),EN_id(vertex[2])};
-	edges[0] = (pEntity)theMesh->getEdge(theMesh->getVertex(IDs[0]),
-			theMesh->getVertex(IDs[1]));
-	edges[1] = (pEntity)theMesh->getEdge(theMesh->getVertex(IDs[0]),
-			theMesh->getVertex(IDs[2]));
-	edges[2] = (pEntity)theMesh->getEdge(theMesh->getVertex(IDs[1]),
-			theMesh->getVertex(IDs[2]));
-
-	vertex.clear();
-}
+//void F_getEdges(pMesh theMesh, pEntity face, std::vector<pEntity> &edges){
+//	std::vector<pVertex> vertex;
+//	M_GetVertices(face,vertex);
+//	int IDs[3]={EN_id(vertex[0]),EN_id(vertex[1]),EN_id(vertex[2])};
+//	edges[0] = (pEntity)theMesh->getEdge(theMesh->getVertex(IDs[0]),
+//			theMesh->getVertex(IDs[1]));
+//	edges[1] = (pEntity)theMesh->getEdge(theMesh->getVertex(IDs[0]),
+//			theMesh->getVertex(IDs[2]));
+//	edges[2] = (pEntity)theMesh->getEdge(theMesh->getVertex(IDs[1]),
+//			theMesh->getVertex(IDs[2]));
+//
+//	vertex.clear();
+//}
 
 VPoint E_getVertexPoint(pEntity edge, int i){
 	return ((mVertex*)edge->get(0,i))->point();
@@ -236,16 +276,16 @@ double ratio(double a, double b){
 	return (double)(a/b);
 }
 
-void unitary_vector(const dblarray &a1, dblarray &a2){
-	std::copy(a1.begin(),a1.end(),a2.begin());
-	dblarray norm(a1.size(),sqrt( std::inner_product(a1.begin(),a1.end(),a1.begin(),.0) ));
-	std::transform(a2.begin(),a2.end(),norm.begin(),a2.begin(),ratio);
-}
+//void unitary_vector(const dblarray &a1, dblarray &a2){
+	//std::copy(a1.begin(),a1.end(),a2.begin());
+	//dblarray norm(a1.size(),sqrt( std::inner_product(a1.begin(),a1.end(),a1.begin(),.0) ));
+	//std::transform(a2.begin(),a2.end(),norm.begin(),a2.begin(),ratio);
+//}
 
-void unitary_vector(dblarray &a1){
-	dblarray norm(a1.size(),sqrt( std::inner_product(a1.begin(),a1.end(),a1.begin(),.0) ));
-	std::transform(a1.begin(),a1.end(),norm.begin(),a1.begin(),ratio);
-}
+//void unitary_vector(dblarray &a1){
+	//dblarray norm(a1.size(),sqrt( std::inner_product(a1.begin(),a1.end(),a1.begin(),.0) ));
+	//std::transform(a1.begin(),a1.end(),norm.begin(),a1.begin(),ratio);
+//}
 
 double norm2(const dblarray &a1){
 	return sqrt( std::inner_product(a1.begin(),a1.end(),a1.begin(),.0) );

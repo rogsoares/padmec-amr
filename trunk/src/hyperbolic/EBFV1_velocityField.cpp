@@ -13,8 +13,12 @@ namespace PRS{
 
 		CPU_Profile::Start();
 
+		const double* Cij = NULL;
+		const double* pGrad_I = NULL;
+		const double* pGrad_J = NULL;
+
 		double p_I, p_J, Sw_I, Sw_J, MobI, MobJ, MobIJ, length, flag;
-		double Cij[3], vel[3], versor[3], pGrad_I[3], pGrad_J[3], pw_grad_IJ[3];
+		double vel[3], versor[3], pw_grad_IJ[3];
 		int i, j, idx0_global, idx1_global, idx0, idx1, id0, id1;
 
 		int nedges = pGCData->getNumEdgesPerDomain(dom);
@@ -30,8 +34,8 @@ namespace PRS{
 			}
 			pPPData->getPressure(idx0_global,p_I);
 			pPPData->getPressure(idx1_global,p_J);
-			pPPData->get_pw_Grad(dom,idx0,pGrad_I);
-			pPPData->get_pw_Grad(dom,idx1,pGrad_J);
+			pPPData->get_pw_Grad_const(dom,idx0,pGrad_I);
+			pPPData->get_pw_Grad_const(dom,idx1,pGrad_J);
 			pGCData->getLength(dom,edge,length);
 			pGCData->getVersor(dom,edge,versor);
 

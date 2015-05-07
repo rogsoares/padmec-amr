@@ -1,94 +1,85 @@
 #include "ErrorAnalysis.h"
 
-/*
- * Steps for error analysis (taken from Felipe Araujo Dissertation, p47):
- * 
- * step 1: Gradient Recovery (skip this step because gradients have already been calculated.)
- * step 2: Calculate L2 norms of all nodal gradients and elements errors.
- *		 The error analysis works always favorable to security, it means that when evaluating element error related to two or more variables (e.g pressure and saturation)
- *		 the highest error will be considered.
- * 
- * 
- * step 3: Calculate global error for solution Neta
- * 
- *         if (global_error > tolerance)
- * 
- * step 4: calculate mean error based on Neta_1 for whole mesh
- * step 5: calculate d1 (new element dimension) parameter for all mesh elements. Defines the degree of refinement for all elements.
- * 
- * 
- * step 6: if (d1 < d_min) d1 = d_min
- * step 7: recalculate mean error based on the new Neta_2 for whole domain excluding the singularities
- * 
- * Singularities must be understood as regions where gradients are too high which leads the error analysis to set those elements with a very high refinement level
- * 
- * step 8: calculate d2 (new element dimension) parameter for all mesh elements excluding elements with singularities.
- * step 9: if (d2 < d_min) d2 = d_min
- * step 10: d_new = min(d1,d2)
- *          In fact, step 10 is inside step 9, because as long the new element degree
- */
+using namespace PRS;
 
-bool calculate_ErrorAnalysis(ErrorAnalysis *pEA, pMesh theMesh, SimulatorParameters *pSimPar, GeomData* pGCData, FuncPointer_GetGradient getGradient){
+bool calculate_ErrorAnalysis(ErrorAnalysis *pEA, SimulatorParameters *pSimPar, GeomData* pGCData,void(*pFunc_getGrad)(FIELD,int,int,int,double*), std::list<int>& elemList, std::map<int,double>& nodeMap){
 
 #ifdef TRACKING_PROGRAM_STEPS
 	cout << "TRACKING_PROGRAM_STEPS: Error Analysis\tIN\n";
 #endif
 
-	pEA->_pSimPar = pSimPar;			// for remeshing use
-	pEA->adapt = false;					// Says if it will be necessary perform a mesh adaptation
-	pEA->initializeParameters(theMesh);	// Every new error analysis, error and level of refinement of all mesh elements 
-	// are set to avoid mistakes from previous analysis.
+	pEA->initialize(pGCData,pSimPar);
 
-	// Before perform the error analysis, check if some original element number of subdivisions 
-	// reached the maximum number of subdivision allowed. If true, return 0
-	if ( pEA->checkMaximumNumberOfSubdivision(theMesh,pSimPar->getMax2D()) ){
-#ifdef __ERROR_ANALYSIS_DEBUG__
-		cout << "Mesh has reached maximum number of element refinement allowed by user.";
-#endif
-		return pEA->adapt;
-	}
+	bool Sw_adapt = analyzeField(SATURATION,pEA,pSimPar,pGCData,pFunc_getGrad);
+	bool p_adapt = analyzeField(PRESSURE,pEA,pSimPar,pGCData,pFunc_getGrad);
 
-	double tol1 = pSimPar->getToleranceForAllElements();
-	double tol2 = pSimPar->getToleranceForAllElements_excludingSingularities();
-	FIELD field = PRESSURE;
-	for (int i=0; i<2; i++){
-		pEA->resetAllElementsAsSingular(theMesh);									// do not preserve any element flagged as singular from previous analysis
-		pEA->calculate_ElementsError(theMesh,pSimPar,pGCData,getGradient,field);
-		pEA->calculate_SmoothedGradientNorm(theMesh,pSimPar,pGCData,getGradient,field);
-		pEA->calculate_GlobalError(theMesh);
-		if ( pEA->getGlobalError() > tol1 ){
-			pEA->adapt = true;
-			pEA->calculate_AvgError(theMesh,tol1,false);
-			pEA->calculate_DegreeOfRefinement(theMesh,pSimPar,false);
-			// if exist some element flagged as singular....
-			if (pEA->getNumElements_Singularity()){
-				// Repeat calculations for all mesh elements excluding those flagged as singular
-				pEA->calculate_SmoothedGradientNorm_Singularity(theMesh,pSimPar,pGCData,getGradient,field);
-				pEA->calculate_GlobalError_Singularity(theMesh);
-				if (pEA->getGlobalError_Singularity()>tol2){
-					pEA->calculate_AvgError(theMesh,tol2,true);
-					pEA->calculate_DegreeOfRefinement(theMesh,pSimPar,true);
-				}
-			}
-		}
-		else{
-			cout << "Adaptation not necessary for field " << i << "\n--------------------------\n";
-		}
-		pEA->monitoring(field,theMesh,tol1,tol2);
-		field = SATURATION;
-	}
+//	if (Sw_adapt || p_adapt){
+		double param1 = pSimPar->Remeshing_param1();
+		double param2 = pSimPar->Remeshing_param2();
+		pEA->calculate_h_ratio(pGCData);
 
-	// after all fields had been analized, set the correct values for h_new
-	if (pEA->adapt){
-		pEA->update_h_new(theMesh);
-		pEA->calculate_height_ratio(theMesh);
-	}
-	pEA->deletePointers();
-	//STOP();
+		pEA->getElementsForAdaptation(param1,param2,pGCData,elemList);
+		return false;
+//		pEA->getNodesForAdaptation(pGCData,nodeMap);
+//	}
+
+	//pEA->deletePointers();
 
 #ifdef TRACKING_PROGRAM_STEPS
 	cout << "TRACKING_PROGRAM_STEPS: Error Analysis\tOUT\n";
 #endif
-	return pEA->adapt;
+	//return Sw_adapt || p_adapt;
+	return false;
 }
 
+bool analyzeField(FIELD field, ErrorAnalysis *pEA, SimulatorParameters *pSimPar,GeomData* pGCData, void(*pFunc_getGrad)(FIELD,int,int,int,double*)){
+	double tol1, tol2;
+	bool adapt = false;
+
+	const bool NO_SINGULARITY = false;
+	const bool WITH_SINGULARITY = true;
+
+	switch (field){
+	case PRESSURE:
+		cout << "Pressure:\n";
+		cout << "====================================================================================\n";
+		tol1 = pSimPar->getp_Tol1();
+		tol2 = pSimPar->getp_Tol2();
+		break;
+	case SATURATION:
+		cout << "Saturation:\n";
+		cout << "====================================================================================\n";
+		tol1 = pSimPar->getSw_Tol1();
+		tol2 = pSimPar->getSw_Tol2();
+		break;
+	}
+
+	// all elements are not singular
+	pEA->setAllElementsAsNotSingular(pGCData->getNumElements());
+
+	// calculate errors for all mesh elements
+	pEA->calculate_ElementsError(pSimPar,pGCData,pFunc_getGrad,field);
+	pEA->calculate_SmoothedGradientNorm(pSimPar,pGCData,pFunc_getGrad,field);
+	pEA->calculate_GlobalError(pGCData);
+
+//	if (pEA->getGlobalError() > tol1){
+		pEA->calculate_AvgError(pGCData->getNumElements(),tol1,NO_SINGULARITY);
+		pEA->calculate_h_new(pGCData, pEA->getAverageError(),field);
+		pEA->identify_singular_regions(pGCData,field);
+
+		// calculate errors for all mesh elements excluding those flagged as singular
+		if (pEA->getNumElements_Singularity()) {
+
+			// Repeat calculations for all mesh elements excluding those flagged as singular
+			pEA->calculate_SmoothedGradientNorm_Singularity(pSimPar,pGCData,pFunc_getGrad,field);
+			pEA->calculate_GlobalError_Singularity(pGCData);
+
+			//if (pEA->getGlobalError_Singularity() > tol2){
+				pEA->calculate_AvgError(pGCData->getNumElements(),tol2,WITH_SINGULARITY);
+				pEA->calculate_h_new(pGCData,pEA->getAverageError_Singularity(),field);
+			//}
+		}
+		adapt = true;
+//	}
+	return adapt;
+}

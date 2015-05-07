@@ -13,7 +13,7 @@ namespace PRS{
 	int SIMULATION_core::solver(){
 		double timeStep;
 		if (simFlag==STEADY_STATE){
-			bool adapt;
+			bool adapt = false;	// ............ If adaptation is not required, get out while loop.
 			int count = 0;
 			do{
 				pElliptic_eq->solver(theMesh);
@@ -23,15 +23,24 @@ namespace PRS{
 				#endif
 				count++;
 			}while (adapt);
-			cout<< "Loops :"<< count <<endl;
+			if (adapt){
+				cout<< "Loops :"<< count <<endl;
+			}
 		}
 		else if (simFlag==TRANSIENT){
 			while ( !pSimPar->finishSimulation() ){
 				pElliptic_eq->solver(theMesh);
 				pHyperbolic_eq->solver(theMesh,timeStep);
-				#ifndef NOADAPTATION
-					adaptation();
-				#endif
+
+				std::list<int> elemList;
+				std::map<int,double> nodeMap;
+				calculate_ErrorAnalysis(pErrorAnalysis,pSimPar,pGCData,PhysicPropData::getGradient,elemList,nodeMap);
+				pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,pGCData,exportSolutionToVTK);
+				STOP();
+
+				//#ifndef NOADAPTATION
+				//	adaptation();
+				//#endif
 			}
 		}
 		return 0;

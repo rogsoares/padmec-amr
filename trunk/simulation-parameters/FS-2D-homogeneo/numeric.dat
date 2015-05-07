@@ -9,24 +9,24 @@
 * NOTE: flag and method must match with souce code flags
 */
 
-Chosse one of the methods availables above to solve the elliptic equation:
+Chosse one of the methods availables below to solve the elliptic equation:
 1 -> EBFV1
 2 -> EBFV1-local
 
-type method ID right above:
+type method ID right below:
 1
 
-Chosse one of the methods availables above to solve the hyperbolic equation:
+Chosse one of the methods availables below to solve the hyperbolic equation:
 1 -> EBFV1
 2 -> EBFV1_adaptative
 
-type method ID right above:
+type method ID right below:
 1
 
 Use high order approximation:
 no
 
-C.F.L (courant-friedilich-lendroff number):
+C.F.L (Courant-Friedilich-Lendroff):
 0.9
 
 Discretization time on production well:
@@ -37,10 +37,10 @@ where i = processor-rank-number and N = number-of-processors
 You MUST provide only filename, i.e, filename = (filename-i-of-N.dat) - (-i-of-N.dat)
 
 mesh filename:
-/home/rogerio/projetos/GOOGLE_CODES/padmec-amr/trunk/simulation-parameters/FS-2D-homogeneo/pp-data-files/test-grad.msh
+/home/rogerio/projetos/padmec-amr/trunk/simulation-parameters/FS-2D-homogeneo/pp-data-files/fs2dhmg__3.msh
 
 export filename (to VTK format without extension .vtk):
-/home/rogerio/projetos/GOOGLE_CODES/padmec-amr/trunk/simulation-parameters/FS-2D-homogeneo/results/test-grad
+/home/rogerio/projetos/padmec-amr/trunk/simulation-parameters/FS-2D-homogeneo/results/fs2dhmg__3
 
 Start simulation from <restart> file?
 no
@@ -49,8 +49,7 @@ Initial and Boundary conditions
 ================================================================================
 
 Dirichlet (Specify: flags and respective pressure values):
-10 1
-51 0
+1100 0
 end
 
 Neumann (Flow rate: positive values for injection and negative for production)
@@ -80,8 +79,7 @@ Ex.: Q = 1e-2, Vt = 0.05, Vp = 0.01, PVI = 1.0, t = PVI*(Vt*phi)/Q = 1
 
 Provide PVI number to specify simulation time duration
 simulation-time:
-.2
-
+1
 
 Specify velocity variation tolerance for time adaptative IMPES simulation
 dvtol:

@@ -144,8 +144,16 @@ public:
 		mat[i][0] = val;
 	}
 
-	void getRow(int row,T **vec){ 
+	void getRow(int row,const T **vec){
 		*vec = mat[row]; 
+	}
+
+	const T* getrowconst(int row){
+		return mat[row];
+	}
+
+	T* getrow(int row){
+		return mat[row];
 	}
 
 	const T getValue(int i, int j) const{

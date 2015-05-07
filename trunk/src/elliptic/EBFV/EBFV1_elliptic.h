@@ -31,6 +31,16 @@ namespace PRS{           // PRS: Petroleum Reservoir Simulator
 		bool key;
 	};
 
+	// MAS - Matrices Assembly Support
+	// holds all Gij and Dij coefficients for entire simulation without mobility term auxiliary
+	// Gij and Dij coefficients do not need to be recomputed every time elliptic solver is required
+	struct MAS{
+		double** Gij;			// matrix nedges by 4, where nedges means all mesh edges
+		double** Eij;			// matrix nedges by 6, where nedges means all mesh edges
+		int** indices;			// matrix indices used for assembling (global vertex ID)
+		double* edge_lambda;	// average mobility for IJ edge: edge_lambda[ith_edge] = (lambda_I + lambda_J)/2
+	};
+
 
 	int MatMultUser(Mat mat, Vec u, Vec y);
 
@@ -61,9 +71,9 @@ namespace PRS{           // PRS: Petroleum Reservoir Simulator
 		int assemblyMatrix(Mat);
 		
 		// Fill matrices E,G and F for a specific edge and domain. Theses function are called inside a loop of domains
-		int divergence_E(Mat E, double *Cij, int edge, int dom, int dom_flag, int idx0_global, int idx1_global, int id0, int id1, int dim);
-		int divergence_G(Mat G, double *Cij, int edge, int dom, int dom_flag, int idx0_global, int idx1_global, int id0, int id1, int dim);
-		int gradient_F_edges(Mat F, double *Cij, int dom, int idx0, int idx1, int id0, int id1, int dim);
+		int divergence_E(Mat E, const double *Cij, int edge, int dom, int dom_flag, int idx0_global, int idx1_global, int id0, int id1, int dim, int);
+		int divergence_G(Mat G, const double *Cij, int edge, int dom, int dom_flag, int idx0_global, int idx1_global, int id0, int id1, int dim, int);
+		int gradient_F_edges(Mat F, const double *Cij, int dom, int idx0, int idx1, int id0, int id1, int dim);
 		int gradient_F_bdry(Mat, int);
 		int F_bdryFaces(pMesh, Mat, const int&);
 		int F_bdryEdges(int,Mat);
@@ -73,7 +83,7 @@ namespace PRS{           // PRS: Petroleum Reservoir Simulator
 		double solveIteratively();
 
 		// Associate to mesh nodes new pressure values computed
-		double pressureGradient(pMesh theMesh);
+		//double pressureGradient(pMesh theMesh);
 		double updatePressure(pMesh theMesh);
 		void calculatePressureGradient();
 		void resetPressureGradient();
@@ -113,7 +123,9 @@ namespace PRS{           // PRS: Petroleum Reservoir Simulator
 		}
 
 		/*set well contribution to right hand side*/
-		int wellsContributionToRHS(pMesh theMesh, Vec&);
+		void wells_RHS_Assembly__Wells(pMesh mesh, Vec &RHS);
+		int wells_1(pMesh mesh, Vec &RHS);
+		int wells_2(pMesh mesh, Vec &RHS);
 
 		/* Matrices E,F and G are assembled for all nodes.
 		 * After that, sub matrices are extracted to form the system of equations.
@@ -133,6 +145,17 @@ namespace PRS{           // PRS: Petroleum Reservoir Simulator
 		double _gradientT;
 
 		bool firstVTK;
+
+		// pointer for Matrix Assembly Support (MAS) struct
+		MAS* pMAS;
+		bool Perform_Assembling;
+		void multiplyMatricesbyMobility();
+		int G_assembly(Mat);
+		int E_assembly(Mat,int,int&);
+		void setMASindices(int, int, int);
+		Mat* F;
+		Mat G_tmp;
+		Mat* E;
 
 
 		PhysicPropData *pPPData;

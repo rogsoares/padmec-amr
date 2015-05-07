@@ -2,7 +2,7 @@
 
 namespace PRS{
 //	int EBFV1_elliptic::gradient_F_edges(Mat F, pEntity edge, const int &dom, int dim, double *Cij){
-int EBFV1_elliptic::gradient_F_edges(Mat F, double *Cij, int dom, int idx0, int idx1, int id0, int id1, int dim){
+int EBFV1_elliptic::gradient_F_edges(Mat F, const double *Cij, int dom, int idx0, int idx1, int id0, int id1, int dim){
 		int i;
 		double volumeI, volumeJ;
 

@@ -6,14 +6,18 @@ namespace PRS{
 		const int* domainList = getDomainList();
 		std::map<int,int> mapIDtoIndex, mapBdryIDtoIndex, mapIDtoIndex_global;
 		std::set<int> setID, setBdryID;
-		int i, j, k, id, id0, id1;
+		int i, j, k, id0, id1, id;
 		pEntity node, edge, face, tetra;
 
 		i = 0;
 		// set a sequential numbering for each vertex ID: from 0 to n-1, where n is the number of vertices
+		alloc_INT_vector(__LINE__,__FILE__,pNodeID,M_numVertices(theMesh));
 		VIter vit = M_vertexIter(theMesh);
 		while ( (node=VIter_next(vit))){
-			mapIDtoIndex_global[EN_id(node)] = i++;
+			id = EN_id(node);
+			pNodeID[i] = id;
+			mapIDtoIndex_global[id] = i;
+			i++;
 		}
 		VIter_delete(vit);
 
@@ -108,7 +112,7 @@ namespace PRS{
 			//		...
 			//		idn = n;
 
-			if (setID.size() > this->getNumNodesPerDomain(k)){
+			if ((int)setID.size() > this->getNumNodesPerDomain(k)){
 				char msg[256]; sprintf(msg,"NUmber of elements collected [%d] is greater than the max [%d]",(int)setID.size(),this->getNumNodesPerDomain(k));
 				throw Exception(__LINE__,__FILE__,msg);
 			}
@@ -164,6 +168,39 @@ namespace PRS{
 
 			if (!i){
 				throw Exception(__LINE__,__FILE__,"Any edge detected!");
+			}
+
+			if (dim==2){
+				i = 0;
+				FIter fit = M_faceIter(theMesh);
+				while ( (face=FIter_next(fit)) ){
+					int flag = GEN_tag(face->getClassification());
+					if ( flag==dom ){
+						for (j=0; j<3; j++){
+							v1 = face->get(0,j);
+							id0 = EN_id( v1 );
+							elem[k].setValue(i,j,mapIDtoIndex[id0]);					// index number for vertex ID for domain k
+							elem[k].setValue(i,j+3,mapIDtoIndex_global[id0]);			// global index number for vertex ID
+						}
+						i++;
+					}
+				}
+			}
+			else{
+				i = 0;
+				RIter rit = M_regionIter(theMesh);
+				while ( (tetra=RIter_next(rit)) ){
+					int flag = GEN_tag(tetra->getClassification());
+					if ( flag==dom ){
+						for (j=0; j<4; j++){
+							v1 = tetra->get(0,j);
+							id0 = EN_id( v1 );
+							elem[k].setValue(i,j,mapIDtoIndex[id0]);					// index number for vertex ID for domain k
+							elem[k].setValue(i,j+4,mapIDtoIndex_global[id0]);			// global index number for vertex ID
+						}
+						i++;
+					}
+				}
 			}
 
 			i = 0;

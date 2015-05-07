@@ -227,6 +227,18 @@ public:
 	void setAdaptation() { _doAdaptation = true; }
 	bool userRequiresAdaptation() const { return _doAdaptation; }
 
+	void setSw_Tol1(double tol) { Sw_tol1 = tol; }	// set Sw tolerance for all elements
+	double getSw_Tol1() const {  return Sw_tol1; }	// get Sw tolerance for all elements
+
+	void setSw_Tol2(double tol) { Sw_tol2 = tol; }	// set Sw tolerance for all elements excluding singularities
+	double getSw_Tol2() const {  return Sw_tol2; }	// get Sw tolerance for all elements excluding singularities
+
+	void setp_Tol1(double tol) { p_tol1 = tol; }	// set p tolerance for all elements
+	double getp_Tol1() const {  return p_tol1; }	// get p tolerance for all elements
+
+	void setp_Tol2(double tol) { p_tol2 = tol; }	// set p tolerance for all elements excluding singularities
+	double getp_Tol2() const {  return p_tol2; }	// get p tolerance for all elements excluding singularities
+
 	void setTol1(double tol) { tol1 = tol; }
 	double getToleranceForAllElements() const {  return tol1; }
 
@@ -290,13 +302,33 @@ public:
 	// function pointer for exact solution
 	double (*exact_solution)(double x, double y, double z);
 
+	// function pointer for source/sink term
+	double (*ss_term)(double x, double y, double z);
+
 	void defineExactSolution();
+
+	BENCHMARK getCaseProblem() const{
+		return case_problem;
+	}
+
+	void setCommandLineArguments(char** argv, int argc){
+		__argv = argv;
+		__argc = argc;
+	}
+
+	// do not compute numeric solution. go to print exact solution in VTK
+	bool exactSolutionExist() const{
+		return exact_sol_exist;
+	}
 
 private:
 
+	bool exact_sol_exist;
 	bool bc_external_definition;
 	char** __argv;
 	int    __argc;
+
+	BENCHMARK case_problem;
 
 
 	RefinementStrategies refstrategy;
@@ -450,6 +482,10 @@ private:
 	bool _doAdaptation;		// Use mesh adaptation:
 	double tol1; 			// Error tolerance for all mesh elements:
 	double tol2; 			// Error tolerance for all mesh elements excluding those on singularities regions:
+	double Sw_tol1;
+	double Sw_tol2;
+	double p_tol1;
+	double p_tol2;
 	int numMax_2D;			// Maximum number of 2D element subdivisions (recommended: 4)
 	int numMax_3D;			// Maximum number of 3D element subdivisions (recommended: 3)
 	int numMaxSubdivisions; // Maximum number of refinement steps:

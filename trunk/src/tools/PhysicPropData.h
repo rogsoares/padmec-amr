@@ -24,7 +24,7 @@ namespace PRS{
  * ties are associated to a mesh entity (node or edge) through the class AttachData that is in charge of store all data (physical,
  * numeric, geometric,...) to mesh entities.
  */
-class PhysicPropData : public AttachData{
+class PhysicPropData{
 public:
 
 	PhysicPropData();
@@ -57,11 +57,19 @@ public:
 		pGrad_dom[dom].setValue(row,2,grad[2]);
 	}
 
-	static void get_pw_Grad(int dom, int row, double* grad){
-		grad[0] = pGrad_dom[dom].getValue(row,0);
-		grad[1] = pGrad_dom[dom].getValue(row,1);
-		grad[2] = pGrad_dom[dom].getValue(row,2);
+	static void get_pw_Grad_const(int dom, int row, const double* &grad){
+		grad = pGrad_dom[dom].getrowconst(row);
 	}
+
+	void get_pw_Grad(int dom, int row, double* &grad){
+		grad = pGrad_dom[dom].getrow(row);
+	}
+
+//	static void get_pw_Grad(int dom, int row, double* grad){
+//		grad[0] = pGrad_dom[dom].getValue(row,0);
+//		grad[1] = pGrad_dom[dom].getValue(row,1);
+//		grad[2] = pGrad_dom[dom].getValue(row,2);
+//	}
 
 	static void setPressure(int idx, double p){
 		pressure.setValue(idx,p);
@@ -83,17 +91,17 @@ public:
 		grad[2] = SwGrad.getValue(row,2);
 	}
 
-	void set_Sw_Grad(int dom, int row, const double* grad){
-		SwGrad_dom[dom].setValue(row,0,grad[0]);
-		SwGrad_dom[dom].setValue(row,1,grad[1]);
-		SwGrad_dom[dom].setValue(row,2,grad[2]);
-	}
-
-	void get_Sw_Grad(int dom, int row, double* grad){
-		grad[0] = SwGrad_dom[dom].getValue(row,0);
-		grad[1] = SwGrad_dom[dom].getValue(row,1);
-		grad[2] = SwGrad_dom[dom].getValue(row,2);
-	}
+//	void set_Sw_Grad(int dom, int row, const double* grad){
+//		SwGrad_dom[dom].setValue(row,0,grad[0]);
+//		SwGrad_dom[dom].setValue(row,1,grad[1]);
+//		SwGrad_dom[dom].setValue(row,2,grad[2]);
+//	}
+//
+//	void get_Sw_Grad(int dom, int row, double* grad){
+//		grad[0] = SwGrad_dom[dom].getValue(row,0);
+//		grad[1] = SwGrad_dom[dom].getValue(row,1);
+//		grad[2] = SwGrad_dom[dom].getValue(row,2);
+//	}
 
 	static void setPressure_NM(int idx, double v){
 		p_tmp.setValue(idx,v);
@@ -179,10 +187,10 @@ public:
 	void storeSwField(pMesh);
 
 
-	// get set/get pointers to arrays of pointer functions
-	FuncPointer_GetGradient get_FuncPointer_GetGradient(){
-		return getGradient;
-	}
+//	// get set/get pointers to arrays of pointer functions
+//	FuncPointer_GetGradient get_FuncPointer_GetGradient(){
+//		return getGradient;
+//	}
 
 	/*! brief For steady-state simulations, total mobility must be equal 1, otherwise it must be calculated.
 	 * \param state if true, lambda_total = 1.0;
@@ -259,7 +267,7 @@ private:
 
 	Matrix<double>* velocity;
 	Matrix<double> nonvisc;
-	Matrix<double> *SwGrad_dom;
+	//Matrix<double> *SwGrad_dom;
 	Matrix<bool> projectedSw_grad;
 	Matrix<bool> injectionWell; // idx = 0 (not injectio/ could be production), idx = 1 free well
 	int nfree;
