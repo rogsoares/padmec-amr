@@ -7,24 +7,23 @@
 
 
 void exportSolutionToVTK(pMesh,void*,void*,void*,void*,string);
-void printVTKHeader(ofstream &, pMesh);
+void print_headers(ofstream &fid, int);
 void printVerticesCoordenates(ofstream &, pMesh);
 void printElementConnectivities(ofstream&, pMesh, int, int);
 void printElementConnectivities(ofstream&, pEntity, int);
 void printCellTypeList(ofstream &, int, int);
-void printPressure(ofstream &, pMesh, PRS::PhysicPropData*);
-void printSaturation(ofstream &, pMesh, PRS::PhysicPropData*);
-void printSaturation(ofstream &, pMesh, PRS::PhysicPropData*, PRS::GeomData*);
+void printPressure(ofstream &fid, GeomData* pGCData, PhysicPropData *pPPData);
+void printSaturation(ofstream &fid, GeomData* pGCData, PhysicPropData *pPPData);
 void printPressureGradient(ofstream& fid, PRS::GeomData* pGCData, PRS::PhysicPropData *pPPData);
 
 //void printElementError(ofstream &, pMesh, ErrorAnalysis*);
 void printElementError(ofstream&, GeomData*, ErrorAnalysis*);
 void print_h_ratio(ofstream &, GeomData*, ErrorAnalysis*);
 void print_singular_regions(ofstream &, GeomData*, ErrorAnalysis*);
+void print_elements_to_remove(ofstream &, GeomData*, ErrorAnalysis*);
 
 // New VTK source file
 // --------------------------------------------------------------
-void print_headers(ofstream&,int);
 void print_coodinates(ofstream&,const GeomData*);
 void print_connectivities(ofstream&, const GeomData*);
 void print_celltype(ofstream&,int,int);

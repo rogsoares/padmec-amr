@@ -100,18 +100,8 @@ void ErrorAnalysis::getNodesForAdaptation(GeomData* pGCData, std::map<int,double
 	for(i=0; i<numNodes; i++){
 		nodeMap[pGCData->getNodeID(i)] /= pGCData->getNumFacesSharingVertex(i);
 	}
+
+//	for(i=0; i<numNodes; i++){
+//		cout << scientific << setprecision(7) << "ID - " << pGCData->getNodeID(i) << "\t avr_height: " << nodeMap[pGCData->getNodeID(i)] << ".  NumFacesSharingVertex: " << pGCData->getNumFacesSharingVertex(i) << endl;
+//	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

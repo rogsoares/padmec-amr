@@ -46,7 +46,7 @@ void ErrorAnalysis::calculate_SmoothedGradientNorm(SimulatorParameters *pSimPar,
 	for (i=0; i<dim+1; i++){
 		delete[] grad[i]; grad[i] = 0;
 	}
-	cout << "SGN (all elements) = " << sqrt(SGN) << endl;
+	//cout << "SGN (all elements) = " << sqrt(SGN) << endl;
 }
 
 void ErrorAnalysis::calculate_SmoothedGradientNorm_Singularity(SimulatorParameters *pSimPar, GeomData* pGCData, void(*pFunc_getGrad)(FIELD,int,int,int,double*), FIELD field){
@@ -93,6 +93,6 @@ void ErrorAnalysis::calculate_SmoothedGradientNorm_Singularity(SimulatorParamete
 	for (i=0; i<dim+1; i++){
 		delete[] grad[i]; grad[i] = 0;
 	}
-	cout << "SGN (singular) = " << sqrt(SGN) << endl;
-	cout << "counter = " << counter << endl;
+//	cout << "SGN (singular) = " << sqrt(SGN) << endl;
+//	cout << "counter = " << counter << endl;
 }

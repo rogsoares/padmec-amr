@@ -30,7 +30,9 @@ class ErrorAnalysis{
 
 public:
 
-	ErrorAnalysis(){}
+	ErrorAnalysis(){
+		init = false;
+	}
 	~ErrorAnalysis(){}
 
 	//calculate functions
@@ -47,6 +49,7 @@ public:
 	void calculate_GlobalError_Singularity(GeomData* pGCData);
 	void calculate_AvgError(int,double,bool);
 	void initialize(GeomData* pGCData, SimulatorParameters *pSimPar);
+	void resetVariables(int);
 
 	// returns a list of connectivities of elements to be removed/modified for mesh adaptation and its size as well.
 	void getElementsForAdaptation(double param1, double param2, GeomData* pGCData, std::list<int> &elemList);
@@ -182,6 +185,8 @@ private:
 	Matrix<double>* p_h_new;			// save h_new for all elements for each field
 
 	bool* pElmToRemove;					// says if an element is to be removed or not
+
+	bool init;
 };
 
 

@@ -22,12 +22,7 @@ void exportSolutionToVTK(string& filename, const PhysicPropData* pPPData, const 
 	cout << setprecision(2) << scientific << "Time to print VTK file: " << MPI_Wtime - t1 << "[s]\n";
 }
 
-void print_headers(ofstream &fid, int numNodes){
-	fid << "# vtk DataFile Version 2.0\n";
-	fid << "Two phases flow simulation\n";
-	fid << "ASCII\nDATASET UNSTRUCTURED_GRID\n";
-	fid << "POINTS " << numNodes << " float\n";
-}
+
 
 void print_Coordinates(ofstream &fid, const GeomData* pGCData){
 	//double coords[3];

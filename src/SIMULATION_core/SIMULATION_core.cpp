@@ -70,7 +70,6 @@ namespace PRS {
 		return 0;
 	}
 
-
 	Elliptic_equation* SIMULATION_core::init_EllipticSolverPointer(int elliptic_method){
 		switch ( elliptic_method ){
 		// EBFV1: A vertex centered edge based finite volume formulation
@@ -117,36 +116,36 @@ namespace PRS {
 
 	void SIMULATION_core::initialize_adaptation(int argc, char **argv){
 		pErrorAnalysis = new ErrorAnalysis;
+
 		#ifndef NOADAPTATION
+			pIData = new InterpolationDataStruct;
+			//pIData->getLevelOfRefinement = ErrorAnalysis::getLevelOfRefinement;
+			pIData->numFields = 2;
+			pIData->pGetDblFunctions = new GetDblFunction[2];
+			pIData->pSetDblFunctions = new SetDblFunction[2];
 
-		pIData = new InterpolationDataStruct;
-		//pIData->getLevelOfRefinement = ErrorAnalysis::getLevelOfRefinement;
-		pIData->numFields = 2;
-		pIData->pGetDblFunctions = new GetDblFunction[2];
-		pIData->pSetDblFunctions = new SetDblFunction[2];
+			// get data from old mesh
+			pIData->pGetDblFunctions[0] = pPPData->getPressure;
+			pIData->pGetDblFunctions[1] = pPPData->getSaturation;
 
-		// get data from old mesh
-		pIData->pGetDblFunctions[0] = pPPData->getPressure;
-		pIData->pGetDblFunctions[1] = pPPData->getSaturation;
+			// set data (interpolated) to new mesh
+			pIData->pSetDblFunctions[0] = pPPData->setPressure_NM;		// set pressure for New Mesh
+			pIData->pSetDblFunctions[1] = pPPData->setSaturation_NM;	// set saturarion for New Mesh
 
-		// set data (interpolated) to new mesh
-		pIData->pSetDblFunctions[0] = pPPData->setPressure_NM;		// set pressure for New Mesh
-		pIData->pSetDblFunctions[1] = pPPData->setSaturation_NM;	// set saturarion for New Mesh
-
-		switch( pSimPar->getRefStrategy() ){
-		case H_REFINEMENT:
-			pMeshAdapt = new H_Refinement_2D;
-			pIData->isElementSpecial = H_Refinement_2D::isElementSpecial;
-			break;
-		case ADAPTIVE_REMESHING:
-			pMeshAdapt = new AdaptiveRemeshing(argc, argv);
-			break;
-		case RH_REFINEMENT:
-			//pMeshAdapt = new RH_Refinement(argc, argv);
-			break;
-		default:
-			throw Exception(__LINE__,__FILE__,"Unknown adaptation strategy.");
-		}
+			switch( pSimPar->getRefStrategy() ){
+			case H_REFINEMENT:
+				pMeshAdapt = new H_Refinement_2D;
+				pIData->isElementSpecial = H_Refinement_2D::isElementSpecial;
+				break;
+			case ADAPTIVE_REMESHING:
+				pMeshAdapt = new AdaptiveRemeshing(argc, argv);
+				break;
+			case RH_REFINEMENT:
+				//pMeshAdapt = new RH_Refinement(argc, argv);
+				break;
+			default:
+				throw Exception(__LINE__,__FILE__,"Unknown adaptation strategy.");
+			}
 		#endif
 	}
 

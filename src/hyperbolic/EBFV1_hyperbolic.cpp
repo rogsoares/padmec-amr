@@ -68,7 +68,7 @@ namespace PRS{
 			timestep_counter = 0;
 		}
 
-		//pSimPar->printOutVTK(theMesh,pPPData,pEA,pSimPar,pGCData,exportSolutionToVTK);
+		pSimPar->printOutVTK(theMesh,pPPData,pEA,pSimPar,pGCData,exportSolutionToVTK);
 		if (!P_pid()) std::cerr << "done.\n\n";
 		return 0;
 	}
