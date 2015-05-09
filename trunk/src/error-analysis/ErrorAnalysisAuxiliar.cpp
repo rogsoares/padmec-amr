@@ -9,6 +9,12 @@
 
 void ErrorAnalysis::initialize(GeomData* pGCData, SimulatorParameters *pSimPar){
 
+	// if initialize had already been called, it means pointers are still allocated from previous analysis.
+	// Before proceed to a new analysis, delete them all.
+	if (init){
+		deletePointers();
+	}
+
 	int nnodes = pGCData->getNumNodes();
 	int nelements = pGCData->getNumElements();
 
@@ -20,18 +26,9 @@ void ErrorAnalysis::initialize(GeomData* pGCData, SimulatorParameters *pSimPar){
 	p_h_new = new Matrix<double>;
 	p_h_new->allocateMemory(nelements,2);	// pressure and saturation
 
-	// reset variables
-	SGN = .0;
-	SGN_sing = .0;
-	averageError = .0;
-	averageError_Singularity = .0;
-	globalError = .0;
-	globalError_Singularity = .0;
-
-	// reseting arrays
+	// reseting array
 	for (int i=0; i<nelements; i++){
-		pElemError[i] = .0;
-		pElmToRemove = false;
+		pElmToRemove[i] = false;
 	}
 
 	p_h_new->initialize(1e+10);
@@ -48,6 +45,22 @@ void ErrorAnalysis::initialize(GeomData* pGCData, SimulatorParameters *pSimPar){
 	// Use elements heights to define a minimum allowed element height for re-mesh.
 	// This must be done for the very first time only.
 	set_h_min(pGCData,pSimPar);
+
+	// analysis error has been started
+	init = true;
+}
+
+void ErrorAnalysis::resetVariables(int nelements){
+	SGN = .0;
+	SGN_sing = .0;
+	averageError = .0;
+	averageError_Singularity = .0;
+	globalError = .0;
+	globalError_Singularity = .0;
+	for (int i=0; i<nelements; i++){
+		pElemError[i] = .0;
+	}
+	setAllElementsAsNotSingular(nelements);
 }
 
 void ErrorAnalysis::deletePointers(){
@@ -55,6 +68,7 @@ void ErrorAnalysis::deletePointers(){
 	delete p_h_new; p_h_new = 0;
 	dealloc_DOUBLE_vector(pElemError);
 	dealloc_BOOL_vector(isElementSingular);
+	dealloc_BOOL_vector(pElmToRemove);
 }
 
 void ErrorAnalysis::setAllElementsAsNotSingular(int nelem){

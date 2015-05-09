@@ -77,7 +77,7 @@ public:
 		}
 
 		int i;
-		double cumulated, average, h, m, s, total;
+		double cumulated, h, m, s, total;
 		double arrayprofile[sizemap];
 
 		ofstream fid;

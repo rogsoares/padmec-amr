@@ -445,22 +445,25 @@ namespace PRS{
 			numElemSharingVertex[i] = 0;
 		}
 
-		/* ----------------------------------------------------
+		/* ----------------------------------------------------------
 					 2-D (triangle)			   3-D (tetrahedra)
 				idx[0]	: local index		idx[0]	: local index
 				idx[1]	: local index		idx[1]	: local index
-											idx[2]	: local index
+				idx[2]	: local index		idx[2]	: local index
+											idx[3]	: global index
 
-				idx[2]	: global index		idx[3]	: global index
 				idx[3]	: global index		idx[4]	: global index
-											idx[5]	: global index
+				idx[4]	: global index		idx[5]	: global index
+				idx[5]	: global index		idx[6]	: global index
+											idx[7]	: global index
 				---------------------------------------------------- */
-
+		int pos1 = dim+1;
+		int pos2 = pos1+dim;
 		for (dom=0; dom<_ndom; dom++){
 			for (i=0; i<numDomElem[dom]; i++){
 				idx = elem[dom].getrowconst(i);
-				for (j=0; j<dim; j++){
-					numElemSharingVertex[ idx[dim+j] ]++;
+				for (j=pos1; j<=pos2; j++){
+					numElemSharingVertex[ idx[j] ]++;
 				}
 			}
 		}

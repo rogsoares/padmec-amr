@@ -11,25 +11,22 @@ bool calculate_ErrorAnalysis(ErrorAnalysis *pEA, SimulatorParameters *pSimPar, G
 	pEA->initialize(pGCData,pSimPar);
 
 	bool Sw_adapt = analyzeField(SATURATION,pEA,pSimPar,pGCData,pFunc_getGrad);
-	bool p_adapt = analyzeField(PRESSURE,pEA,pSimPar,pGCData,pFunc_getGrad);
+	bool p_adapt = false;//analyzeField(PRESSURE,pEA,pSimPar,pGCData,pFunc_getGrad);
 
 //	if (Sw_adapt || p_adapt){
-		double param1 = pSimPar->Remeshing_param1();
-		double param2 = pSimPar->Remeshing_param2();
-		pEA->calculate_h_ratio(pGCData);
+	double param1 = pSimPar->Remeshing_param1();
+	double param2 = pSimPar->Remeshing_param2();
+	pEA->calculate_h_ratio(pGCData);
+	pEA->getElementsForAdaptation(param1,param2,pGCData,elemList);
+	pEA->getNodesForAdaptation(pGCData,nodeMap);
 
-		pEA->getElementsForAdaptation(param1,param2,pGCData,elemList);
-		return false;
-//		pEA->getNodesForAdaptation(pGCData,nodeMap);
 //	}
 
-	//pEA->deletePointers();
 
 #ifdef TRACKING_PROGRAM_STEPS
 	cout << "TRACKING_PROGRAM_STEPS: Error Analysis\tOUT\n";
 #endif
-	//return Sw_adapt || p_adapt;
-	return false;
+	return Sw_adapt || p_adapt;
 }
 
 bool analyzeField(FIELD field, ErrorAnalysis *pEA, SimulatorParameters *pSimPar,GeomData* pGCData, void(*pFunc_getGrad)(FIELD,int,int,int,double*)){
@@ -54,8 +51,8 @@ bool analyzeField(FIELD field, ErrorAnalysis *pEA, SimulatorParameters *pSimPar,
 		break;
 	}
 
-	// all elements are not singular
-	pEA->setAllElementsAsNotSingular(pGCData->getNumElements());
+	// reset global error, element error, etc.
+	pEA->resetVariables(pGCData->getNumElements());
 
 	// calculate errors for all mesh elements
 	pEA->calculate_ElementsError(pSimPar,pGCData,pFunc_getGrad,field);

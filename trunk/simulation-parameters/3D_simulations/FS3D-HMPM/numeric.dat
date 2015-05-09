@@ -79,7 +79,7 @@ Ex.: Q = 1e-2, Vt = 0.05, Vp = 0.01, PVI = 1.0, t = PVI*(Vt*phi)/Q = 1
 
 Provide PVI number to specify simulation time duration
 simulation-time:
-1
+.08
 
 Specify velocity variation tolerance for time adaptative IMPES simulation
 dvtol:
@@ -92,6 +92,6 @@ will be the simulation. Oscilation can appear on recovered and accumulated oil p
 
 Define reservoir dimension length and heigth
 Reservoir Dimensions: L - H:
-1.0 1.0
+0.4 1.0
 
 # END OF SIMULATOR PARAMETERS FILE

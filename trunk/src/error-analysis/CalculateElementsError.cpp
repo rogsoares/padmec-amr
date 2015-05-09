@@ -15,24 +15,24 @@ void ErrorAnalysis::calculate_ElementsError(SimulatorParameters *pSimPar, GeomDa
 
 	// arrays of pointers for arrays: gradients and delta gradients
 	double* grad[4];
-	double* delt_grad[4];
 	for (i=0; i<dim+1; i++){
-		grad[i] = new double[3];
-		delt_grad[i] = new double[3];
+		grad[i] = new double[dim];
 	}
 
 	// vector created over elements' edges
 	int num_edges = 3*(dim-1);
-	double* vectors[6];
+	double* vectors[num_edges];
+	double* delt_grad[num_edges];
 	for (i=0;i<num_edges;i++){
 		vectors[i] = new double[dim];
+		delt_grad[i] = new double[dim];
 	}
 
 	// indices to automate edge vectors creation
 	int idx[6][2] = {{0,1},{1,2},{2,0},{0,3},{1,3},{2,3}};
 
-	// automate delta gradient calculation
-	int dltGrd_idx[4][2] = {{0,1},{1,2},{2,3},{3,0}};
+	// automate delta gradient calculation: triangle has 3 grad. diff | tetrahedron has 6 grad. differences
+	int dltGrd_idx[6][2] = {{0,1},{1,2},{2,0},{3,0},{3,1},{3,2}};
 
 	// indices: elements connectivities
 	const int* indices = NULL;
@@ -103,10 +103,11 @@ void ErrorAnalysis::calculate_ElementsError(SimulatorParameters *pSimPar, GeomDa
 //			cout << endl;
 
 			// gradient variation
-			for (i=0; i<dim+1; i++){    /*number of element vertices*/
+			for (i=0; i<num_edges; i++){    /*number of element vertices*/
 				//double* deltgrd = delt_grad[i];
 				double* grd_A = grad[ dltGrd_idx[i][0] ];
 				double* grd_B = grad[ dltGrd_idx[i][1] ];
+				//cout << grd_A << "\t" << grd_B << "\t\t" << dltGrd_idx[i][0] << "," << dltGrd_idx[i][1] << endl;
 				for (j=0; j<dim; j++){  /*number of coordinates*/
 					(delt_grad[i])[j] = grd_B[j] - grd_A[j];
 				}
@@ -123,7 +124,7 @@ void ErrorAnalysis::calculate_ElementsError(SimulatorParameters *pSimPar, GeomDa
 
 			// inner product
 			double e, error = .0;
-			for (i=0; i<dim+1; i++){    /*number of element vertices*/
+			for (i=0; i<num_edges; i++){    /*number of element vertices*/
 				e = inner_product(delt_grad[i],vectors[i],dim);
 				error += fabs(e);
 			}
