@@ -15,16 +15,14 @@
 #include "SimulatorParameters.h"
 #include "GeomData.h"
 #include "Matrix.h"
+#include "CPU_Profiling.h"
+
 using namespace PRS;
 
 class ErrorAnalysis;
 
-bool analyzeField(FIELD, ErrorAnalysis*, SimulatorParameters*, GeomData*, void(*)(FIELD,int,int,int,double*));
-
-class ErrorAnalysis;
-
-
-bool calculate_ErrorAnalysis(ErrorAnalysis*, SimulatorParameters*, GeomData*, void(*)(FIELD,int,int,int,double*), std::list<int>&, std::map<int,double>&);
+bool analyzeField(FIELD, ErrorAnalysis*, SimulatorParameters*, GeomData*, void(*)(FIELD,int,int,int,const double*&));
+bool calculate_ErrorAnalysis(ErrorAnalysis*, SimulatorParameters*, GeomData*, void(*)(FIELD,int,int,int,const double*&), std::list<int>&, std::map<int,double>&);
 
 class ErrorAnalysis{
 
@@ -36,9 +34,9 @@ public:
 	~ErrorAnalysis(){}
 
 	//calculate functions
-	void calculate_ElementsError(SimulatorParameters *pSimPar, GeomData*, void(*)(FIELD,int,int,int,double*), FIELD);
-	void calculate_SmoothedGradientNorm(SimulatorParameters *pSimPar, GeomData*, void(*)(FIELD,int,int,int,double*), FIELD);
-	void calculate_SmoothedGradientNorm_Singularity(SimulatorParameters *pSimPar, GeomData*, void(*)(FIELD,int,int,int,double*), FIELD);
+	void calculate_ElementsError(SimulatorParameters *pSimPar, GeomData*, void(*)(FIELD,int,int,int,const double*&), FIELD);
+	void calculate_SmoothedGradientNorm(SimulatorParameters *pSimPar, GeomData*, void(*)(FIELD,int,int,int, const double*&), FIELD);
+	void calculate_SmoothedGradientNorm_Singularity(SimulatorParameters *pSimPar, GeomData*, void(*)(FIELD,int,int,int,const double*&), FIELD);
 	void calculate_DegreeOfRefinement(GeomData*, RefinementStrategies, bool, FIELD);
 
 	double getElementError(int i) const{
@@ -169,6 +167,10 @@ public:
 	void identify_singular_regions(GeomData*, FIELD);
 	void calculate_h_ratio(GeomData*);
 
+	double getWE_node(int i) const{
+		return pWH_node[i];
+	}
+
 private:
 
 	int numElements;					// number or mesh's elements
@@ -183,8 +185,8 @@ private:
 	double* pElemError;					// where element error are stored
 	bool* isElementSingular;			// says if element is singular or not
 	Matrix<double>* p_h_new;			// save h_new for all elements for each field
-
 	bool* pElmToRemove;					// says if an element is to be removed or not
+	double* pWH_node;					// pointer to array to store Weighted height per mesh node. (for visualization purpose)
 
 	bool init;
 };

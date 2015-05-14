@@ -2,8 +2,8 @@
 
 using namespace PRS;
 
-bool calculate_ErrorAnalysis(ErrorAnalysis *pEA, SimulatorParameters *pSimPar, GeomData* pGCData,void(*pFunc_getGrad)(FIELD,int,int,int,double*), std::list<int>& elemList, std::map<int,double>& nodeMap){
-
+bool calculate_ErrorAnalysis(ErrorAnalysis *pEA, SimulatorParameters *pSimPar, GeomData* pGCData, void(*pFunc_getGrad)(FIELD,int,int,int,const double*&), std::list<int>& elemList, std::map<int,double>& nodeMap){
+	CPU_Profile::Start();
 #ifdef TRACKING_PROGRAM_STEPS
 	cout << "TRACKING_PROGRAM_STEPS: Error Analysis\tIN\n";
 #endif
@@ -11,25 +11,26 @@ bool calculate_ErrorAnalysis(ErrorAnalysis *pEA, SimulatorParameters *pSimPar, G
 	pEA->initialize(pGCData,pSimPar);
 
 	bool Sw_adapt = analyzeField(SATURATION,pEA,pSimPar,pGCData,pFunc_getGrad);
-	bool p_adapt = false;//analyzeField(PRESSURE,pEA,pSimPar,pGCData,pFunc_getGrad);
+	bool p_adapt = analyzeField(PRESSURE,pEA,pSimPar,pGCData,pFunc_getGrad);
 
-//	if (Sw_adapt || p_adapt){
-	double param1 = pSimPar->Remeshing_param1();
-	double param2 = pSimPar->Remeshing_param2();
-	pEA->calculate_h_ratio(pGCData);
-	pEA->getElementsForAdaptation(param1,param2,pGCData,elemList);
-	pEA->getNodesForAdaptation(pGCData,nodeMap);
-
-//	}
+	if (Sw_adapt || p_adapt){
+		double param1 = pSimPar->Remeshing_param1();
+		double param2 = pSimPar->Remeshing_param2();
+		pEA->calculate_h_ratio(pGCData);
+		pEA->getElementsForAdaptation(param1,param2,pGCData,elemList);
+		pEA->getNodesForAdaptation(pGCData,nodeMap);
+	}
 
 
 #ifdef TRACKING_PROGRAM_STEPS
 	cout << "TRACKING_PROGRAM_STEPS: Error Analysis\tOUT\n";
 #endif
+
+	CPU_Profile::End("Error Analysis");
 	return Sw_adapt || p_adapt;
 }
 
-bool analyzeField(FIELD field, ErrorAnalysis *pEA, SimulatorParameters *pSimPar,GeomData* pGCData, void(*pFunc_getGrad)(FIELD,int,int,int,double*)){
+bool analyzeField(FIELD field, ErrorAnalysis *pEA, SimulatorParameters *pSimPar,GeomData* pGCData, void(*pFunc_getGrad)(FIELD,int,int,int,const double*&)){
 	double tol1, tol2;
 	bool adapt = false;
 

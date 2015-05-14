@@ -34,6 +34,7 @@ namespace PRS{
 		Sw.freeMemory();
 		pressure.freeMemory();
 		Sw_old.freeMemory();
+
 		// allocate with new dimension
 		int rows,cols;
 		Sw_tmp.getsize(rows,cols);
@@ -41,6 +42,7 @@ namespace PRS{
 		pressure.allocateMemory(rows);
 		Sw_old.allocateMemory(rows);
 		Sw_old.initialize(0);
+
 		// transfer data
 		for(int i=0;i<rows;i++){
 			Sw.setValue(i,Sw_tmp.getValue(i));
@@ -55,7 +57,6 @@ namespace PRS{
 		int ndom = pGCData->getNumDomains();
 		pGrad_dom = new Matrix<double>[ndom];
 		velocity = new Matrix<double>[ndom];
-		//SwGrad_dom = new Matrix<double>[ndom];
 		for (int k=0; k<ndom; k++){
 			int nrows = pGCData->getNumNodesPerDomain(k);
 			int nedges = pGCData->getNumEdgesPerDomain(k);
@@ -63,8 +64,6 @@ namespace PRS{
 			pGrad_dom[k].initialize(.0);
 			velocity[k].allocateMemory(nedges,6);
 			velocity[k].initialize(.0);
-			//SwGrad_dom[k].allocateMemory(nrows,3);
-			//SwGrad_dom[k].initialize(.0);
 		}
 		nnodes = numnodes;
 		SwGrad.allocateMemory(nnodes,3);
@@ -90,13 +89,11 @@ namespace PRS{
 		for (int k=0; k<ndom; k++){
 			pGrad_dom[k].freeMemory();
 			velocity[k].freeMemory();
-			//SwGrad_dom[k].freeMemory();
 		}
 		SwGrad.freeMemory();
 		injectionWell.freeMemory();
 		projectedSw_grad.freeMemory();
 		nonvisc.freeMemory();
-		//delete[] SwGrad_dom; SwGrad_dom = 0;
 		delete[] pGrad_dom; pGrad_dom = 0;
 		delete[] velocity; velocity = 0;
 

@@ -12,17 +12,17 @@
  * 	SNG = sum((|gradSw_I|+|gradSw_J|+|gradSw_K|)/3.0)^2
  * 	where sum is for each triangle element with nodes I, J, K.
  */
-void ErrorAnalysis::calculate_SmoothedGradientNorm(SimulatorParameters *pSimPar, GeomData* pGCData, void(*pFunc_getGrad)(FIELD,int,int,int,double*), FIELD field){
+void ErrorAnalysis::calculate_SmoothedGradientNorm(SimulatorParameters *pSimPar, GeomData* pGCData, void(*pFunc_getGrad)(FIELD,int,int,int,const double*&), FIELD field){
 	int i;
 	int dim = pGCData->getMeshDim();			// mesh dimension
 	int pos = dim+1;							// Auxiliary variable
 	const int* indices = NULL;					// indices: elements connectivities
 
 	// arrays of pointers for arrays: gradients and delta gradients
-	double* grad[4];
-	for (i=0; i<dim+1; i++){
-		grad[i] = new double[3];
-	}
+	const double* grad[4] = {NULL,NULL,NULL,NULL};
+//	for (i=0; i<dim+1; i++){
+//		grad[i] = new double[3];
+//	}
 
 	// loop over domains
 	double sgn_tmp, SGN = 0;
@@ -43,23 +43,23 @@ void ErrorAnalysis::calculate_SmoothedGradientNorm(SimulatorParameters *pSimPar,
 		}
 	}
 	setSmoothedGradNorm(sqrt(SGN));
-	for (i=0; i<dim+1; i++){
-		delete[] grad[i]; grad[i] = 0;
-	}
+//	for (i=0; i<dim+1; i++){
+//		delete[] grad[i]; grad[i] = 0;
+//	}
 	//cout << "SGN (all elements) = " << sqrt(SGN) << endl;
 }
 
-void ErrorAnalysis::calculate_SmoothedGradientNorm_Singularity(SimulatorParameters *pSimPar, GeomData* pGCData, void(*pFunc_getGrad)(FIELD,int,int,int,double*), FIELD field){
+void ErrorAnalysis::calculate_SmoothedGradientNorm_Singularity(SimulatorParameters *pSimPar, GeomData* pGCData, void(*pFunc_getGrad)(FIELD,int,int,int,const double*&), FIELD field){
 	int i;
 	int dim = pGCData->getMeshDim();			// mesh dimension
 	int pos = dim+1;							// Auxiliary variable
 	const int* indices = NULL;					// indices: elements connectivities
 
 	// arrays of pointers for arrays: gradients and delta gradients
-	double* grad[4];
-	for (i=0; i<dim+1; i++){
-		grad[i] = new double[3];
-	}
+	const double* grad[4] = {NULL,NULL,NULL,NULL};;
+//	for (i=0; i<dim+1; i++){
+//		grad[i] = new double[3];
+//	}
 
 	int ith_elem = 0;
 	int counter = 0;
@@ -90,9 +90,9 @@ void ErrorAnalysis::calculate_SmoothedGradientNorm_Singularity(SimulatorParamete
 	}
 	setSmoothedGradNorm_Singularity( sqrt(SGN) );
 
-	for (i=0; i<dim+1; i++){
-		delete[] grad[i]; grad[i] = 0;
-	}
+//	for (i=0; i<dim+1; i++){
+//		delete[] grad[i]; grad[i] = 0;
+//	}
 //	cout << "SGN (singular) = " << sqrt(SGN) << endl;
 //	cout << "counter = " << counter << endl;
 }

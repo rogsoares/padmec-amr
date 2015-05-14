@@ -2,7 +2,7 @@ Set error analisys and mesh adaptation parameters
 
 
 Use mesh adaptation:
-no
+yes
 
 Refinement Strategy: {h-refinement, remeshing, rh-refinement}
 remeshing

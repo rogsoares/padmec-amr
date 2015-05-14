@@ -31,16 +31,8 @@ namespace PRS{
 			while ( !pSimPar->finishSimulation() ){
 				pElliptic_eq->solver(theMesh);
 				pHyperbolic_eq->solver(theMesh,timeStep);
-
-				std::list<int> elemList;
-				std::map<int,double> nodeMap;
-				//calculate_ErrorAnalysis(pErrorAnalysis,pSimPar,pGCData,PhysicPropData::getGradient,elemList,nodeMap);
-				//pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,pGCData,exportSolutionToVTK);
-
-				//STOP();
-
 				//#ifndef NOADAPTATION
-				//	adaptation();
+				adaptation();
 				//#endif
 			}
 		}

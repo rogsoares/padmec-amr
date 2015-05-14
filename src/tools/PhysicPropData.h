@@ -112,22 +112,34 @@ public:
 	}
 
 	// that's for error analysis
-	static void getGradient(FIELD field, int dom, int idx, int idx_global, double* grad){
+	static void getGradient(FIELD field, int dom, int idx, int idx_global, const double* &grad){
 		switch (field){
 		case PRESSURE:
-			grad[0] = pGrad_dom[dom].getValue(idx,0);
-			grad[1] = pGrad_dom[dom].getValue(idx,1);
-			grad[2] = pGrad_dom[dom].getValue(idx,2);
+			grad = pGrad_dom[dom].getrowconst(idx);
 			break;
 		case SATURATION:
-			grad[0] = SwGrad.getValue(idx_global,0);
-			grad[1] = SwGrad.getValue(idx_global,1);
-			grad[2] = SwGrad.getValue(idx_global,2);
+			grad = SwGrad.getrowconst(idx_global);
 			break;
 		default:
 			throw Exception(__LINE__,__FILE__,"Unknown field.");
 		}
 	}
+//	static void getGradient(FIELD field, int dom, int idx, int idx_global, double* grad){
+//		switch (field){
+//		case PRESSURE:
+//			grad[0] = pGrad_dom[dom].getValue(idx,0);
+//			grad[1] = pGrad_dom[dom].getValue(idx,1);
+//			grad[2] = pGrad_dom[dom].getValue(idx,2);
+//			break;
+//		case SATURATION:
+//			grad[0] = SwGrad.getValue(idx_global,0);
+//			grad[1] = SwGrad.getValue(idx_global,1);
+//			grad[2] = SwGrad.getValue(idx_global,2);
+//			break;
+//		default:
+//			throw Exception(__LINE__,__FILE__,"Unknown field.");
+//		}
+//	}
 
 	static void setSaturation(int idx, double v){
 		Sw.setValue(idx,v);
