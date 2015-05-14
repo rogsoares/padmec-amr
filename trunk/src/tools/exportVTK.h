@@ -15,6 +15,7 @@ void printCellTypeList(ofstream &, int, int);
 void printPressure(ofstream &fid, GeomData* pGCData, PhysicPropData *pPPData);
 void printSaturation(ofstream &fid, GeomData* pGCData, PhysicPropData *pPPData);
 void printPressureGradient(ofstream& fid, PRS::GeomData* pGCData, PRS::PhysicPropData *pPPData);
+void printWeightedHeight(ofstream &fid, GeomData* pGCData, ErrorAnalysis *pEA);
 
 //void printElementError(ofstream &, pMesh, ErrorAnalysis*);
 void printElementError(ofstream&, GeomData*, ErrorAnalysis*);

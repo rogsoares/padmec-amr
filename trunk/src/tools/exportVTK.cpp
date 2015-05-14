@@ -6,9 +6,13 @@ using namespace PRS;
 void exportSolutionToVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3, void *pData4, string filename){
 	CPU_Profile::Start();
 
+	// open file for output
+	// -------------------------------------------------------------------------
 	ofstream fid;
 	open_file(fid,filename,__LINE__,__FILE__);
 
+	// initialize pointers
+	// -------------------------------------------------------------------------
 	PhysicPropData *pPPData  = (PhysicPropData*)pData1;
 	throw_exception(!pPPData,"PhysicPropData *pPPData = NULL!",__LINE__,__FILE__);
 
@@ -18,10 +22,14 @@ void exportSolutionToVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3
 	GeomData *pGCData = (GeomData*)pData4;
 	throw_exception(!pGCData,"GeomData *pGCData = NULL!",__LINE__,__FILE__);
 	
+	// define constants
+	// -------------------------------------------------------------------------
 	int dim = pGCData->getMeshDim();
 	int numElements = pGCData->getNumElements();
 	int nnodes = pGCData->getNumNodes();
 
+	// start printing
+	// -------------------------------------------------------------------------
 	print_headers(fid,nnodes);
 	printVerticesCoordenates(fid,theMesh);
 	printElementConnectivities(fid,theMesh,dim,numElements);
@@ -32,15 +40,16 @@ void exportSolutionToVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3
 	fid << "\nPOINT_DATA "<< M_numVertices(theMesh) << endl;
 	printPressure(fid,pGCData,pPPData);
 	printSaturation(fid,pGCData,pPPData);
-	//printPressureGradient(fid,pGCData,pPPData);
+	printPressureGradient(fid,pGCData,pPPData);
+	printWeightedHeight(fid,pGCData,pEA);
 
 	// LIST HERE ALL ELEMENT FIELDS
 	// -------------------------------------------------------------------
-//	fid << "\nCELL_DATA "<< pGCData->getNumElements() << endl;
-//	printElementError(fid,pGCData,pEA);
-//	print_h_ratio(fid,pGCData,pEA);
-//	print_singular_regions(fid,pGCData,pEA);
-//	print_elements_to_remove(fid,pGCData,pEA);
+	fid << "\nCELL_DATA "<< pGCData->getNumElements() << endl;
+	printElementError(fid,pGCData,pEA);
+	print_h_ratio(fid,pGCData,pEA);
+	print_singular_regions(fid,pGCData,pEA);
+	print_elements_to_remove(fid,pGCData,pEA);
 	
 	fid.close();
 	CPU_Profile::End("VTK");
@@ -128,6 +137,15 @@ void printSaturation(ofstream &fid, GeomData* pGCData, PhysicPropData* pPPData){
 	}
 }
 
+void printWeightedHeight(ofstream &fid, GeomData* pGCData, ErrorAnalysis *pEA){
+	fid << "SCALARS WeightedHeight float 1\n";
+	fid << "LOOKUP_TABLE default\n";
+	fid << setprecision(8) << fixed;
+	for(int i=0; i<pGCData->getNumNodes(); i++){
+		fid << pEA->getWE_node(i) << endl;
+	}
+}
+
 void printElementError(ofstream &fid, GeomData* pGCData, ErrorAnalysis *pEA){
 	fid << "SCALARS Element_Error float 1 " << endl;
 	fid << "LOOKUP_TABLE default " << endl;
@@ -151,7 +169,7 @@ void printPressureGradient(ofstream& fid, GeomData* pGCData, PhysicPropData *pPP
 }
 
 void print_h_ratio(ofstream &fid, GeomData* pGCData, ErrorAnalysis *pEA){
-	fid << "SCALARS h_ratio float 1 " << endl;
+	fid << "SCALARS hnew_by_hold float 1 " << endl;
 	fid << "LOOKUP_TABLE default " << endl;
 	int k = 0;
 	for (int dom=0; dom<pGCData->getNumDomains(); dom++){

@@ -71,15 +71,17 @@ void ErrorAnalysis::getNodesForAdaptation(GeomData* pGCData, std::map<int,double
 	int k = 0;
 	int dim = pGCData->getMeshDim();
 	int pos1 = dim+1;
-	int pos2 = 2*dim-1;
+	int pos2 = 2*pos1;
 	int ndom = pGCData->getNumDomains();
+
+	// 2-D:	indices[6] = {id0_local, id1_local, id2_local, id0_global, id1_global, id2_global}
+	// 3-D:	indices[8] = {id0_local, id1_local, id2_local, id3_local, id0_global, id1_global, id2_global, id3_global}
 	const int* indices = NULL;
 	double h1, h2;
 
 	// initialize
 	for(i=0; i<numNodes; i++){
-		ID = pGCData->getNodeID(i);
-		nodeMap[ID] = 0;
+		nodeMap[i] = 0.0;
 	}
 
 	// summation
@@ -88,17 +90,27 @@ void ErrorAnalysis::getNodesForAdaptation(GeomData* pGCData, std::map<int,double
 			pGCData->getElement(dom,row,indices);
 
 			h1 = std::min( get_h_new(k,0), get_h_new(k,1) );
+			//cout << "h1 = " << h1 << endl;
 			for (i=pos1; i<pos2; i++){
-				h2 = nodeMap[ indices[i] ];
-				nodeMap[ indices[i] ] = h1 + h2;
+				ID = indices[i];
+				nodeMap[ID] += h1;
+//				cout << ID << "\t";
 			}
+//			cout << endl;
 			k++;
 		}
 	}
 
+	cout << "          nodeMap size = " << nodeMap.size() << endl;
+	cout << "pGCData->getNumNodes() = " << pGCData->getNumNodes() << endl;
+
 	// weighting heights
-	for(i=0; i<numNodes; i++){
-		nodeMap[pGCData->getNodeID(i)] /= pGCData->getNumFacesSharingVertex(i);
+	i = 0;
+	std::map<int,double>::iterator iter;
+	for(iter=nodeMap.begin(); iter != nodeMap.end(); iter++){
+		iter->second /= pGCData->getNumFacesSharingVertex(i);
+		this->pWH_node[i] = iter->second;
+		i++;
 	}
 
 //	for(i=0; i<numNodes; i++){

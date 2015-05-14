@@ -20,6 +20,7 @@ void ErrorAnalysis::initialize(GeomData* pGCData, SimulatorParameters *pSimPar){
 
 	// allocating memory
 	alloc_DOUBLE_vector(__LINE__,__FILE__,pElemError,nelements);
+	alloc_DOUBLE_vector(__LINE__,__FILE__,pWH_node,nnodes);
 	alloc_BOOL_vector(__LINE__,__FILE__,isElementSingular,nelements);
 	alloc_BOOL_vector(__LINE__,__FILE__,pElmToRemove,nelements);
 
@@ -69,6 +70,7 @@ void ErrorAnalysis::deletePointers(){
 	dealloc_DOUBLE_vector(pElemError);
 	dealloc_BOOL_vector(isElementSingular);
 	dealloc_BOOL_vector(pElmToRemove);
+	dealloc_DOUBLE_vector(pWH_node);
 }
 
 void ErrorAnalysis::setAllElementsAsNotSingular(int nelem){

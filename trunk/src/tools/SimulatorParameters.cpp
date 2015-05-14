@@ -315,7 +315,7 @@ namespace PRS{
 			char fname[256];
 			sprintf(fname,"%s__%d-of-%d__step-%d.vtk",expofName.c_str(),P_pid(),P_size(),theStep);
 			PetscPrintf(PETSC_COMM_WORLD,"VTK Output: step file #%d\n",theStep);
-			//printVTK(theMesh,pData1,pData2,pData3,pData4,fname);
+			printVTK(theMesh,pData1,pData2,pData3,pData4,fname);
 			updatePrintOutVTKFrequency();
 			allowPrintingVTK = false;
 		}

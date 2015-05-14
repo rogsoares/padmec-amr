@@ -9,7 +9,6 @@
 
 namespace PRS{
 	void EBFV1_hyperbolic::calculateSaturationGradient(){
-
 		CPU_Profile::Start();
 
 		int dim = pGCData->getMeshDim();
@@ -20,7 +19,7 @@ namespace PRS{
 			calc_Sw_grad_2(dom,dim);
 		}
 		calc_Sw_grad_3(dim);
-		//calc_Sw_grad_4(dim);
+		calc_Sw_grad_4(dim);
 
 		CPU_Profile::End("SaturationGradient");
 	}
@@ -183,7 +182,6 @@ namespace PRS{
 				for (int face=0; face<nfaces; face++){
 					pGCData->getDij(dom,face,Dij);
 					pGCData->getBdryFace(dom,face,idx0,idx1,idx2,idx0_global,idx1_global,idx2_global);
-
 					pPPData->get_Sw_Grad(idx0_global,Sw_grad_I);
 					pPPData->get_Sw_Grad(idx1_global,Sw_grad_J);
 					pPPData->get_Sw_Grad(idx2_global,Sw_grad_K);

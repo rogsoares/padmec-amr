@@ -170,11 +170,11 @@ namespace PRS{
 			VecDestroy(&output);
 		}
 		
-		if (pSimPar->userRequiresAdaptation()){
-			// todo: ta dando erro aqui na hora de liberar memoria
-			delete[] matvec_struct->rows; matvec_struct->rows = 0;
-			delete matvec_struct; matvec_struct = 0;
-		}
+//		if (pSimPar->userRequiresAdaptation()){
+//			// todo: ta dando erro aqui na hora de liberar memoria
+//			delete[] matvec_struct->rows; matvec_struct->rows = 0;
+//			delete matvec_struct; matvec_struct = 0;
+//		}
 
 		CPU_Profile::End("freeMemory");
 		return 0;

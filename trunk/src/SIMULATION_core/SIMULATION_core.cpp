@@ -117,7 +117,7 @@ namespace PRS {
 	void SIMULATION_core::initialize_adaptation(int argc, char **argv){
 		pErrorAnalysis = new ErrorAnalysis;
 
-		#ifndef NOADAPTATION
+		//#ifndef NOADAPTATION
 			pIData = new InterpolationDataStruct;
 			//pIData->getLevelOfRefinement = ErrorAnalysis::getLevelOfRefinement;
 			pIData->numFields = 2;
@@ -132,21 +132,21 @@ namespace PRS {
 			pIData->pSetDblFunctions[0] = pPPData->setPressure_NM;		// set pressure for New Mesh
 			pIData->pSetDblFunctions[1] = pPPData->setSaturation_NM;	// set saturarion for New Mesh
 
-			switch( pSimPar->getRefStrategy() ){
-			case H_REFINEMENT:
-				pMeshAdapt = new H_Refinement_2D;
-				pIData->isElementSpecial = H_Refinement_2D::isElementSpecial;
-				break;
-			case ADAPTIVE_REMESHING:
-				pMeshAdapt = new AdaptiveRemeshing(argc, argv);
-				break;
-			case RH_REFINEMENT:
-				//pMeshAdapt = new RH_Refinement(argc, argv);
-				break;
-			default:
-				throw Exception(__LINE__,__FILE__,"Unknown adaptation strategy.");
-			}
-		#endif
+//			switch( pSimPar->getRefStrategy() ){
+//			case H_REFINEMENT:
+//				//pMeshAdapt = new H_Refinement_2D;
+//				//pIData->isElementSpecial = H_Refinement_2D::isElementSpecial;
+//				break;
+//			case ADAPTIVE_REMESHING:
+//				//pMeshAdapt = new AdaptiveRemeshing(argc, argv);
+//				break;
+//			case RH_REFINEMENT:
+//				//pMeshAdapt = new RH_Refinement(argc, argv);
+//				break;
+//			default:
+//				throw Exception(__LINE__,__FILE__,"Unknown adaptation strategy.");
+//			}
+	//	#endif
 	}
 
 	int SIMULATION_core::finalize(){

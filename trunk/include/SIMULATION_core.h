@@ -7,7 +7,7 @@
 #include "RH_Refinement.h"
 #include "H_Refinement_2D.h"
 #include "AdaptiveRemeshing.h"
-#include "ErrorAnalysis_2D.h"
+#include "ErrorAnalysis.h"
 #include "interpolation.h"
 
 
