@@ -191,6 +191,7 @@ namespace PRS{
 				if (getFaceFlag(face)==domainList[i]){
 					for (int j = 0; j<3; j++){
 						edge = (pEdge)face->get(1,j);
+						//cout << "edge flag: " << getEdgeFlag(edge) << endl;
 						if ( getEdgeFlag(edge)!= domainList[i]){
 							edgeList.insert(edge);
 						}

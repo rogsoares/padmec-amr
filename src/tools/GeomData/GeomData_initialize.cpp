@@ -24,14 +24,14 @@ namespace PRS{
 		setDomainList(domainList);
 		delete[] domainList; domainList = 0;
 
-		if (theMesh->getDim()==2){
-			numElem = M_numFaces(theMesh);
-			elemtype = 3;
-		}
-		else{
-			numElem = M_numRegions(theMesh);
-			elemtype = 4;
-		}
+//		if (theMesh->getDim()==2){
+//			numElem = M_numFaces(theMesh);
+//			elemtype = 3;
+//		}
+//		else{
+//			numElem = M_numRegions(theMesh);
+//			elemtype = 4;
+//		}
 
 		// FVM:
 		// CASE 1: classical edge based Finite Volume Formulation
@@ -42,6 +42,14 @@ namespace PRS{
 	}
 
 	void GeomData::initilize(pMesh theMesh){
+		if (theMesh->getDim()==2){
+			numElem = M_numFaces(theMesh);
+			elemtype = 3;
+		}
+		else{
+			numElem = M_numRegions(theMesh);
+			elemtype = 4;
+		}
 		calculateNumEdges(theMesh);					// calculate number of data to be stored
 		calculateNumElements(theMesh);
 		calculateNumBDRYEdges(theMesh);

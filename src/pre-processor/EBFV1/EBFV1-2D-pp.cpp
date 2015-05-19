@@ -206,6 +206,8 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 //	}
 //	cout << endl;
 
+	validete_coefficients(theMesh,setOfDomain,pGCData);
+
 #ifdef TRACKING_PROGRAM_STEPS
 	cout << "TRACKING_PROGRAM_STEPS: EBFV1_preprocessor_2D\tOUT\n";
 #endif

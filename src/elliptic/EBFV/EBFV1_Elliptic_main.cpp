@@ -15,50 +15,7 @@ namespace PRS{
 		one_eighth = (double)(1.0/8.0);
 		firstVTK = true;
 
-		// Matrix Assembly Support
-		// -------------------------------------------------------------
-		int dim = pGCData->getMeshDim();
-		int nedges = 0;
-		for(int i=0;i<pGCData->getNumDomains(); i++){
-			nedges += pGCData->getNumEdgesPerDomain(i);
-		}
-		int nvertices = M_numVertices(theMesh);
-		pMAS = new MAS;
-		pMAS->Eij = new double*[nedges];
-		pMAS->Gij = new double*[nedges];
-		pMAS->indices = new int*[nedges];
-		pMAS->edge_lambda = new double[nedges];
-
-		for(int i=0;i<nedges;i++){
-			pMAS->Eij[i] = new double[4*dim];
-			pMAS->Gij[i] = new double[4];
-			pMAS->indices[i] = new int[2];
-		}
-		Perform_Assembling = true;
-		// -------------------------------------------------------------
-
-//		int idx[2*(dim+1)];
-//		double t1 = MPI_Wtime();
-//		//const int* idx = NULL;
-//		for(int i=0;i<pGCData->getNumDomains(); i++){
-//			for(int j=0;j<pGCData->getNumElemPerDomain(i); j++){
-//				//pGCData->getElement(i,j,idx);
-//				pGCData->getElement(i,j,idx);
-////				cout << "local indices: ";
-////				for(int k=0; k<dim+1; k++){
-////					//cout << idx[k] << "\t";
-////				}
-//				//cout << "\tglobal indices: ";
-//				//for(int k=dim+1; k<2*(dim+1); k++){
-//					//cout << idx[k] << "\t";
-//				//}
-//				//cout << endl;
-//			}
-//		}
-//		double t2 = MPI_Wtime();
-//		cout << "time: " << t2-t1 << endl;
-//		STOP();
-
+		initialize_MAS();
 
 		// Auxiliary vector to assembly distributed matrix system of equations
 		pMData->rowsToImport(mesh,matvec_struct->nrows,matvec_struct->rows);
@@ -76,7 +33,7 @@ namespace PRS{
 	// solves system of equation for pressure field
 	double EBFV1_elliptic::solver(pMesh theMesh){
 		if (pSimPar->userRequiresAdaptation()){
-			//matvec_struct = new Data_struct;
+			matvec_struct = new Data_struct;
 		}
 		#ifdef TRACKING_PROGRAM_STEPS
 		cout << "TRACKING_PROGRAM_STEPS: pressure solver\tIN\n";
@@ -170,13 +127,50 @@ namespace PRS{
 			VecDestroy(&output);
 		}
 		
-//		if (pSimPar->userRequiresAdaptation()){
-//			// todo: ta dando erro aqui na hora de liberar memoria
-//			delete[] matvec_struct->rows; matvec_struct->rows = 0;
-//			delete matvec_struct; matvec_struct = 0;
-//		}
+		if (pSimPar->userRequiresAdaptation()){
+			// todo: ta dando erro aqui na hora de liberar memoria
+			delete[] matvec_struct->rows; matvec_struct->rows = 0;
+			delete matvec_struct; matvec_struct = 0;
+		}
 
 		CPU_Profile::End("freeMemory");
 		return 0;
+	}
+
+	void EBFV1_elliptic::initialize_MAS(){
+		int dim = pGCData->getMeshDim();
+		int nedges = 0;
+		for(int i=0;i<pGCData->getNumDomains(); i++){
+			nedges += pGCData->getNumEdgesPerDomain(i);
+		}
+		int nvertices = M_numVertices(theMesh);
+		pMAS = new MAS;
+		pMAS->Eij = new double*[nedges];
+		pMAS->Gij = new double*[nedges];
+		pMAS->indices = new int*[nedges];
+		pMAS->edge_lambda = new double[nedges];
+
+		for(int i=0;i<nedges;i++){
+			pMAS->Eij[i] = new double[4*dim];
+			pMAS->Gij[i] = new double[4];
+			pMAS->indices[i] = new int[2];
+		}
+		Perform_Assembling = true;
+	}
+
+	void EBFV1_elliptic::finalize_MAS(){
+		int nedges = 0;
+		for(int i=0;i<pGCData->getNumDomains(); i++){
+			nedges += pGCData->getNumEdgesPerDomain(i);
+		}
+		for(int i=0;i<nedges;i++){
+			delete[] pMAS->Eij[i]; pMAS->Eij[i] = 0;
+			delete[] pMAS->Gij[i]; pMAS->Gij[i] = 0;
+			delete[] pMAS->indices[i]; pMAS->indices[i] = 0;
+		}
+		delete[] pMAS->Eij; pMAS->Eij[i] = 0;
+		delete[] pMAS->Gij; pMAS->Gij[i] = 0;
+		delete[] pMAS->indices; pMAS->indices[i] = 0;
+		delete pMAS;
 	}
 }

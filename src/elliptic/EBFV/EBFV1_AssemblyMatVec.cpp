@@ -28,11 +28,11 @@ namespace PRS{
 		//double Cij[3];
 		const double* Cij = NULL;
 		const int* indices = NULL;
-		int i,j,nedges, dom, idx0, idx1,idx0_global, idx1_global, id0, id1, dom_flag;
+		int i, nedges, dom, id0, id1, dom_flag;
 
 		// Matrices assembly based only on geometric data
 		// --------------------------------------------------------------------------
-		if (Perform_Assembling){
+		if (Perform_Assembling || pSimPar->adaptation_ocurred()){
 			E = new Mat[ndom];
 			F = new Mat[ndom];
 			MatCreateAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,np,np,100,PETSC_NULL,100,PETSC_NULL,&G_tmp);
@@ -43,7 +43,7 @@ namespace PRS{
 		}
 
 		int counter = 0;
-		if (Perform_Assembling){
+		if (Perform_Assembling || pSimPar->adaptation_ocurred()){
 			for (dom=0; dom<ndom; dom++){
 				nedges = pGCData->getNumEdgesPerDomain(dom);
 				dom_flag = pGCData->getDomFlag(dom);
@@ -55,9 +55,10 @@ namespace PRS{
 					// idx0_global = indices[2]
 					// idx1_global = indices[3]
 
-					//pGCData->getEdge(dom,i,idx0,idx1,idx0_global,idx1_global);
 					pGCData->getID(dom,indices[0],indices[1],id0,id1);
-					//divergence_E(E[dom],Cij,i,dom,dom_flag,idx0_global,idx1_global,id0,id1,dim,counter);
+//					if (i==383){
+//						cout << i << " " << id0 << " " << id1 << endl;
+//					}
 					divergence_E(E[dom],Cij,i,dom,dom_flag,indices[2],indices[3],id0,id1,dim,counter);
 					divergence_G(G_tmp,Cij,i,dom,dom_flag,indices[2],indices[3],id0,id1,dim,counter);
 					gradient_F_edges(F[dom],Cij,dom,indices[0],indices[1],id0,id1,dim);
@@ -131,9 +132,21 @@ namespace PRS{
 		ISDestroy(&rows_E);
 		ISDestroy(&cols_E);
 
-		MatZeroEntries(G_tmp);
-		for (i=0; i<ndom; i++){
-			MatZeroEntries(E[i]);
+		// if the mesh has been modified, then matrices must be deleted and new ones will be created
+		if (pSimPar->adaptation_ocurred()){
+			for (i=0; i<ndom; i++){
+				MatDestroy(&E[i]);
+				MatDestroy(&F[i]);
+			}
+			MatDestroy(&G_tmp);
+			finalize_MAS();
+		}
+		// otherwise, reuse the original matrices and save time allocating memory.
+		else{
+			MatZeroEntries(G_tmp);
+			for (i=0; i<ndom; i++){
+				MatZeroEntries(E[i]);
+			}
 		}
 
 		// Create the output vector
@@ -264,10 +277,11 @@ namespace PRS{
 			}
 		}
 		assemblyMatrix(G);
+		return 0;
 	}
 
 	int EBFV1_elliptic::E_assembly(Mat E, int dom, int &counter){
-		int i,j,k;
+		int j,k;
 		int dim = pGCData->getMeshDim();
 		double Eij[4*dim];
 		int idxn[2*dim];
@@ -297,6 +311,7 @@ namespace PRS{
 			counter++;
 		}
 		assemblyMatrix(E);
+		return 0;
 	}
 
 	void EBFV1_elliptic::setMASindices(int count, int id0, int id1){

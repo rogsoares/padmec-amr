@@ -97,7 +97,8 @@ namespace PRS{
 		}
 	}
 
-	void GeomData::deallocatePointers(int dim){
+	void GeomData::deallocatePointers(int _dim){
+		_dim = dim;
 		int ndom = getNumDomains();
 		volume_global[0].freeMemory();
 

@@ -24,6 +24,7 @@ namespace PRS{
 		EBFV1_pressureSolver_scheme = false;
 		_doAdaptation = false;
 		vtk_time_frequency = PVI_increment*getSimTime();
+		set_adapt_occur(false);
 	}
 	
 	SimulatorParameters::~SimulatorParameters(){
@@ -263,7 +264,7 @@ namespace PRS{
 	 * or more)
 	 */
 	void SimulatorParameters::setInitialOilVolume(pMesh theMesh, GeomData *pGCData){
-		int i, dom, ndom, nnodes, node, idx;
+		int  dom, ndom, nnodes, node;
 		double vol_total = .0, vol;
 		ndom = pGCData->getNumDomains();
 		for (dom=0; dom<ndom; dom++){
