@@ -148,6 +148,8 @@ namespace PRS{           // PRS: Petroleum Reservoir Simulator
 
 		// pointer for Matrix Assembly Support (MAS) struct
 		MAS* pMAS;
+		void initialize_MAS();
+		void finalize_MAS();
 		bool Perform_Assembling;
 		void multiplyMatricesbyMobility();
 		int G_assembly(Mat);

@@ -930,6 +930,7 @@ void getdomains(pMesh m, int &n, int* domList){
 }
 
 void readmesh(pMesh m,char* filename){
+
 	cout << "Lendo malha... ";
 	ifstream fid;
 	fid.open(filename);
@@ -950,6 +951,10 @@ void readmesh(pMesh m,char* filename){
 	fid >> NbNod;
 	cout << "\tElements: " << NbNod << endl;
 	int face_id = 0;
+
+	int v_counter = 0;
+	int e_counter = 0;
+	int f_counter = 0;
 	for (int i=0; i<NbNod; i++){
 		int iNbNod,iTyp,iGrp,iElm,iNbSub,id;
 		mVertex *nod[100];
@@ -964,19 +969,29 @@ void readmesh(pMesh m,char* filename){
 		mEntity *theEntity = 0;
 		switch(iTyp){
 		case 2 :
+			f_counter++;
 			theEntity = m->createFaceWithVertices(nod[0],nod[1],nod[2],m->getGEntity(iGrp,2));
-			EN_setID((pEntity)theEntity,++face_id);
+			//EN_setID((pEntity)theEntity,++face_id);
 			break;
 		case 1 :
+			e_counter++;
 			theEntity = m->createEdge(nod[0],nod[1],m->getGEntity(iGrp,1));
 			break;
 		case 15 :
+			v_counter++;
 			mVertex *v = nod[0];
 			v->classify(m->getGEntity(iGrp,0));
 			break;
 		}
 	}
-	cout << "OK!\n";
+	cout << "done!\n";
+	cout << "Summary:\n";
+	cout << "----------------------------------\n";
+	cout << "#Prescribed vertices: " << v_counter << endl;
+	cout << "#Boundary edges:      " << e_counter << endl;
+	cout << "#Triangles:           " << f_counter << endl;
+
+
 	pVertex node;
 
 	int flag;
@@ -1016,4 +1031,6 @@ void readmesh(pMesh m,char* filename){
 	//		}
 	//	}
 	//	VIter_delete(vit);
+	m->modifyState(2,1);
+	m->modifyState(1,2);
 }

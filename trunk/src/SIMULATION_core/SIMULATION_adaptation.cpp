@@ -11,6 +11,8 @@
 namespace PRS{
 	bool SIMULATION_core::adaptation(){
 		bool adapt = false;
+		pSimPar->set_adapt_occur(false);
+
 		if ( pSimPar->userRequiresAdaptation() ){
 			// performs an error estimation on saturation and/or pressure solution and verifies if tolerances are obeyed.
 			// If error is greater than tolerance then mesh will be adapted to improve solution quality
@@ -20,7 +22,11 @@ namespace PRS{
 			bool adapt = calculate_ErrorAnalysis(pErrorAnalysis,pSimPar,pGCData,PhysicPropData::getGradient,elemList,nodeMap);
 			pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,pGCData,exportSolutionToVTK);
 
+
 			if (adapt){
+				// let other simulation code parts aware of the occurrence of the adaptation process
+				pSimPar->set_adapt_occur(true);
+
 				// retrieve cumulative simulation time
 				pSimPar->retrieveSimulationTime();
 
@@ -50,7 +56,7 @@ namespace PRS{
 				pPPData->allocateTemporaryData(M_numVertices(pIData->m1));
 
 				// interpolate data from m2 to m1
-				interpolation(pIData,pSimPar->getInterpolationMethod());
+				//interpolation(pIData,pSimPar->getInterpolationMethod());
 
 				// transfer Sw and pressure from tmp to main struct
 				pPPData->transferTmpData();
@@ -58,11 +64,12 @@ namespace PRS{
 				//pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,pGCData,exportSolutionToVTK);
 
 				// waste old data and get ready for new data
-				pGCData->deallocatePointers();
-				pGCData->initilize(theMesh);
+				pGCData->deallocatePointers(0);
 
 				// mesh pre-processor
 				EBFV1_preprocessor(pIData->m1,pGCData);
+
+				pGCData->initilize(theMesh);
 
 				// objects (pSimPar, pMData, pGCData, pPPData) must store new data
 				updatePointersData(theMesh);

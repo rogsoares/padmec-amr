@@ -16,6 +16,7 @@ struct PP_Parameters{
 	int dim;
 };
 
+void validete_coefficients(pMesh theMesh, std::set<int>& setOfDomain, GeomData* pGCData);
 
 void computeDij(pMesh, pFace, GeomData *);
 

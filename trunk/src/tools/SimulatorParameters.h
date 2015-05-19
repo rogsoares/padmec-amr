@@ -321,8 +321,17 @@ public:
 		return exact_sol_exist;
 	}
 
+	bool adaptation_ocurred() const{
+		return adapoccur;
+	}
+
+	void set_adapt_occur(bool k){
+		adapoccur = k;
+	}
+
 private:
 
+	bool adapoccur;
 	bool exact_sol_exist;
 	bool bc_external_definition;
 	char** __argv;

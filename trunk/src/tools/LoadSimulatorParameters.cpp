@@ -81,7 +81,6 @@ namespace PRS{
 		if (!this->useRestart()){
 			setStepOutputFile(0);
 		}
-
 		getDomains();
 		getWells(theMesh,pGCData->getMeshDim());
 		weightWellFlowRateByVolume(theMesh,pGCData);
@@ -241,7 +240,6 @@ namespace PRS{
 
 					// set cumulative simulation time variable: cumTS = summation of all time steps (from the beginning to PVI i-1
 					string strline;
-					string data[8];
 					char strtmp4[512]; sprintf(strtmp4,"%s_simulation-monitor-%d.csv",expofName.c_str(),P_size());
 					rfid.open(strtmp4);
 					if (!rfid.is_open()){

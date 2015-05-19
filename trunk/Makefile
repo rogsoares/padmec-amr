@@ -77,8 +77,8 @@ OBJS_MAIN=$(OBJ_DIR)/main.o $(OBJ_DIR)/SIMULATION_core.o $(OBJ_DIR)/SIMULATION_c
           $(OBJ_DIR)/CalculateSmoothGradientNorm.o $(OBJ_DIR)/Calculate_heights.o 
 	
 OBJS_ELLIPTIC=$(OBJ_DIR)/EBFV1_Elliptic_main.o $(OBJ_DIR)/EBFV1_AssemblyMatVec.o $(OBJ_DIR)/EBFV1_E.o $(OBJ_DIR)/EBFV1_G.o $(OBJ_DIR)/EBFV1_F_omega.o  $(OBJ_DIR)/EBFV1_wells.o \
-              $(OBJ_DIR)/EBFV1_F_gamma.o $(OBJ_DIR)/EBFV1_DefectCorrectionSolver.o $(OBJ_DIR)/EBFV1_MatrixFreeSolver.o $(OBJ_DIR)/EBFV1_PressureGradient.o \
-	          $(OBJ_DIR)/MEBFV_Assembly.o $(OBJ_DIR)/MEBFV_Elliptic_main.o $(OBJ_DIR)/MEBFV_Initialize.o
+              $(OBJ_DIR)/EBFV1_F_gamma.o $(OBJ_DIR)/EBFV1_MatrixFreeSolver.o $(OBJ_DIR)/EBFV1_PressureGradient.o $(OBJ_DIR)/MEBFV_Elliptic_main.o $(OBJ_DIR)/MEBFV_Initialize.o\
+	          $(OBJ_DIR)/MEBFV_Assembly.o 
 
 OBJS_HYPERBOLIC=$(OBJ_DIR)/EBFV1_velocityField.o $(OBJ_DIR)/EBFV1_hyperbolic.o $(OBJ_DIR)/EBFV1_hyperbolic_MIMPES.o $(OBJ_DIR)/EBFV1_advectiveTerm.o \
                 $(OBJ_DIR)/EBFV1_advanceSaturation.o $(OBJ_DIR)/SaturationGradient.o
@@ -90,11 +90,9 @@ OBJS_TOOLS=$(OBJ_DIR)/MeshData.o $(OBJ_DIR)/MeshData2.o $(OBJ_DIR)/OilProduction
 OBJS_GEOMDATA=$(OBJ_DIR)/GeomData.o $(OBJ_DIR)/GeomData2.o $(OBJ_DIR)/GeomData3.o $(OBJ_DIR)/GeomData_initialize.o $(OBJ_DIR)/GeomData_calculate.o $(OBJ_DIR)/GeomData_Mapping.o \
               $(OBJ_DIR)/GeomData_AllocateMemory.o $(OBJ_DIR)/GeomData_TransferData.o 
 	
-OBJS_PREPROCESSOR=$(OBJ_DIR)/Calculate-Cij-parallel.o $(OBJ_DIR)/Calculate-Vi-parallel.o $(OBJ_DIR)/EBFV1__pre-processors.o \
-	              $(OBJ_DIR)/EBFV1-2D-pp.o $(OBJ_DIR)/EBFV1-3D-pp.o $(OBJ_DIR)/setCorrectNumberOfRemoteCopies.o $(OBJ_DIR)/validate-EBFV1.o \
-	              $(OBJ_DIR)/assemblyMatrix_A.o $(OBJ_DIR)/calculateGeomCoefficients.o $(OBJ_DIR)/Matrix_E.o $(OBJ_DIR)/Matrix_G.o $(OBJ_DIR)/Matrix_F.o \
-	              $(OBJ_DIR)/EBFV1_modified.o $(OBJ_DIR)/rockProp.o
-
+OBJS_PREPROCESSOR=$(OBJ_DIR)/EBFV1__pre-processors.o $(OBJ_DIR)/EBFV1-2D-pp.o $(OBJ_DIR)/EBFV1-3D-pp.o $(OBJ_DIR)/EBFV1_modified.o $(OBJ_DIR)/rockProp.o \
+	              $(OBJ_DIR)/assemblyMatrix_A.o $(OBJ_DIR)/calculateGeomCoefficients.o $(OBJ_DIR)/Matrix_E.o $(OBJ_DIR)/Matrix_G.o $(OBJ_DIR)/Matrix_F.o $(OBJ_DIR)/validate_coeff.o
+	              
 ifeq (,$(findstring NOADAPTATION,$(CXXFLAGS) $(ROCKPROP)))
 OBJS_ADAPTATION=$(OBJ_DIR)/AdaptiveRemeshing.o \
     $(OBJ_DIR)/H_Refinement.o $(OBJ_DIR)/H_Refinement_2D.o \
