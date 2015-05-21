@@ -651,7 +651,6 @@ void identifyBoundaryElements(pMesh theMesh, GeomData *pGCData, std::set<int> se
 	bool detected=false;
 	pEdge edge,face;
 	std::set<int>::iterator iter;
-	int flag;
 	if (theMesh->getDim()==2){
 		EIter eit = M_edgeIter(theMesh);
 		while ( (edge = EIter_next(eit)) ){

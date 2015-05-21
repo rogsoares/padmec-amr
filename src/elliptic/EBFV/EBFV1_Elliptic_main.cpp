@@ -15,10 +15,12 @@ namespace PRS{
 		one_eighth = (double)(1.0/8.0);
 		firstVTK = true;
 
+		// Matrix Assembly Support - MAS
 		initialize_MAS();
 
 		// Auxiliary vector to assembly distributed matrix system of equations
 		pMData->rowsToImport(mesh,matvec_struct->nrows,matvec_struct->rows);
+		throw_exception(!matvec_struct->nrows,"Number of rows NULL",__LINE__,__FILE__);
 	}
 	
 	EBFV1_elliptic::~EBFV1_elliptic(){
@@ -33,7 +35,9 @@ namespace PRS{
 	// solves system of equation for pressure field
 	double EBFV1_elliptic::solver(pMesh theMesh){
 		if (pSimPar->userRequiresAdaptation()){
-			matvec_struct = new Data_struct;
+			if (pSimPar->adaptation_ocurred()){
+				matvec_struct = new Data_struct;
+			}
 		}
 		#ifdef TRACKING_PROGRAM_STEPS
 		cout << "TRACKING_PROGRAM_STEPS: pressure solver\tIN\n";
@@ -66,13 +70,10 @@ namespace PRS{
 		CPU_Profile::Start();
 
 		PetscScalar val;
-		PetscInt i,m,n,row,col=0;
-		PetscInt numGN = pMData->getNum_GNodes();
-
 		if ( !pSimPar->exactSolutionExist() ){
 			int nLIDs, *IDs_ptr;
 			pMData->getRemoteIDs(nLIDs,&IDs_ptr);
-			for(i=0; i<nLIDs;i++){
+			for(int i=0; i<nLIDs;i++){
 				int ID = pMData->get_PETScToApp_Ordering(IDs_ptr[i]+1);
 				VecGetValues(output,1,&i,&val);
 				//cout << "p = " << val << endl;
@@ -84,7 +85,7 @@ namespace PRS{
 		if (key){
 			int nnodes = M_numVertices(theMesh);
 			if ( !pSimPar->exactSolutionExist() ){
-				for(i=0;i<nnodes;i++){
+				for(int i=0;i<nnodes;i++){
 					int ID = pMData->get_AppToPETSc_Ordering(i+1);
 					if ( pMData->getDirichletValue(ID,&val) ){
 						pPPData->setPressure(i,val);
@@ -94,7 +95,7 @@ namespace PRS{
 			}
 			else{
 				double coords[3], x, y, z;
-				for(i=0;i<nnodes;i++){
+				for(int i=0;i<nnodes;i++){
 					pGCData->getCoordinates(i,coords);
 					x = coords[0]; y = coords[1]; z = coords[2];
 					pPPData->setPressure(i,pSimPar->exact_solution(x,y,z));
@@ -128,9 +129,11 @@ namespace PRS{
 		}
 		
 		if (pSimPar->userRequiresAdaptation()){
-			// todo: ta dando erro aqui na hora de liberar memoria
-			delete[] matvec_struct->rows; matvec_struct->rows = 0;
-			delete matvec_struct; matvec_struct = 0;
+			if (pSimPar->adaptation_ocurred()){
+				// todo: ta dando erro aqui na hora de liberar memoria
+				delete[] matvec_struct->rows; matvec_struct->rows = 0;
+				delete matvec_struct; matvec_struct = 0;
+			}
 		}
 
 		CPU_Profile::End("freeMemory");
@@ -143,7 +146,6 @@ namespace PRS{
 		for(int i=0;i<pGCData->getNumDomains(); i++){
 			nedges += pGCData->getNumEdgesPerDomain(i);
 		}
-		int nvertices = M_numVertices(theMesh);
 		pMAS = new MAS;
 		pMAS->Eij = new double*[nedges];
 		pMAS->Gij = new double*[nedges];
@@ -168,9 +170,9 @@ namespace PRS{
 			delete[] pMAS->Gij[i]; pMAS->Gij[i] = 0;
 			delete[] pMAS->indices[i]; pMAS->indices[i] = 0;
 		}
-		delete[] pMAS->Eij; pMAS->Eij[i] = 0;
-		delete[] pMAS->Gij; pMAS->Gij[i] = 0;
-		delete[] pMAS->indices; pMAS->indices[i] = 0;
+		delete[] pMAS->Eij; pMAS->Eij = 0;
+		delete[] pMAS->Gij; pMAS->Gij = 0;
+		delete[] pMAS->indices; pMAS->indices = 0;
 		delete pMAS;
 	}
 }

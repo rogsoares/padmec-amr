@@ -131,7 +131,7 @@ public:
 		}
 
 
-		double cumulated, average, h, m, s, total;
+		double cumulated, h, m, s, total;
 		int i;
 
 		CPUtimeMap getCPUGroup = cpugroup[group];

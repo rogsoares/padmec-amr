@@ -31,7 +31,6 @@ int EBFV1_preprocessor_2D(pMesh theMesh, void *pData, int &ndom){
 	/// initialize coefficients
 	initializeCoefficients(theMesh,pGCData);
 
-	double H = pGCData->getReservoirHeight();
 	std::set<int> setOfDomain;
 
 	// for each face, calculate all data needed and attach them to the its edges

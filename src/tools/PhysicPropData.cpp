@@ -175,7 +175,6 @@ namespace PRS{
 
 	void PhysicPropData::setInitialSaturation(pMesh theMesh, SimulatorParameters *simPar){
 		pVertex node;
-		bool hasInjectionWell = false;
 		double Sw;
 		int idx = 0, well = 0;
 
@@ -209,10 +208,9 @@ namespace PRS{
 		}
 		else{
 			while ( (node = VIter_next(vit)) ){
-				int flag = GEN_tag(node->getClassification());
 				Sw = simPar->getInitialSaturation(node);
 				if ( Sw > .0 ){
-					//printf("Injection well located in node %d Sw = %f flag: %d\n",EN_id(node),Sw,flag);
+					//printf("Injection well located in node %d Sw = %f\n",EN_id(node),Sw);
 					well = 1;
 				}
 				setSaturation(idx,Sw);
@@ -225,7 +223,7 @@ namespace PRS{
 		well = P_getMaxInt(well);
 
 		if (!well){
-			//throw Exception(__LINE__,__FILE__,"Injection wells are missing!");
+			throw Exception(__LINE__,__FILE__,"Injection wells are missing!");
 		}
 	}
 

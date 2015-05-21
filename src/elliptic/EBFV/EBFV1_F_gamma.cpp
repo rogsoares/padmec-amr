@@ -4,10 +4,8 @@ namespace PRS{
 
 	int EBFV1_elliptic::gradient_F_bdry(Mat F, int dom){
 		double Dij[3], Fij_column1[4], Fij_column2[4], volumeI, volumeJ, volumeK;
-		double v0[3], v1[3], v2[3];
-		int ndom, nedges, nfaces, id0, id1, id2, idx_0, idx_1, idx_2, idx0_global, idx1_global, idx2_global, i, j, pos1, pos2, pos3;
+		int nedges, nfaces, id0, id1, id2, idx_0, idx_1, idx_2, idx0_global, idx1_global, idx2_global, i, j, pos1, pos2;
 
-		double sum[3]={.0,.0,.0};
 		if (pGCData->getMeshDim()==2){
 			nedges = pGCData->getNumBDRYEdgesPerDomain(dom);
 			for (j = 0; j<nedges; j++){

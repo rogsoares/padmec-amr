@@ -205,7 +205,7 @@ void PADMEC_GAMBIARRA(pMesh m);
 void checkNumEdges(pMesh, int, char*);
 void checkMesh(pMesh m);
 void calculateNumFacesAroundVertices(pMesh m, std::map<int,int> &facesAroundVertices);
-void readmesh(pMesh m,char* filename);
+void readmesh(pMesh m, const char* filename);
 void getdomains(pMesh m, int &n, int* domlist);
 
 

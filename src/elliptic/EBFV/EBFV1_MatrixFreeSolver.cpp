@@ -12,7 +12,7 @@ namespace PRS{           // PRS: Petroleum Reservoir Simulator
 	double EBFV1_elliptic::setMatrixFreeOperation(pMesh theMesh){
 		CPU_Profile::Start();
 
-		PetscInt m, n, its;
+		PetscInt m, n;
 		VecGetOwnershipRange(output,&m,&n);
 		PetscInt nLRows = n - m;
 		PetscInt numGF = pMData->getNum_GF_Nodes();
@@ -52,11 +52,13 @@ namespace PRS{           // PRS: Petroleum Reservoir Simulator
 		}
 		guess_sol = true;
 
-
-
 		// call PETSc to solver system of equation
+		MatGetSize(matvec_struct->G,&m,&n); cout << "Matrix G: " << m << "  " << n << endl;
+		VecGetSize(matvec_struct->RHS,&m);  cout << "Vec RHS : " << m << endl;
+		VecGetSize(output,&m);              cout << "  output: " << m 	<< endl;
 		KSP_solver(matrix,matvec_struct->G,matvec_struct->RHS,output,pSimPar,guessNonZero,KSPBCGS,PCASM,_KSPiter);
-		//printVectorToFile(matvec_struct->RHS,"output.txt");
+		printVectorToFile(output,"output.txt");
+		printMatrixToFile(matvec_struct->G,"matvec_structG.txt");
 
 		if (_KSPiter >= 10000){
 			throw Exception(__LINE__,__FILE__,"Number of KSP iterations reached the maximum number allowed: 10.000 iterations."
