@@ -212,7 +212,6 @@ namespace PRS{
 	int MeshData::getNodesWithKnownValues(pMesh theMesh){
 		pEntity node, edge, face;
 		int i,ID;
-		double coord1[3],coord2[3],x1,y1,x2,y2;
 
 		// search for flagged nodes
 		VIter vit = M_vertexIter( theMesh );
@@ -233,14 +232,10 @@ namespace PRS{
 		while ( (edge = EIter_next(eit)) ){
 			if (!theMesh->getRefinementDepth(edge)){
 				int flag = EN_getFlag(edge);
-//				cout << flag << endl;
-				/*
-				 * This is a way to use the simulator to evaluate elliptic equation without screw-up the input data procedure.
-				 */
+				#ifdef CRUMPTON_EXAMPLE
+				double coord1[3],coord2[3],x1,y1,x2,y2;
 				V_coord(edge->get(0,0),coord1); x1 = coord1[0]; y1 = coord1[1];
 				V_coord(edge->get(0,1),coord2); x2 = coord2[0]; y2 = coord2[1];
-
-				#ifdef CRUMPTON_EXAMPLE
 				if (flag >= 2000 && flag <3000 &&  flag != 2005 ){	// take only external boundary edges
 					// boundary conditions:
 					// u(x,y) = [2*sin(y)+cos(y)]alpha*x + sin(y),	x <= 0
@@ -311,7 +306,6 @@ namespace PRS{
 			}
 		}
 
-		cout << "size: " << dirichlet.size() << endl;
 		for(MIter mit = dirichlet.begin(); mit != dirichlet.end(); mit++){
 			//cout << "Node [" << mit->first << "]:\t " << mit->second << endl;
 		}

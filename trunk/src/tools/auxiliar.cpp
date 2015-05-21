@@ -929,7 +929,7 @@ void getdomains(pMesh m, int &n, int* domList){
 	}
 }
 
-void readmesh(pMesh m,char* filename){
+void readmesh(pMesh m, const char* filename){
 
 	cout << "Lendo malha... ";
 	ifstream fid;

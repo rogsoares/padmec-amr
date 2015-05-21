@@ -10,8 +10,13 @@
 
 namespace PRS{
 	bool SIMULATION_core::adaptation(){
+
+		// let's suppose adaptation will not be necessary
 		bool adapt = false;
 		pSimPar->set_adapt_occur(false);
+
+		// temporary for debug purposes
+		string filename("simulation-parameters/FS-2D-homogeneo/pp-data-files/fs2dhmg__3.msh");
 
 		if ( pSimPar->userRequiresAdaptation() ){
 			// performs an error estimation on saturation and/or pressure solution and verifies if tolerances are obeyed.
@@ -21,7 +26,6 @@ namespace PRS{
 			std::map<int,double> nodeMap;
 			bool adapt = calculate_ErrorAnalysis(pErrorAnalysis,pSimPar,pGCData,PhysicPropData::getGradient,elemList,nodeMap);
 			pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,pGCData,exportSolutionToVTK);
-
 
 			if (adapt){
 				// let other simulation code parts aware of the occurrence of the adaptation process
@@ -38,14 +42,18 @@ namespace PRS{
 				makeMeshCopy2(pIData->m1,pm,pPPData->getPressure,pPPData->getSw_old);
 
 				// mesh adaptation (adapted mesh saved in file. Bad, bad, bad!)
-				//pMeshAdapt->run(pIData->m1,elemToAdapt,backgroundNodes);
+				//pMeshAdapt->run(pIData->m1,elemList,nodeMap);
+
+				// clean up
+				elemList.clear();
+				nodeMap.clear();
 
 				// delete any trace of FMDB data structure
 				deleteMesh(theMesh); theMesh = 0;
 
 				//create a new FMDB data structure with data in file
 				pIData->m1 = MS_newMesh(0);
-				readmesh(pIData->m1,"simulation-parameters/FS-2D-homogeneo/pp-data-files/fs2dhmg__3.msh");
+				readmesh(pIData->m1,filename.c_str());
 				theMesh = pIData->m1;
 
 				// take mesh (coords and connectivities) from temporary matrix to m2 (avoid conflicts with FMDB when deleting m1 and theMesh)
@@ -61,14 +69,13 @@ namespace PRS{
 				// transfer Sw and pressure from tmp to main struct
 				pPPData->transferTmpData();
 
-				//pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,pGCData,exportSolutionToVTK);
-
 				// waste old data and get ready for new data
 				pGCData->deallocatePointers(0);
 
 				// mesh pre-processor
 				EBFV1_preprocessor(pIData->m1,pGCData);
 
+				// initialize geometric coefficients pointer
 				pGCData->initilize(theMesh);
 
 				// objects (pSimPar, pMData, pGCData, pPPData) must store new data
@@ -76,6 +83,10 @@ namespace PRS{
 
 				// data transfer from FMDB to matrices
 				pGCData->dataTransfer(theMesh);
+
+			//	pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,pGCData,exportSolutionToVTK);
+
+				STOP();
 
 				// temporary mesh not necessary any more (goodbye!)
 				deleteMesh(pm);

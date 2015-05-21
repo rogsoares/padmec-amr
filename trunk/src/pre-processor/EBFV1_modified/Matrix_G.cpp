@@ -27,7 +27,6 @@ void calculeMatrix_G(pEntity edge, GeomData* pGCData, const double* K, const dou
 	}
 
 	double KL[3] = {.0, .0, .0};
-	int pos = 0;
 
 	for (i=0; i<dim; i++){
 		for (j=0; j<dim; j++){

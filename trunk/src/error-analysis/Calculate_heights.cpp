@@ -77,7 +77,7 @@ void ErrorAnalysis::getNodesForAdaptation(GeomData* pGCData, std::map<int,double
 	// 2-D:	indices[6] = {id0_local, id1_local, id2_local, id0_global, id1_global, id2_global}
 	// 3-D:	indices[8] = {id0_local, id1_local, id2_local, id3_local, id0_global, id1_global, id2_global, id3_global}
 	const int* indices = NULL;
-	double h1, h2;
+	double h1;
 
 	// initialize
 	for(i=0; i<numNodes; i++){

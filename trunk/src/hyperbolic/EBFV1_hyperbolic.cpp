@@ -60,8 +60,8 @@ namespace PRS{
 		calculateExplicitAdvanceInTime(timeStep);			// Calculate saturation field: Sw(n+1)
 
 	#ifdef _SEEKFORBUGS_
-		if (!P_pid()) std::cout << "<_SEEKFORBUGS_>  timeStep = : " << timeStep << endl;
-		if (timeStep==.0) throw Exception(__LINE__,__FILE__,"Time step NULL!");
+		std::cout << "<_SEEKFORBUGS_>  timeStep = : " << timeStep << endl;
+		throw_exception(timeStep < 1e-10,"Time step NULL!",__LINE__,__FILE__);
 	#endif
 
 		timestep_counter++;
@@ -71,7 +71,7 @@ namespace PRS{
 			timestep_counter = 0;
 		}
 
-		//pSimPar->printOutVTK(theMesh,pPPData,pEA,pSimPar,pGCData,exportSolutionToVTK);
+		pSimPar->printOutVTK(theMesh,pPPData,pEA,pSimPar,pGCData,exportSolutionToVTK);
 		if (!P_pid()) std::cerr << "done.\n\n";
 		return 0;
 	}

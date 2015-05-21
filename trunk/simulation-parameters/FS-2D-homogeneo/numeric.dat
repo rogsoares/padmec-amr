@@ -40,7 +40,7 @@ mesh filename:
 /home/rogerio/projetos/padmec-amr/trunk/simulation-parameters/FS-2D-homogeneo/pp-data-files/fs2dhmg__1.msh
 
 export filename (to VTK format without extension .vtk):
-/home/rogerio/projetos/padmec-amr/trunk/simulation-parameters/FS-2D-homogeneo/results/fs2dhmg__3_1
+/home/rogerio/projetos/padmec-amr/trunk/simulation-parameters/FS-2D-homogeneo/results/fs2dhmg__1
 
 Start simulation from <restart> file?
 no

@@ -11,27 +11,24 @@
 namespace PRS{
 
 	double EBFV1_elliptic::assembly_EFG_RHS(pMesh mesh){
+
+		// compute assembly matrices timing
 		CPU_Profile::Start();
+
 		int np = pMData->getNum_GNodes();
 		int numGF = pMData->getNum_GF_Nodes();
 		int dim = pGCData->getMeshDim();
 		int ndom = pSimPar->getNumDomains();
 
-		if (!dim || !np || !numGF || !ndom){
-			char msg[256]; sprintf(msg,"dim = %d, np = %d, numGF = %d, ndom = %d.  NULL parameters found!\n",dim,np,numGF,ndom);
-			throw Exception(__LINE__,__FILE__,msg);
-		}
 		matvec_struct->ndom = ndom;
 		matvec_struct->F_nrows = np*dim;
 		matvec_struct->F_ncols = np;
 
-		//double Cij[3];
 		const double* Cij = NULL;
 		const int* indices = NULL;
 		int i, nedges, dom, id0, id1, dom_flag;
 
-		// Matrices assembly based only on geometric data
-		// --------------------------------------------------------------------------
+		// Matrices assembly based only on geometric data. Allocating memory
 		if (Perform_Assembling || pSimPar->adaptation_ocurred()){
 			E = new Mat[ndom];
 			F = new Mat[ndom];
@@ -43,6 +40,20 @@ namespace PRS{
 		}
 
 		int counter = 0;
+		/*
+		 * If adaptation is not present, matrices E, F ang G are assembly just once.
+		 * Matrices E ang G are geometric matrices multiplied by the mobility
+		 * This multiplication will be done are new time step, but E ang G will remain the same for
+		 * the whole simulation
+		 *
+		 * If adaptation is required, then all matrices MUST be computed again!
+		 */
+		if (pSimPar->adaptation_ocurred()){
+			pMData->rowsToImport(mesh,matvec_struct->nrows,matvec_struct->rows);
+			throw_exception(!matvec_struct->nrows,"Number of rows NULL",__LINE__,__FILE__);
+			initialize_MAS();
+		}
+
 		if (Perform_Assembling || pSimPar->adaptation_ocurred()){
 			for (dom=0; dom<ndom; dom++){
 				nedges = pGCData->getNumEdgesPerDomain(dom);
@@ -56,9 +67,6 @@ namespace PRS{
 					// idx1_global = indices[3]
 
 					pGCData->getID(dom,indices[0],indices[1],id0,id1);
-//					if (i==383){
-//						cout << i << " " << id0 << " " << id1 << endl;
-//					}
 					divergence_E(E[dom],Cij,i,dom,dom_flag,indices[2],indices[3],id0,id1,dim,counter);
 					divergence_G(G_tmp,Cij,i,dom,dom_flag,indices[2],indices[3],id0,id1,dim,counter);
 					gradient_F_edges(F[dom],Cij,dom,indices[0],indices[1],id0,id1,dim);
@@ -72,7 +80,10 @@ namespace PRS{
 		}
 		CPU_Profile::End("MatricesAssembly-01");
 
+		// this multiplication will be performed every new time step.
 		multiplyMatricesbyMobility();
+
+		// every time G and E are multiplied by the mobility they MUST be assembled
 		G_assembly(G_tmp);
 		counter = 0;
 		for (dom=0; dom<ndom; dom++){
@@ -173,6 +184,8 @@ namespace PRS{
 		// -------------------------------------------------------------------------
 		int nrows = matvec_struct->nrows;
 		int *rows = matvec_struct->rows;
+
+		cout << "n_rows: " << nrows << endl;
 
 		IS rowsToImport;
 		ISCreateGeneral(PETSC_COMM_WORLD,nrows,rows,PETSC_COPY_VALUES,&rowsToImport);

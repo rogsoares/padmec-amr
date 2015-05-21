@@ -239,7 +239,6 @@ int EBFV1_preprocessor_3D(pMesh theMesh, void *pData, int &ndom){
 	 * flag. This value is greater than 3000 and is used to filter them from those provided by mesh file.
 	 */
 
-	int count = 0;
 	dblarray Dij(3,.0);
 	//PetscPrintf(PETSC_COMM_WORLD,"Loop over boundary faces - start... ");///MPI_Barrier(MPI_COMM_WORLD);
 	if ( M_numFaces(theMesh) != 0 ){
@@ -282,7 +281,7 @@ void computeDij(pMesh theMesh, pEntity face, GeomData *pGCData){
 	pVertex oppositeVertex = theMesh->getVertex(ID1);
 	// NOTE: Dij points outside to dom1
 	if ( oppositeVertex ){
-		double Dij[3] = {.0,.0,.0}, dij[3];
+		double Dij[3] = {.0,.0,.0};
  		DijVector(face,oppositeVertex,Dij);
 		pGCData->setDij(face,dom1,dom2,Dij);
 	}

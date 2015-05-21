@@ -41,15 +41,15 @@ void exportSolutionToVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3
 	printPressure(fid,pGCData,pPPData);
 	printSaturation(fid,pGCData,pPPData);
 	printPressureGradient(fid,pGCData,pPPData);
-	printWeightedHeight(fid,pGCData,pEA);
+	//printWeightedHeight(fid,pGCData,pEA);
 
 	// LIST HERE ALL ELEMENT FIELDS
 	// -------------------------------------------------------------------
-	fid << "\nCELL_DATA "<< pGCData->getNumElements() << endl;
-	printElementError(fid,pGCData,pEA);
-	print_h_ratio(fid,pGCData,pEA);
-	print_singular_regions(fid,pGCData,pEA);
-	print_elements_to_remove(fid,pGCData,pEA);
+//	fid << "\nCELL_DATA "<< pGCData->getNumElements() << endl;
+//	printElementError(fid,pGCData,pEA);
+//	print_h_ratio(fid,pGCData,pEA);
+//	print_singular_regions(fid,pGCData,pEA);
+//	print_elements_to_remove(fid,pGCData,pEA);
 	
 	fid.close();
 	CPU_Profile::End("VTK");

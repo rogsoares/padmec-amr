@@ -67,7 +67,7 @@ void validete_coefficients(pMesh theMesh, std::set<int>& setOfDomain, GeomData* 
 		//cout << "ID:\t" << "Summ:\n";
 		std::map<int,double*>::iterator miter = coeff_sum.begin();
 		for(;miter!=coeff_sum.end();miter++){
-			int ID = miter->first;
+			//int ID = miter->first;
 			p = miter->second;
 			//cout << ID << "\t" << p[0] << " " << p[1] << " " << p[2] << endl;
 			summation[0] += p[0];
