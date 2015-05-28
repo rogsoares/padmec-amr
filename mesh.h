@@ -30,8 +30,8 @@ struct EdgeInfo{
 
 	// Geometric Coefficients
 	std::map<int, double*> Cij;
+    double* Dij;
 
-	double* Dij;
 };
 
 struct TriInfo{
@@ -50,6 +50,7 @@ struct QuadInfo{
 	int id3;
 	int geom;
 	int physical;
+	double* CG;
 };
 
 struct TetraInfo{
@@ -67,6 +68,10 @@ enum REF_MOMENT{BEFORE, AFTER};
 namespace MeshDB{
 
 	class Mesh{
+
+	private:
+        int domains;
+        int currentdom;
 	public:
 		Mesh();
 		~Mesh();
@@ -87,6 +92,8 @@ namespace MeshDB{
 		int getNumTriangles(REF_MOMENT rm) const;
 		int getNumQuad(REF_MOMENT rm) const;
 		int getNumTetras(REF_MOMENT rm) const;
+		int getNumDom(){return domains;};
+		int getCurrDom(){return currentdom;}
 
 		void refine_mesh(int refLevel);
 
@@ -107,6 +114,7 @@ namespace MeshDB{
 		void write(const char* filename);
 
 		void quad_preprocessor();
+		void verify_coeff_calculation();
 
 	private:
 

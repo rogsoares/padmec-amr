@@ -8,11 +8,11 @@
 
 
 CXXFLAGS=-g -Wall
-PROJ_DIR=/home/rogerio/projetos/padmec-amr/branches/ParMesh
+PROJ_DIR=/home/rogerio/projetos/svn/branches/ParMesh
 CXX=mpicxx
 INCLUDES=-I$(PROJ_DIR)
 SOURCES=$(PROJ_DIR)
-OBJ=main.o read.o write.o mesh.o mesh-create.o mesh_parallel.o quad_preprocessor.o refine.o refine_TRI.o refine_QUAD.o refine_TETRA.o utilities.o
+OBJ=main.o read.o write.o mesh.o mesh-create.o mesh_parallel.o refine.o refine_TRI.o refine_QUAD.o refine_TETRA.o utilities.o quad_preprocessor.o
 EXEC=mesh-data.exe
 
 all:	$(EXEC)
