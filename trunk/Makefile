@@ -74,7 +74,8 @@ SRC_DIR12=$(PROJ_DIR)/src/adaptation/h-refinement
 
 OBJS_MAIN=$(OBJ_DIR)/main.o $(OBJ_DIR)/SIMULATION_core.o $(OBJ_DIR)/SIMULATION_core__solvers.o $(OBJ_DIR)/SIMULATION_adaptation.o \
           $(OBJ_DIR)/CalculateElementsError.o $(OBJ_DIR)/CalculateGlobalError.o $(OBJ_DIR)/ErrorAnalysis.o $(OBJ_DIR)/ErrorAnalysisAuxiliar.o \
-          $(OBJ_DIR)/CalculateSmoothGradientNorm.o $(OBJ_DIR)/Calculate_heights.o 
+          $(OBJ_DIR)/CalculateSmoothGradientNorm.o $(OBJ_DIR)/Calculate_heights.o $(OBJ_DIR)/IhR_main.o $(OBJ_DIR)/interpolation.o \
+	      $(OBJ_DIR)/IAR_calculate.o $(OBJ_DIR)/IAR_gradients.o 
 	
 OBJS_ELLIPTIC=$(OBJ_DIR)/EBFV1_Elliptic_main.o $(OBJ_DIR)/EBFV1_AssemblyMatVec.o $(OBJ_DIR)/EBFV1_E.o $(OBJ_DIR)/EBFV1_G.o $(OBJ_DIR)/EBFV1_F_omega.o  $(OBJ_DIR)/EBFV1_wells.o \
               $(OBJ_DIR)/EBFV1_F_gamma.o $(OBJ_DIR)/EBFV1_MatrixFreeSolver.o $(OBJ_DIR)/EBFV1_PressureGradient.o $(OBJ_DIR)/MEBFV_Elliptic_main.o $(OBJ_DIR)/MEBFV_Initialize.o\
@@ -96,11 +97,8 @@ OBJS_PREPROCESSOR=$(OBJ_DIR)/EBFV1__pre-processors.o $(OBJ_DIR)/EBFV1-2D-pp.o $(
 ifeq (,$(findstring NOADAPTATION,$(CXXFLAGS) $(ROCKPROP)))
 OBJS_ADAPTATION=$(OBJ_DIR)/AdaptiveRemeshing.o \
     $(OBJ_DIR)/H_Refinement.o $(OBJ_DIR)/H_Refinement_2D.o \
-    $(OBJ_DIR)/CalculateElementsError_2D.o $(OBJ_DIR)/CalculateGlobalError.o \
-    $(OBJ_DIR)/ErrorAnalysis.o $(OBJ_DIR)/ErrorAnalysisAuxiliar.o $(OBJ_DIR)/CalculateSmoothGradientNorm_2D.o \
     $(OBJ_DIR)/MeshRegularization.o $(OBJ_DIR)/SpecialElements_2D.o \
-    $(OBJ_DIR)/UnevenElements.o $(OBJ_DIR)/IhR_main.o $(OBJ_DIR)/interpolation.o \
-	$(OBJ_DIR)/IAR_calculate.o $(OBJ_DIR)/IAR_gradients.o $(OBJ_DIR)/FileManager.o $(OBJ_DIR)/FileManagerFunctions.o \
+    $(OBJ_DIR)/UnevenElements.o $(OBJ_DIR)/FileManager.o $(OBJ_DIR)/FileManagerFunctions.o \
 	$(OBJ_DIR)/MRE.o $(OBJ_DIR)/Rebuilder2.o $(OBJ_DIR)/ErrorEstimator.o $(OBJ_DIR)/Rebuilder3.o
 endif
 
@@ -155,14 +153,14 @@ $(OBJ_DIR)/%.o:	$(SRC_DIR71)/%.cpp
 $(OBJ_DIR)/%.o:	$(SRC_DIR8)/%.cpp
 	$(CXX) $(CXXFLAGS) $(ROCKPROP) $(INCLUDES)  -c $< 
 	@mv *.o $(OBJ_DIR)
+	
+$(OBJ_DIR)/%.o:	$(SRC_DIR10)/%.cpp
+	$(CXX) $(CXXFLAGS) $(ROCKPROP) $(INCLUDES)  -c $< 
+	@mv *.o $(OBJ_DIR)
 
 ifeq (,$(findstring NOADAPTATION,$(CXXFLAGS) $(ROCKPROP)))
 		
 $(OBJ_DIR)/%.o:	$(SRC_DIR9)/%.cpp
-	$(CXX) $(CXXFLAGS) $(ROCKPROP) $(INCLUDES)  -c $< 
-	@mv *.o $(OBJ_DIR)
-	
-$(OBJ_DIR)/%.o:	$(SRC_DIR10)/%.cpp
 	$(CXX) $(CXXFLAGS) $(ROCKPROP) $(INCLUDES)  -c $< 
 	@mv *.o $(OBJ_DIR)
 

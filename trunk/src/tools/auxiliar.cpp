@@ -516,13 +516,13 @@ void makeMeshCopy2(pMesh m, PADMEC_mesh *pm, void(*pGetPressure)(int,double&), v
 }
 
 void makeMeshCopy2(PADMEC_mesh* pm,pMesh m, void(*pSetPressure)(int,double), void(*pSetSaturation)(int,double)){
-	int i,j, k = 0;
-	double x,y,z;
+	int i, k = 0;
+//	double x,y,z;
 	for (i=0; i<pm->numVertices; i++){
-		x = pm->coords[k++];
-		y = pm->coords[k++];
-		z = pm->coords[k++];
-		mVertex* v = m->createVertex(pm->ID[i],x,y,z,0);
+//		x = pm->coords[k++];
+//		y = pm->coords[k++];
+//		z = pm->coords[k++];
+		//mVertex* v = m->createVertex(pm->ID[i],x,y,z,0);
 		pSetPressure(i,pm->field1[i]);
 		pSetSaturation(i,pm->field2[i]);
 	}
@@ -542,7 +542,7 @@ void makeMeshCopy2(PADMEC_mesh* pm,pMesh m, void(*pSetPressure)(int,double), voi
 
 void makeMeshCopy(pMesh m1, pMesh m2, void(*pSetPressure)(pEntity,double), double(*pGetPressure)(pEntity), void(*pSetSaturation)(pEntity,double), double(*pGetSaturation)(pEntity)){
 	mEntity* ent;
-	mVertex* v;
+//	mVertex* v;
 	//mVertex* vertices[4];
 	pGEntity pGEnt;
 	double coord[3];
@@ -590,96 +590,6 @@ void makeMeshCopy(pMesh m1, pMesh m2, void(*pSetPressure)(pEntity,double), doubl
 	}
 	else{
 	}
-
-#ifdef _SEEKFORBUGS2_
-	/*	pEntity ent1, ent2;
-	int IDs1[4],IDs2[4];
-
-	VIter vit1 = M_vertexIter(m1);
-	VIter vit2 = M_vertexIter(m2);
-	while ( (ent1 = VIter_next(vit1)) ){
-		ent2 = VIter_next(vit2);
-		printf("%d [%d]\t%d [%d]\n",EN_id(ent1),GEN_tag(ent1->getClassification()),EN_id(ent2),GEN_tag(ent2->getClassification()));
-	}
-	VIter_delete(vit1);
-	VIter_delete(vit2);
-	//exit(1);
-	EIter eit1 = M_edgeIter(m1);
-	EIter eit2 = M_edgeIter(m2);
-	while ( (ent1 = EIter_next(eit1)) ){
-		ent2 = EIter_next(eit2);
-		printf("%d %d [%d]\t %d %d [%d]\n",
-				EN_id((mVertex*)ent1->get(0,0)),EN_id((mVertex*)ent1->get(0,1)),GEN_tag(ent1->getClassification()),
-				EN_id((mVertex*)ent2->get(0,0)),EN_id((mVertex*)ent2->get(0,1)),GEN_tag(ent2->getClassification()));
-	}
-	EIter_delete(eit1);
-	EIter_delete(eit2);
-	//exit(1);
-
-	// let's check if copy was made successfully
-	if (m1->getDim()==2){
-		FIter fit1 = M_faceIter(m1);
-		FIter fit2 = M_faceIter(m2);
-		while ( (ent1 = FIter_next(fit1)) ){
-			ent2 = FIter_next(fit2);
-			getTriVerticesIDs(ent1,IDs1);
-			getTriVerticesIDs(ent2,IDs2);
-			printf("%d %d %d [%d]\t%d %d %d [%d]\n",
-					IDs1[0],IDs1[1],IDs1[2],GEN_tag(ent1->getClassification()),
-					IDs2[0],IDs2[1],IDs2[2],GEN_tag(ent2->getClassification()));
-			//			printf("%d %d %d [%d]\t%d %d %d [%d]\n",
-			//								IDs1[0],IDs1[1],IDs1[2],0,IDs2[0],IDs2[1],IDs2[2],0);
-		}
-		FIter_delete(fit1);
-		FIter_delete(fit2);
-
-
-		// let's delete m1 and see if m2 still alive
-		FIter fit = M_faceIter(m1);
-		while ( (ent = FIter_next(fit)) ){
-			m1->DEL(ent);
-		}
-		FIter_delete(fit);
-
-		EIter eit = M_edgeIter(m1);
-		while ( (ent = EIter_next(eit)) ){
-			m1->DEL(ent);
-		}
-		EIter_delete(eit);
-
-		VIter vit = M_vertexIter(m1);
-		while ( (ent = VIter_next(vit)) ){
-			m1->DEL(ent);
-		}
-		VIter_delete(vit);
-
-		cout << "m1     m2\n";
-		cout << "V: " << M_numVertices(m1);
-		cout << "\tV: " << M_numVertices(m2) << endl;
-		cout << "E: " << M_numEdges(m1);
-		cout << "\tE: " << M_numEdges(m2) << endl;
-		cout << "F: " << M_numFaces(m1);
-		cout << "\tF: " << M_numFaces(m2) << endl;
-
-
-		throw Exception(__LINE__,__FILE__,"Finish him!\n");
-
-
-	}
-	else{
-		throw Exception(__LINE__,__FILE__,"To be implemented soon...\n");
-		//		RIter rit = M_regionIter(m1);
-		//		while ( (ent = RIter_next(rit)) ){
-		//			v[0] = (mVertex*)ent->get(0,0);
-		//			v[1] = (mVertex*)ent->get(0,1);
-		//			v[2] = (mVertex*)ent->get(0,2);
-		//			v[3] = (mVertex*)ent->get(0,3);
-		//			pGEnt = ent->getClassification();
-		//			m2->createTetWithVertices(v[0],v[1],v[2],v[3],pGEnt);
-		//		}
-		//		RIter_delete(rit);
-	}*/
-#endif
 }
 void deleteMesh(PADMEC_mesh* pm){
 	delete[] pm->ID; pm->ID = 0;
@@ -690,10 +600,6 @@ void deleteMesh(PADMEC_mesh* pm){
 }
 
 void deleteMesh(pMesh m){
-	// 	cout << "V: " << M_numVertices(m) << endl;
-	// 	cout << "E: " << M_numEdges(m) << endl;
-	// 	cout << "F: " << M_numFaces(m) << endl;
-	// 	cout << "R: " << M_numRegions(m) << endl;
 	pEntity ent;
 	cout << "Deleting mesh: \n";
 	if (m->getDim()==3){
@@ -724,126 +630,7 @@ void deleteMesh(pMesh m){
 		m->DEL(ent);
 	}
 	VIter_delete(vit);
-	// 	cout << "V: " << M_numVertices(m) << endl;
-	// 	cout << "E: " << M_numEdges(m) << endl;
-	// 	cout << "F: " << M_numFaces(m) << endl;
-	// 	cout << "R: " << M_numRegions(m) << endl;
-
 }
-
-
-/*
- * 
- * seta as entidade das malhas com os flags necessarios para uma nova simulação (condições de contorno). 
- * isso deve vir direto do adaptador. Mas, enquanto isso nao é resolvido por saulo, vamos "adaptando" as coisas.
- * Rogério: 23/05/2013
- * 
- * ---------------------------------------------------------------------------------------------------------------
- * ATENÇÃO: ESTAMOS CONSIDERANDO UM FIVE-SPOT HOMOGENEO, OU SEJA, O MESMO FLAG 3300 PARA TODOS OS TRIANGULOS,
- *          FLAG 2000 PARA AS ARESTAS DO CONTORNO E 10/51 PARA OS POÇOS !!!!!!!
- * * -------------------------------------------------------------------------------------------------------------
- */
-void PADMEC_GAMBIARRA(pMesh m){
-	cout << "PADMEC_GAMBIARRA   IN\n";
-	pEntity ent;
-
-	m->modifyState(2,1);
-	m->modifyState(1,2);
-
-	// insere flag nos elementos
-	FIter fit = M_faceIter(m);
-	while ( (ent = FIter_next(fit)) ){
-		ent->classify( m->getGEntity(3300,2) );
-	}
-	FIter_delete(fit);
-
-	/// first, set to all nodes the triangles' flags
-	VIter vit = M_vertexIter(m);
-	while ( (ent = VIter_next(vit)) ){
-		ent->classify( m->getGEntity(3300,0) );
-	}
-	VIter_delete(vit);
-
-	/// second, set to all nodes on boundary edges the boundary flag
-	mVertex *v1, *v2, *p1, *p2, *injectionWell, *productionWell;
-	double coord1[3], coord2[3];
-	double xmax = 0.0, xmin = 1e3;
-	double ymax = 0.0, ymin = 1e3;
-
-	EIter eit = M_edgeIter(m);
-	while ( (ent = EIter_next(eit)) ){
-		ent->classify( m->getGEntity(3300,1) );
-		if ( E_numFaces(ent)==1 ){
-			v1 = (mVertex*)ent->get(0,0);
-			v2 = (mVertex*)ent->get(0,1);
-			v1->classify( m->getGEntity(2000,0) );
-			v2->classify( m->getGEntity(2000,0) );
-			ent->classify( m->getGEntity(2000,1) );
-			V_coord(v1,coord1);
-			V_coord(v2,coord2);
-
-			/// look for dirichlet and neumann nodes
-			if (coord1[0] < xmin){
-				xmin = coord1[0];
-				injectionWell = v1;
-			}
-			if (coord1[1] < ymin){
-				ymin = coord1[1];
-			}
-			if (coord1[0] > xmax){
-				xmax = coord1[0];
-			}
-			if (coord1[1] > ymax){
-				ymax = coord1[1];
-			}
-			if (coord2[0] < xmin){
-				xmin = coord2[0];
-			}
-			if (coord2[1] < ymin){
-				ymin = coord2[1];
-			}
-			if (coord2[0] > xmax){
-				xmax = coord2[0];
-			}
-			if (coord2[1] > ymax){
-				ymax = coord2[1];
-			}
-			if (coord1[0] >= xmax && coord1[1] >= ymax){
-				productionWell = v1;
-			}
-			if (coord2[0] >= xmax && coord2[1] >= ymax){
-				productionWell = v2;
-			}
-			if (coord1[0] <= xmin && coord1[1] <= ymin){
-				injectionWell = v1;
-			}
-			if (coord2[0] <= xmin && coord2[1] <= ymin){
-				injectionWell = v2;
-			}
-			if (coord1[0] <= xmin && coord1[1] >= ymax){
-				p1 = v1;
-			}
-			if (coord2[0] <= xmin && coord2[1] >= ymax){
-				p1 = v2;
-			}
-			if (coord1[0] >= xmax && coord1[1] <= ymin){
-				p2 = v1;
-			}
-			if (coord2[0] >= xmax && coord2[1] <= ymin){
-				p2 = v2;
-			}
-		}
-	}
-	EIter_delete(eit);
-
-	/// set dirichlet and neumann nodes flags
-	injectionWell->classify( m->getGEntity(10,0) );
-	productionWell->classify( m->getGEntity(51,0) );
-	p1->classify( m->getGEntity(1100,0) );
-	p2->classify( m->getGEntity(1100,0) );
-	cout << "PADMEC_GAMBIARRA   OUT\n";
-}
-
 
 void checkNumEdges(pMesh theMesh, int line, char* file){
 	if (!M_numEdges(theMesh)){
@@ -930,7 +717,6 @@ void getdomains(pMesh m, int &n, int* domList){
 }
 
 void readmesh(pMesh m, const char* filename){
-
 	cout << "Lendo malha... ";
 	ifstream fid;
 	fid.open(filename);
@@ -950,7 +736,7 @@ void readmesh(pMesh m, const char* filename){
 	fid.getline (line,256);
 	fid >> NbNod;
 	cout << "\tElements: " << NbNod << endl;
-	int face_id = 0;
+//	int face_id = 0;
 
 	int v_counter = 0;
 	int e_counter = 0;
@@ -966,16 +752,14 @@ void readmesh(pMesh m, const char* filename){
 			nod[i] = m->getVertex(id);
 		}
 
-		mEntity *theEntity = 0;
 		switch(iTyp){
 		case 2 :
 			f_counter++;
-			theEntity = m->createFaceWithVertices(nod[0],nod[1],nod[2],m->getGEntity(iGrp,2));
-			//EN_setID((pEntity)theEntity,++face_id);
+			m->createFaceWithVertices(nod[0],nod[1],nod[2],m->getGEntity(iGrp,2));
 			break;
 		case 1 :
 			e_counter++;
-			theEntity = m->createEdge(nod[0],nod[1],m->getGEntity(iGrp,1));
+			m->createEdge(nod[0],nod[1],m->getGEntity(iGrp,1));
 			break;
 		case 15 :
 			v_counter++;
@@ -992,7 +776,133 @@ void readmesh(pMesh m, const char* filename){
 	cout << "#Triangles:           " << f_counter << endl;
 
 
-	pVertex node;
+//	pVertex node;
+
+	int flag;
+	pEntity edge, ent;
+	EIter eit = M_edgeIter(m);
+	while ( (edge = EIter_next(eit)) ){
+		flag = getEdgeFlag(edge);
+		for (int i=0; i<2; i++){
+			pVertex v = edge->get(0,i);
+			if ( !v->getClassification() ){
+				v->classify( m->getGEntity(flag,0) );
+			}
+		}
+	}
+	EIter_delete(eit);
+
+	FIter fit = M_faceIter(m);
+	while ( (ent = FIter_next(fit)) ){
+		flag = GEN_tag(ent->getClassification());
+		for (int i=0; i<3; i++){
+			pVertex v = ent->get(0,i);
+			if ( !v->getClassification() ){
+				v->classify( m->getGEntity(flag,0) );
+			}
+		}
+	}
+	FIter_delete(fit);
+
+	//	VIter vit = M_vertexIter(m);
+	//	while ( (node = VIter_next(vit)) ){
+	//		cout << "Node " << EN_id(node) << " has classification ";
+	//		if ( !node->getClassification() ){
+	//			cout << "NULL\n";
+	//		}
+	//		else{
+	//			cout << GEN_tag(node->getClassification()) << endl;
+	//		}
+	//	}
+	//	VIter_delete(vit);
+	m->modifyState(2,1);
+	m->modifyState(1,2);
+}
+
+void readmesh_parametric(pMesh m, const char* filename, std::list<parametric_coords> &parametric_list){
+	cout << "Lendo malha... \n";
+	ifstream fid;
+	fid.open(filename);
+	int NbNod, iNod;
+	double x,y,z;
+	char line[512];
+	fid.getline (line,256);
+	fid >> NbNod;
+	cout << setprecision(10) << fixed;
+	cout << "\nNodes: " << NbNod << endl;
+	for(int i=0;i<NbNod;i++){
+
+		parametric_coords parametric;
+
+		fid >> iNod >> x >> y >> z >> parametric.npc;
+		m->createVertex(iNod,x,y,z,0);
+
+		switch (parametric.npc){
+		case 0:
+			fid >> parametric.pcoord1;
+
+			cout << x << " " << y << " " << z << " " << parametric.pcoord1 << endl;
+			break;
+		case 1:
+			fid >> parametric.pcoord1 >> parametric.pcoord2;
+			cout << x << " " << y << " " << z << " " << parametric.pcoord1 << " " << parametric.pcoord2 << endl;
+			break;
+		case 2:
+			fid >> parametric.pcoord1 >> parametric.pcoord2 >> parametric.pcoord3;
+			cout << x << " " << y << " " << z << " " << parametric.pcoord1 << " " << parametric.pcoord2 << " " << parametric.pcoord3 << endl;
+			break;
+		}
+		parametric_list.push_back(parametric);
+	}
+
+	fid.getline (line,256);
+	fid.getline (line,256);
+	fid.getline (line,256);
+	fid >> NbNod;
+	cout << "\tElements: " << NbNod << endl;
+//	int face_id = 0;
+
+	int v_counter = 0;
+	int e_counter = 0;
+	int f_counter = 0;
+	for (int i=0; i<NbNod; i++){
+		int iNbNod,iTyp,iGrp,iElm,iNbSub,id;
+		mVertex *nod[100];
+		fid >> iElm >> iTyp >> iGrp >> iNbSub >> iNbNod;
+
+		//cout << "iTyp: " << iTyp << "\tiGrp: " << iGrp << endl;
+		for(int i=0;i<iNbNod;i++){
+			fid >> id;
+			nod[i] = m->getVertex(id);
+		}
+
+//		mEntity *theEntity = 0;
+		switch(iTyp){
+		case 2 :
+			f_counter++;
+			m->createFaceWithVertices(nod[0],nod[1],nod[2],m->getGEntity(iGrp,2));
+			//EN_setID((pEntity)theEntity,++face_id);
+			break;
+		case 1 :
+			e_counter++;
+			m->createEdge(nod[0],nod[1],m->getGEntity(iGrp,1));
+			break;
+		case 15 :
+			v_counter++;
+			mVertex *v = nod[0];
+			v->classify(m->getGEntity(iGrp,0));
+			break;
+		}
+	}
+	cout << "done!\n";
+	cout << "Summary:\n";
+	cout << "----------------------------------\n";
+	cout << "#Prescribed vertices: " << v_counter << endl;
+	cout << "#Boundary edges:      " << e_counter << endl;
+	cout << "#Triangles:           " << f_counter << endl;
+
+
+//	pVertex node;
 
 	int flag;
 	pEntity edge, ent;

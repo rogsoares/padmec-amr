@@ -86,7 +86,7 @@ namespace PRS{
 
 			//	pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,pGCData,exportSolutionToVTK);
 
-				STOP();
+				//STOP();
 
 				// temporary mesh not necessary any more (goodbye!)
 				deleteMesh(pm);

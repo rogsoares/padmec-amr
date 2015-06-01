@@ -175,9 +175,6 @@ namespace PRS{
 			int ndom = (int)pSimPar->setOfDomains.size();
 			for (int dom=0; dom<ndom; dom++){
 				int nfaces = pGCData->getNumBdryFacesPerDomain(dom);
-				double line1[3] = {6., 1., 1.};
-				double line2[3] = {1., 6., 1.};
-				double line3[3] = {1., 1., 6.};
 				double dot1, dot2, dot3, Sw_vec[3], aux[3];
 				for (int face=0; face<nfaces; face++){
 					pGCData->getDij(dom,face,Dij);

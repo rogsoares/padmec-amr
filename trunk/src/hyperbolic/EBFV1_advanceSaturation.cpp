@@ -38,12 +38,11 @@ namespace PRS{
 	}
 
 	void EBFV1_hyperbolic::nodeWith_Wells(double delta_T){
-		const double tol = 1e-5;							// tolerance for fractional flux correction
 		const int N = pSimPar->getWellTimeDiscretion();		// get number of delta subdivisions
 		double dt_well = (double)delta_T/N;					// time step for well nodes saturation
 
 		int i,j, well_idx;
-		double Sw,Sw0,Sw1,Sw_old,Vt,Qi,Vi,Qwi,Qt,fw,fo,nonvisc,wp,volume, nrc, porosity,cml_oil,Qo,Qw,diff_Sw;
+		double Sw,Sw0,Sw_old,Vt,Qi,Vi,Qwi,Qt,fw,fo,nonvisc,wp,cml_oil,Qo,Qw;
 
 		// TODO: nao usar constantes para identificar pocos!
 		Qt = pSimPar->getFlowrateValue(51);					// source/sink term
@@ -51,7 +50,6 @@ namespace PRS{
 		cml_oil = .0;
 		Qo = .0;
 		Qw = .0;
-		int iter = 0;
 		int nnodes = pPPData->getNumNodesWells();
 		for (i=0; i<nnodes; i++){
 			pPPData->getNeumannIndex(i,well_idx);
@@ -65,23 +63,6 @@ namespace PRS{
 				fw = pPPData->getFractionalFlux(Sw0);
 				Qwi = fabs(fw*Qi);
 				Sw = Sw0 - dt_well*(Qwi/wp);
-
-				// correct fw
-//				do{
-//					Sw1 = Sw;
-//					fw = pPPData->getFractionalFlux(Sw1);
-//					Qwi = fabs(fw*Qi);
-//					Sw = Sw1 - dt_well*(Qwi/wp);
-//					diff_Sw = fabs(Sw - Sw1);
-//
-//					// avoid infinite loop
-//					iter++;
-//					if (iter>10){
-//						//cout << "Iter. exceeded! Exiting loop.\n";
-//						break;
-//					}
-//
-//				}while ( diff_Sw > tol );
 				Sw_old = Sw;
 			}
 	#ifdef _SEEKFORBUGS_
@@ -96,8 +77,6 @@ namespace PRS{
 			Qo += fabs(Qi*fo);
 			Qw += fabs(Qi*fw);
 			cml_oil += Qo;
-
-			//cout << setprecision(7) << fw << " " << fo << " " << Qo << " " << Qw << " " << cml_oil << " " << Sw << " " << Qt << " " << delta_T << endl;
 		}
 
 		setRecoveredOil(Qo/(Qo+Qw));

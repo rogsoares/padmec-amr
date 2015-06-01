@@ -182,7 +182,7 @@ namespace PRS{
 	void SimulatorParameters::getWells(pMesh theMesh, int dim){
 		// if user has provided some well, count how many nodes are flagged for each one
 		if ( MWells.size() ){
-			pEntity node, edge;
+			pEntity node;
 			
 			// associate a set container to each well flag
 			// EX.: two injection and one production wells provided
