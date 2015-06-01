@@ -16,18 +16,17 @@ double calculate_Gradients(InterpolationDataStruct* pIData, int field){
 	//PETSc variables
 	Vec Fx, Fy, gradx, grady;
 	Mat M;
-	PetscErrorCode ierr;
 
 	//create vectors Fx, Fy, gradx and grady
-	ierr = VecCreate(PETSC_COMM_WORLD,&Fx);CHKERRQ(ierr);
-	ierr = VecSetSizes(Fx,PETSC_DECIDE,NumOfNodes);CHKERRQ(ierr);
-	ierr = VecSetFromOptions(Fx);CHKERRQ(ierr);
-	ierr = VecDuplicate(Fx,&Fy);CHKERRQ(ierr);
-	ierr = VecDuplicate(Fx,&gradx);CHKERRQ(ierr);
-	ierr = VecDuplicate(Fx,&grady);CHKERRQ(ierr);
+	VecCreate(PETSC_COMM_WORLD,&Fx);
+	VecSetSizes(Fx,PETSC_DECIDE,NumOfNodes);
+	VecSetFromOptions(Fx);
+	VecDuplicate(Fx,&Fy);
+	VecDuplicate(Fx,&gradx);
+	VecDuplicate(Fx,&grady);
 
 	//create an sparse matrix
-	ierr = MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,NumOfNodes,NumOfNodes,80,PETSC_NULL,80,PETSC_NULL,&M); CHKERRQ(ierr);
+	MatCreateAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,NumOfNodes,NumOfNodes,80,PETSC_NULL,80,PETSC_NULL,&M);
 
 	//Assembly
 	Assembly_Mat_Vec(pIData,field,M,Fx,Fy);
@@ -37,7 +36,7 @@ double calculate_Gradients(InterpolationDataStruct* pIData, int field){
 	KSP_solver(M, M, Fx, gradx);
 	KSP_solver(M, M, Fy, grady);
 
-	//ierr = VecView(Fy,PETSC_VIEWER_STDOUT_SELF);CHKERRQ(ierr);
+	//VecView(Fy,PETSC_VIEWER_STDOUT_SELF);
 
 
 	//store first order derivatives
@@ -47,11 +46,11 @@ double calculate_Gradients(InterpolationDataStruct* pIData, int field){
 	calculate_SecondOrderDerivatives(pIData);
 
 	//destroy vectors, matrix and KSP's
-	ierr = VecDestroy(Fx);CHKERRQ(ierr);
-	ierr = VecDestroy(Fy);CHKERRQ(ierr);
-	ierr = VecDestroy(gradx);CHKERRQ(ierr);
-	ierr = VecDestroy(grady);CHKERRQ(ierr);
-	ierr = MatDestroy(M);CHKERRQ(ierr);
+	VecDestroy(&Fx);
+	VecDestroy(&Fy);
+	VecDestroy(&gradx);
+	VecDestroy(&grady);
+	MatDestroy(&M);
 	return 0;
 }
 
@@ -93,13 +92,13 @@ double Assembly_Mat_Vec(InterpolationDataStruct* pIData, int field, Mat M, Vec F
 	}
 	FIter_delete(fit);
 
-	PetscErrorCode ierr;
-	ierr = MatAssemblyBegin(M,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(M,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-	ierr = VecAssemblyBegin(Fx);CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(Fx);CHKERRQ(ierr);
-	ierr = VecAssemblyBegin(Fy);CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(Fy);CHKERRQ(ierr);
+
+	MatAssemblyBegin(M,MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(M,MAT_FINAL_ASSEMBLY);
+	VecAssemblyBegin(Fx);
+	VecAssemblyEnd(Fx);
+	VecAssemblyBegin(Fy);
+	VecAssemblyEnd(Fy);
 	return 0;
 }
 
@@ -108,26 +107,25 @@ double KSP_solver(Mat A, Mat pcMatrix, Vec y, Vec x){
 	double startt = MPI_Wtime();
 	KSP ksp;
 	PC preconditioner;
-	PetscErrorCode ierr;
-	ierr = KSPCreate(PETSC_COMM_WORLD,&ksp); CHKERRQ(ierr);
-	ierr = KSPSetOperators(ksp,A,pcMatrix,DIFFERENT_NONZERO_PATTERN);CHKERRQ(ierr);
-	ierr = KSPSetType(ksp,KSPCG);CHKERRQ(ierr);
-	ierr = KSPGetPC(ksp,&preconditioner);CHKERRQ(ierr);
-	ierr = PCSetType(preconditioner,PCJACOBI);CHKERRQ(ierr);
-	ierr = KSPSetInitialGuessNonzero(ksp,PETSC_FALSE);CHKERRQ(ierr);
-	ierr = KSPSetTolerances(ksp,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);CHKERRQ(ierr);
-	ierr = KSPSetFromOptions(ksp);CHKERRQ(ierr);
-	ierr = KSPSolve(ksp,y,x);CHKERRQ(ierr);
-	ierr = KSPDestroy(ksp); CHKERRQ(ierr);
+
+	KSPCreate(PETSC_COMM_WORLD,&ksp);
+	KSPSetOperators(ksp,A,pcMatrix);
+	KSPSetType(ksp,KSPCG);
+	KSPGetPC(ksp,&preconditioner);
+	PCSetType(preconditioner,PCJACOBI);
+	KSPSetInitialGuessNonzero(ksp,PETSC_FALSE);
+	KSPSetTolerances(ksp,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
+	KSPSetFromOptions(ksp);
+	KSPSolve(ksp,y,x);
+	KSPDestroy(&ksp);
 	double endt = MPI_Wtime();
 	return endt-startt;
 }
 
 double store_FirstOrderDerivatives(InterpolationDataStruct* pIData, Vec gradx, Vec grady){
-	PetscErrorCode ierr;
 	double *dx, *dy;
-	ierr = VecGetArray(gradx,&dx);CHKERRQ(ierr);
-	ierr = VecGetArray(grady,&dy);CHKERRQ(ierr);
+	VecGetArray(gradx,&dx);
+	VecGetArray(grady,&dy);
 
 	//loop on vertices to calculate the secord order derivatives
 	VIter vit = M_vertexIter(pIData->m2);
@@ -141,8 +139,8 @@ double store_FirstOrderDerivatives(InterpolationDataStruct* pIData, Vec gradx, V
 		pIData->pGrad(id,1) = dy[id-1];
 	}
 	VIter_delete(vit);
-	ierr = VecRestoreArray(gradx,&dx);CHKERRQ(ierr);
-	ierr = VecRestoreArray(grady,&dy);CHKERRQ(ierr);
+	VecRestoreArray(gradx,&dx);
+	VecRestoreArray(grady,&dy);
 	return 0;
 }
 

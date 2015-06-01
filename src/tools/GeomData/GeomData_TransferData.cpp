@@ -58,7 +58,6 @@ namespace PRS{
 				EIter_delete(eit);
 			}
 			else{
-				int counter = 0;
 				FIter fit = M_faceIter(theMesh);
 				while ( pFace face = FIter_next(fit) ){
 					if ( faceBelongToDomain(face,dom) ){
@@ -81,7 +80,6 @@ namespace PRS{
 		int ndom = getNumDomains();
 		VIter vit = M_vertexIter(theMesh);
 		while ( (node = VIter_next(vit)) ){
-			int id = EN_id(node);
 			volume = .0;
 			for (int i=0; i<ndom; i++){
 				volume += getVolume(node,domainList[i]);
@@ -110,7 +108,7 @@ namespace PRS{
 		row = 0;
 		if (theMesh->getDim()==2){
 			FIter fit = M_faceIter(theMesh);
-			while ( face = FIter_next(fit) ){
+			while ( (face = FIter_next(fit)) ){
 				for(i=0; i<3; i++){
 					node = (pEntity)face->get(0,i);
 					ID = EN_id(node);
@@ -122,7 +120,7 @@ namespace PRS{
 		}
 		else{
 			RIter rit = M_regionIter(theMesh);
-			while ( tetra = RIter_next(rit) ){
+			while ( (tetra = RIter_next(rit)) ){
 				for(i=0; i<4; i++){
 					node = (pEntity)tetra->get(0,i);
 					ID = EN_id(node);

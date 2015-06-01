@@ -109,6 +109,11 @@ namespace PRS{
 		}
 		fid.close();
 
+		std::list<parametric_coords> parametric_list;
+		readmesh_parametric(theMesh,prepFilename().c_str(),parametric_list);
+		cout << "Size parametric list: " << parametric_list.size() << endl;
+		STOP();
+
 		M_load(theMesh,prepFilename().c_str());		// load mesh using FMDB
 		int dim = theMesh->getDim();
 

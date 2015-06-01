@@ -70,7 +70,6 @@ namespace PRS{
 			MobJ = pPPData->getTotalMobility(Sw_J);
 			MobIJ = 0.5*(MobI + MobJ);
 
-			int pos = 0;
 			for (i=0; i<dim; i++){
 				vel[i] = 0;
 			}
@@ -87,7 +86,7 @@ namespace PRS{
 		}
 
 		CPU_Profile::End("VelocityField");
-
+		return 0;
 	}
 }
 

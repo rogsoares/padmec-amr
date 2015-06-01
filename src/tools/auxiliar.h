@@ -197,16 +197,21 @@ void makeMeshCopy2(PADMEC_mesh*,pMesh , void(*pSetPressure)(int,double), void(*p
  * \param pMesh m
  */
 void deleteMesh(pMesh m);
-
 void deleteMesh(PADMEC_mesh* pm);
-
-void PADMEC_GAMBIARRA(pMesh m);
-
 void checkNumEdges(pMesh, int, char*);
 void checkMesh(pMesh m);
 void calculateNumFacesAroundVertices(pMesh m, std::map<int,int> &facesAroundVertices);
 void readmesh(pMesh m, const char* filename);
-void getdomains(pMesh m, int &n, int* domlist);
 
+// reads a mesh file from gmsh (file version 1.0) with parametric coordinates
+struct parametric_coords{
+	int npc;	// number of parametric coordinates
+	double pcoord1;
+	double pcoord2;
+	double pcoord3;
+};
+void readmesh_parametric(pMesh m, const char* filename, std::list<parametric_coords> &parametric_list);
+
+void getdomains(pMesh m, int &n, int* domlist);
 
 #endif /*AUXILIAR_H_*/
