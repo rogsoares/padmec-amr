@@ -26,7 +26,7 @@ CXXFLAGS=-g -Wall -DNOADAPTATION -DTRACKING_PROGRAM_STEPS -Wparentheses -D_SEEKF
 #CXXFLAGS=-DPARALLEL -g -Wall -Wunused -D__ADAPTATION_DEBUG__ -D__ERROR_ANALYSIS_DEBUG__ -D_SEEKFORBUGS_ -DTRACKING_PROGRAM_STEPS -DFVPO
 # scientific_application folder is where libraries are installed 
 APP_DIR=$(HOME)/applications
-PROJ_DIR=$(HOME)/projetos/padmec-amr/trunk
+PROJ_DIR=/home/rogerio/projetos/svn/svn/trunk
 GMSH_DIR=$(APP_DIR)/gmshGMSH
 
 # compilers
