@@ -24,10 +24,10 @@ type method ID right below:
 1
 
 Use high order approximation:
-no
+yes
 
 C.F.L (Courant-Friedilich-Lendroff):
-0.9
+0.48
 
 Discretization time on production well:
 1000
@@ -37,10 +37,10 @@ where i = processor-rank-number and N = number-of-processors
 You MUST provide only filename, i.e, filename = (filename-i-of-N.dat) - (-i-of-N.dat)
 
 mesh filename:
-/home/rogerio/projetos/padmec-amr/trunk/simulation-parameters/FS-2D-homogeneo/pp-data-files/fs2dhmg__parametric.msh
+/home/rogerio/projetos/padmec-amr/trunk/simulation-parameters/FS-2D-homogeneo/pp-data-files/fs2dhmg.msh
 
 export filename (to VTK format without extension .vtk):
-/home/rogerio/projetos/padmec-amr/trunk/simulation-parameters/FS-2D-homogeneo/results/fs2dhmg__1
+/home/rogerio/projetos/padmec-amr/trunk/simulation-parameters/FS-2D-homogeneo/results/fs2dhmg-MUSCL
 
 Start simulation from <restart> file?
 no

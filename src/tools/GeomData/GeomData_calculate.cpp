@@ -170,7 +170,7 @@ namespace PRS{
 			}
 			numDomEdges[i] = (int)edgeList.size();
 			if (!numDomEdges[i]){
-				throw Exception(__LINE__,__FILE__,"Number of boundary faces: 0.");
+				throw Exception(__LINE__,__FILE__,"Number of edges: 0. Check if elements flags in mesh and physical.dat files match.");
 			}
 			edgeList.clear();
 		}

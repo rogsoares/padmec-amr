@@ -185,7 +185,7 @@ namespace PRS{
 		int nrows = matvec_struct->nrows;
 		int *rows = matvec_struct->rows;
 
-		cout << "n_rows: " << nrows << endl;
+		//cout << "n_rows: " << nrows << endl;
 
 		IS rowsToImport;
 		ISCreateGeneral(PETSC_COMM_WORLD,nrows,rows,PETSC_COPY_VALUES,&rowsToImport);

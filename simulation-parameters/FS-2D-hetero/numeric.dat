@@ -9,25 +9,25 @@
 * NOTE: flag and method must match with souce code flags
 */
 
-Chosse one of the methods availables above to solve the elliptic equation:
+Chosse one of the methods availables below to solve the elliptic equation:
 1 -> EBFV1
 2 -> EBFV1-local
 
-type method ID right above:
+type method ID right below:
 1
 
-Chosse one of the methods availables above to solve the hyperbolic equation:
+Chosse one of the methods availables below to solve the hyperbolic equation:
 1 -> EBFV1
 2 -> EBFV1_adaptative
 
-type method ID right above:
+type method ID right below:
 1
 
 Use high order approximation:
-no
+yes
 
-C.F.L (courant-friedilich-lendroff number):
-0.7
+C.F.L (Courant-Friedilich-Lendroff):
+0.48
 
 Discretization time on production well:
 1000
@@ -37,14 +37,13 @@ where i = processor-rank-number and N = number-of-processors
 You MUST provide only filename, i.e, filename = (filename-i-of-N.dat) - (-i-of-N.dat)
 
 mesh filename:
-/home/rogerio/projetos/GOOGLE_CODES/padmec-amr/trunk/simulation-parameters/FS-2D-hetero/pp-data-files/Helming-2D.msh
+/home/rogerio/projetos/padmec-amr/trunk/simulation-parameters/FS-2D-hetero/pp-data-files/Helming-2D.msh
 
 export filename (to VTK format without extension .vtk):
-/home/rogerio/projetos/GOOGLE_CODES/padmec-amr/trunk/simulation-parameters/FS-2D-hetero/results/Helming-2D
+/home/rogerio/projetos/padmec-amr/trunk/simulation-parameters/FS-2D-hetero/results/Helmig2D-MUSCL
 
 Start simulation from <restart> file?
-() yes. Type file:/home/rogerio/Dropbox/medwards/case1-transv/transv_1stO__converted_0-of-1__step-9.vtk
-(x) no.
+no
  
 Initial and Boundary conditions
 ================================================================================
@@ -80,8 +79,7 @@ Ex.: Q = 1e-2, Vt = 0.05, Vp = 0.01, PVI = 1.0, t = PVI*(Vt*phi)/Q = 1
 
 Provide PVI number to specify simulation time duration
 simulation-time:
-.1
-
+.2
 
 Specify velocity variation tolerance for time adaptative IMPES simulation
 dvtol:
