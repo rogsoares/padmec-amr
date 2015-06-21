@@ -48,7 +48,6 @@ namespace PRS{
 			calculateSaturationGradient();
 		}
 
-
 		pPPData->resetNonvisc(alpha_max);
 		for (int dom=0; dom<ndom; dom++){
 			calculateIntegralAdvectiveTerm(dom,timeStep);

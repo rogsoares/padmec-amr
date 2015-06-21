@@ -40,7 +40,8 @@ void exportSolutionToVTK(pMesh theMesh, void *pData1, void *pData2, void *pData3
 	fid << "\nPOINT_DATA "<< M_numVertices(theMesh) << endl;
 	printPressure(fid,pGCData,pPPData);
 	printSaturation(fid,pGCData,pPPData);
-	printPressureGradient(fid,pGCData,pPPData);
+	//printPressureGradient(fid,pGCData,pPPData);
+	//printSaturationGradient(fid,pGCData,pPPData);
 	//printWeightedHeight(fid,pGCData,pEA);
 
 	// LIST HERE ALL ELEMENT FIELDS
@@ -165,6 +166,15 @@ void printPressureGradient(ofstream& fid, GeomData* pGCData, PhysicPropData *pPP
 			pPPData->get_pw_Grad(dom,node,p_grad);
 			fid << p_grad[0] << " " << p_grad[1] << " " << p_grad[2] << endl;
 		}
+	}
+}
+
+void printSaturationGradient(ofstream& fid, GeomData* pGCData, PhysicPropData *pPPData){
+	fid << "VECTORS Sw_grad float\n";
+	double* Sw_grad = NULL;
+	for (int node=0; node<pGCData->getNumNodes(); node++){
+		pPPData->get_Sw_Grad(node,Sw_grad);
+		fid << Sw_grad[0] << " " << Sw_grad[1] << " " << Sw_grad[2] << endl;
 	}
 }
 

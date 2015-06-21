@@ -6,15 +6,22 @@
 #include "GeomData.h"
 
 extern Matrix<double> *pGrad_dom;
-extern Matrix<double> pressure;
+
+/*
+ * Saturation gradient is ALWAYS continuous even for heterogeneous problems
+ * SwGrad_dom is an auxiliary matrix (DO NOT REMOVE IT FROM THE CODE!!!!!!!!!!)
+ * SwGrad is the matrix where saturation must be get from
+ */
+extern Matrix<double> *SwGrad_dom; // DO NOT REMOVE IT FROM THE CODE!!!!!!!!!!
 extern Matrix<double> SwGrad;
+
+extern Matrix<double> pressure;
 extern Matrix<double> Sw;
 extern Matrix<double> Sw_old;
 
 // temporary matrices (nx1) to store interpolated values from old to new mesh
 extern Matrix<double> Sw_tmp;
 extern Matrix<double> p_tmp;
-
 
 namespace PRS{
 
@@ -65,12 +72,6 @@ public:
 		grad = pGrad_dom[dom].getrow(row);
 	}
 
-//	static void get_pw_Grad(int dom, int row, double* grad){
-//		grad[0] = pGrad_dom[dom].getValue(row,0);
-//		grad[1] = pGrad_dom[dom].getValue(row,1);
-//		grad[2] = pGrad_dom[dom].getValue(row,2);
-//	}
-
 	static void setPressure(int idx, double p){
 		pressure.setValue(idx,p);
 	}
@@ -79,29 +80,13 @@ public:
 		p = pressure.getValue(idx);
 	}
 
-	static void set_Sw_Grad(int row, const double* grad){
-		SwGrad.setValue(row,0,grad[0]);
-		SwGrad.setValue(row,1,grad[1]);
-		SwGrad.setValue(row,2,grad[2]);
+	void get_Sw_Grad(int dom, int row, double* &grad){
+			grad = SwGrad_dom[dom].getrow(row);
 	}
 
-	static void get_Sw_Grad(int row, double* grad){
-		grad[0] = SwGrad.getValue(row,0);
-		grad[1] = SwGrad.getValue(row,1);
-		grad[2] = SwGrad.getValue(row,2);
+	void get_Sw_Grad(int idx_global, double* &grad){
+		grad = SwGrad.getrow(idx_global);
 	}
-
-//	void set_Sw_Grad(int dom, int row, const double* grad){
-//		SwGrad_dom[dom].setValue(row,0,grad[0]);
-//		SwGrad_dom[dom].setValue(row,1,grad[1]);
-//		SwGrad_dom[dom].setValue(row,2,grad[2]);
-//	}
-//
-//	void get_Sw_Grad(int dom, int row, double* grad){
-//		grad[0] = SwGrad_dom[dom].getValue(row,0);
-//		grad[1] = SwGrad_dom[dom].getValue(row,1);
-//		grad[2] = SwGrad_dom[dom].getValue(row,2);
-//	}
 
 	static void setPressure_NM(int idx, double v){
 		p_tmp.setValue(idx,v);
@@ -124,22 +109,6 @@ public:
 			throw Exception(__LINE__,__FILE__,"Unknown field.");
 		}
 	}
-//	static void getGradient(FIELD field, int dom, int idx, int idx_global, double* grad){
-//		switch (field){
-//		case PRESSURE:
-//			grad[0] = pGrad_dom[dom].getValue(idx,0);
-//			grad[1] = pGrad_dom[dom].getValue(idx,1);
-//			grad[2] = pGrad_dom[dom].getValue(idx,2);
-//			break;
-//		case SATURATION:
-//			grad[0] = SwGrad.getValue(idx_global,0);
-//			grad[1] = SwGrad.getValue(idx_global,1);
-//			grad[2] = SwGrad.getValue(idx_global,2);
-//			break;
-//		default:
-//			throw Exception(__LINE__,__FILE__,"Unknown field.");
-//		}
-//	}
 
 	static void setSaturation(int idx, double v){
 		Sw.setValue(idx,v);

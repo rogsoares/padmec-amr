@@ -5,10 +5,12 @@ namespace PRS{
 		CPU_Profile::Start();
 		int dim = pGCData->getMeshDim();
 		const double* Cij = NULL;
+		double* Sw_grad_I = NULL;
+		double* Sw_grad_J = NULL;
 		double Sw_I, Sw_J, fwII, fwJJ, fwIJ, df_dsIJ, n, alpha;
 		double  non_visc_fv, non_visc_ad, nonvisc_I, nonvisc_J;
 		double courant, phi, length;
-		double vel[3], FluxIJ[3], Cij_norm, versor[3], edIJ[3], Sw_grad_I[3], Sw_grad_J[3];
+		double vel[3], FluxIJ[3], Cij_norm, versor[3], edIJ[3];//, Sw_grad_I[3], Sw_grad_J[3];
 		int i,j,idx0_global, idx1_global, idx0, idx1, id0, id1,flag1,flag2;
 		double sign, koef = (double)1./3.;
 
@@ -75,16 +77,12 @@ namespace PRS{
 			// Approximate Eigenvalue (Note that we are using the linearized form of df_dsIJ)
 			n = .0;
 			for (i=0; i<dim; i++){
-				n += vel[i]*vel[i];//pow(vel[i],2);
+				n += vel[i]*vel[i];
 			}
 			alpha = sqrt(n)*df_dsIJ;
 
 			// get the maximum alpha to compute the time step
 			alpha_max = std::max(alpha,alpha_max);
-
-//			if (alpha_max>1000){
-//				cout << "vel: " << vel[0] << " " << vel[1] << "\tdf_dsIJ: " << df_dsIJ << endl;
-//			}
 
 			// Central difference Contribution
 			non_visc_fv = .0;
@@ -104,16 +102,13 @@ namespace PRS{
 			// update nonvisc term. it will be set to 0 at the next time iteration
 			pPPData->setNonvisc(idx0_global,nonvisc_I);
 			pPPData->setNonvisc(idx1_global,nonvisc_J);
-			//cout << setprecision(7) << "dom: " << dom << " " << nonvisc_I << " " << nonvisc_J << endl;
 		}
-		//STOP();
+
 		courant = pSimPar->CFL();
 		int flag = pGCData->getDomFlag(dom);
 		phi = pSimPar->getPorosity(flag);
 		length = pGCData->getSmallestEdgeLength();
 		timeStep = std::min(timeStep,(courant*length*phi)/alpha_max);
-
-		//cout << setprecision(7) <<  "\talphamax: " << alpha_max << "\ttimeStep: " << timeStep << endl;
 
 		CPU_Profile::End("IntegralAdvectiveTerm");
 		return 0;

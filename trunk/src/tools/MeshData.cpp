@@ -310,9 +310,9 @@ namespace PRS{
 			//cout << "Node [" << mit->first << "]:\t " << mit->second << endl;
 		}
 
-		if (!P_getSumInt(dirichlet.size()) ){
-			throw Exception(__LINE__,__FILE__,"Prescribed (dirichlet) nodes were not found. Simulation cannot proceed.\n");
-		}
+		string msg("Dirichlet nodes were not found. Check if Phisycal command was used properly in .geo file\n");
+		throw_exception(!P_getSumInt(dirichlet.size()),msg,__LINE__,__FILE__);
+
 
 		// go ahead only if parallel
 		if (P_size()==1) return 0;

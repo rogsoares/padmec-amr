@@ -1,6 +1,7 @@
 #include "PhysicPropData.h"
 
 Matrix<double> *pGrad_dom;		// each pointer is a matrix nx3
+Matrix<double> *SwGrad_dom; // DO NOT REMOVE IT FROM THE CODE!!!!!!!!!!
 Matrix<double> pressure;
 Matrix<double> SwGrad;			// a unique matrix nnodesx3 for whole mesh
 Matrix<double> Sw;				// for domain
@@ -56,12 +57,15 @@ namespace PRS{
 	void PhysicPropData::allocateData(SimulatorParameters *pSimPar, GeomData* pGCData, int numnodes){
 		int ndom = pGCData->getNumDomains();
 		pGrad_dom = new Matrix<double>[ndom];
+		SwGrad_dom = new Matrix<double>[ndom];
 		velocity = new Matrix<double>[ndom];
 		for (int k=0; k<ndom; k++){
 			int nrows = pGCData->getNumNodesPerDomain(k);
 			int nedges = pGCData->getNumEdgesPerDomain(k);
 			pGrad_dom[k].allocateMemory(nrows,3);
 			pGrad_dom[k].initialize(.0);
+			SwGrad_dom[k].allocateMemory(nrows,3);
+			SwGrad_dom[k].initialize(.0);
 			velocity[k].allocateMemory(nedges,6);
 			velocity[k].initialize(.0);
 		}
@@ -88,6 +92,7 @@ namespace PRS{
 		int ndom = pSimPar->getNumDomains();
 		for (int k=0; k<ndom; k++){
 			pGrad_dom[k].freeMemory();
+			SwGrad_dom[k].freeMemory();
 			velocity[k].freeMemory();
 		}
 		SwGrad.freeMemory();
@@ -95,6 +100,7 @@ namespace PRS{
 		projectedSw_grad.freeMemory();
 		nonvisc.freeMemory();
 		delete[] pGrad_dom; pGrad_dom = 0;
+		delete[] SwGrad_dom; SwGrad_dom = 0;
 		delete[] velocity; velocity = 0;
 
 		if (!Allocated){
