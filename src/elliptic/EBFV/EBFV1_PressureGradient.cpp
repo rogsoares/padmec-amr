@@ -47,8 +47,6 @@ namespace PRS{
 				p_grad_I[i] += val*Cij[i];
 				p_grad_J[i] += -val*Cij[i];
 			}
-			//pPPData->set_pw_Grad(dom,idx0,p_grad_I);
-			//pPPData->set_pw_Grad(dom,idx1,p_grad_J);
 		}
 	}
 
@@ -74,8 +72,6 @@ namespace PRS{
 					p_grad_I[i] += ((5.*p_I + p_J)/6.)*Dij[i];
 					p_grad_J[i] += ((p_I + 5.*p_J)/6.)*Dij[i];
 				}
-				//pPPData->set_pw_Grad(dom,idx0,p_grad_I);
-				//pPPData->set_pw_Grad(dom,idx1,p_grad_J);
 			}
 		}
 		else{
@@ -105,10 +101,6 @@ namespace PRS{
 					p_grad_J[i] += aux[i]*dot2;
 					p_grad_K[i] += aux[i]*dot3;
 				}
-
-				pPPData->set_pw_Grad(dom,idx0,p_grad_I);
-				pPPData->set_pw_Grad(dom,idx1,p_grad_J);
-				pPPData->set_pw_Grad(dom,idx2,p_grad_K);
 			}
 		}
 	}
@@ -127,19 +119,21 @@ namespace PRS{
 				for (i=0; i<dim; i++){
 					p_grad[i] /= vol;
 				}
-				//pPPData->set_pw_Grad(dom,node,p_grad);
 			}
 		}
 	}
 
 	void EBFV1_elliptic::resetPressureGradient(){
-		double p_grad[3]={.0,.0,.0};
-		int dom, ndom, nnodes, node;
+		double* p_grad = NULL;
+		int dom, ndom, nnodes, node, i;
 		ndom = (int)pSimPar->setOfDomains.size();
 		for (dom=0; dom<ndom; dom++){
 			nnodes = pGCData->getNumNodesPerDomain(dom);
 			for (node=0; node<nnodes; node++){
-				pPPData->set_pw_Grad(dom,node,p_grad);
+				pPPData->get_pw_Grad(dom,node,p_grad);
+				for (i=0; i<3; i++){
+					p_grad[i] = 0;
+				}
 			}
 		}
 	}

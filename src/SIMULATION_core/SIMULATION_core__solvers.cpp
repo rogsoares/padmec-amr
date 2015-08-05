@@ -6,7 +6,6 @@
  */
 
 #include "SIMULATION_core.h"
-//#include <sstream>
 
 namespace PRS{
 
@@ -19,7 +18,7 @@ namespace PRS{
 				pElliptic_eq->solver(theMesh);
 				pSimPar->printOutVTK(theMesh,pPPData,pErrorAnalysis,pSimPar,pGCData,exportSolutionToVTK);
 				#ifndef NOADAPTATION
-					adapt = adaptation();
+				adapt = adaptation();
 				#endif
 				count++;
 			}while (adapt);
@@ -34,6 +33,13 @@ namespace PRS{
 				//#ifndef NOADAPTATION
 				//adaptation();
 				//#endif
+			}
+		}
+		else if (simFlag==MIMPES_ADAPT){
+			while ( !pSimPar->finishSimulation() ){
+				pElliptic_eq->solver(theMesh);
+				pHyperbolic_eq->solver(theMesh,timeStep);
+				adaptation();
 			}
 		}
 		return 0;

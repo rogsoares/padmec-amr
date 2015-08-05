@@ -22,7 +22,9 @@ using namespace PRS;
 class ErrorAnalysis;
 
 bool analyzeField(FIELD, ErrorAnalysis*, SimulatorParameters*, GeomData*, void(*)(FIELD,int,int,int,const double*&));
+bool analyzeField2(FIELD, ErrorAnalysis*, SimulatorParameters*, GeomData*, void(*)(FIELD,int,int,int,const double*&));
 bool calculate_ErrorAnalysis(ErrorAnalysis*, SimulatorParameters*, GeomData*, void(*)(FIELD,int,int,int,const double*&), std::list<int>&, std::map<int,double>&);
+bool calculate_ErrorAnalysis(ErrorAnalysis*, SimulatorParameters*, GeomData*, void(*)(FIELD,int,int,int,const double*&));
 
 class ErrorAnalysis{
 

@@ -48,8 +48,6 @@ namespace PRS{
 				Sw_grad_I[i] += val*Cij[i];
 				Sw_grad_J[i] += -val*Cij[i];
 			}
-//			pPPData->set_Sw_Grad(idx0,Sw_grad_I);
-//			pPPData->set_Sw_Grad(idx1,Sw_grad_J);
 		}
 	}
 
@@ -73,8 +71,6 @@ namespace PRS{
 					Sw_grad_I[i] += ((5.*Sw_I + Sw_J)/6.)*Dij[i];
 					Sw_grad_J[i] += ((Sw_I + 5.*Sw_J)/6.)*Dij[i];
 				}
-//				pPPData->set_Sw_Grad(idx0_global,Sw_grad_I);
-//				pPPData->set_Sw_Grad(idx1_global,Sw_grad_J);
 			}
 		}
 		else{
@@ -104,10 +100,6 @@ namespace PRS{
 					Sw_grad_J[i] += aux[i]*dot2;
 					Sw_grad_K[i] += aux[i]*dot3;
 				}
-
-//				pPPData->set_Sw_Grad(idx0_global,Sw_grad_I);
-//				pPPData->set_Sw_Grad(idx1_global,Sw_grad_J);
-//				pPPData->set_Sw_Grad(idx2_global,Sw_grad_K);
 			}
 		}
 	}
@@ -118,6 +110,7 @@ namespace PRS{
 		double* Sw_grad = NULL;
 		int i, dom, ndom, nnodes, node, idx;
 		ndom = (int)pSimPar->setOfDomains.size();
+
 		// performe sw_grad accumulation for multidomains
 		for (dom=0; dom<ndom; dom++){
 			nnodes = pGCData->getNumNodesPerDomain(dom);
@@ -131,7 +124,7 @@ namespace PRS{
 			}
 		}
 
-		// weight cumulated sw_grad per node volume
+		// weight accumulate sw_grad per node volume
 		nnodes = pGCData->getNumNodes();
 		for (node=0; node<nnodes; node++){
 			pPPData->get_Sw_Grad(node,Sw_grad);
@@ -139,7 +132,6 @@ namespace PRS{
 			for (i=0; i<dim; i++){
 				Sw_grad[i] /= volume;
 			}
-			//pPPData->set_Sw_Grad(node,Sw_grad);
 		}
 	}
 
@@ -148,10 +140,10 @@ namespace PRS{
 		double* Sw_grad_J = NULL;
 		double* Sw_grad_K = NULL;
 		double versor[3], innerp1, innerp2, Dij[3];
-		int i,nedges, edge, idx0_global, idx1_global, idx2_global, flag1, flag2;
+		int i,nedges, edge, idx0_global, idx1_global, idx2_global, flag1, flag2, flag3;
 
 		if (dim==2){
-			nedges = pGCData->getNumEBE();
+			nedges = pGCData->getNumExternalBdryEdges();
 			for (edge=0; edge<nedges; edge++){
 				pGCData->getVersor_ExternalBdryElement(edge,versor);
 				pGCData->getExternalBdryEdges(edge,idx0_global,idx1_global,flag1,flag2);
@@ -163,7 +155,6 @@ namespace PRS{
 					for (i=0; i<dim; i++){
 						Sw_grad_I[i] = innerp1*versor[i];
 					}
-					//pPPData->set_Sw_Grad(idx0_global,Sw_grad_I);
 					pPPData->setProjectedSwgrad(idx0_global,true);
 				}
 				if ( !pSimPar->isInjectionWell(flag2)  && !pPPData->getProjectedSwgrad(idx1_global) ){
@@ -172,54 +163,45 @@ namespace PRS{
 					for (i=0; i<dim; i++){
 						Sw_grad_J[i] = innerp2*versor[i];
 					}
-					//pPPData->set_Sw_Grad(idx1_global,Sw_grad_J);
-				    pPPData->setProjectedSwgrad(idx1_global,true);
+					pPPData->setProjectedSwgrad(idx1_global,true);
 				}
 			}
 		}
 		else{
-			int idx0,idx1,idx2;
-			int ndom = (int)pSimPar->setOfDomains.size();
-			for (int dom=0; dom<ndom; dom++){
-				int nfaces = pGCData->getNumBdryFacesPerDomain(dom);
-				for (int face=0; face<nfaces; face++){
-					pGCData->getDij(dom,face,Dij);
-					pGCData->getBdryFace(dom,face,idx0,idx1,idx2,idx0_global,idx1_global,idx2_global);
+			for (int face=0; face<pGCData->getNumExternalBdryFaces(); face++){
+				//pGCData->getDij(dom,face,Dij);
+				pGCData->getExternalBdryFaces(face,idx0_global,idx1_global,idx2_global,flag1,flag2,flag3);
 
-//					// project each nodal gradient on face
-//					double norma = sqrt( inner_product(Dij,Dij,dim) );
-//					double n[3] = {Dij[0]/norma, Dij[1]/norma, Dij[2]/norma};
-//
-//					// exclude injection wells
-//					if ( !pSimPar->isInjectionWell(flag1)  && !pPPData->getProjectedSwgrad(idx0_global)){
-//						pPPData->get_Sw_Grad(idx0_global,Sw_grad_I);
-//						double scalar = Sw_grad_I[0]*n[0] + Sw_grad_I[1]*n[1] + Sw_grad_I[2]*n[2];
-//						for (i=0; i<3; i++){
-//							Sw_grad_I[i] = Sw_grad_I[i] - scalar*n[i];
-//						}
-//						//pPPData->set_Sw_Grad(idx0_global,Sw_grad_I);
-//						pPPData->setProjectedSwgrad(idx0_global,true);
-//					}
-//
-//					if ( !pSimPar->isInjectionWell(flag2)  && !pPPData->getProjectedSwgrad(idx1_global) ){
-//						pPPData->get_Sw_Grad(idx1_global,Sw_grad_J);
-//						double scalar = Sw_grad_J[0]*n[0] + Sw_grad_J[1]*n[1] + Sw_grad_J[2]*n[2];
-//						for (i=0; i<3; i++){
-//							Sw_grad_J[i] = Sw_grad_J[i] - scalar*n[i];
-//						}
-//						//pPPData->set_Sw_Grad(idx0_global,Sw_grad_I);
-//						pPPData->setProjectedSwgrad(idx1_global,true);
-//					}
-//
-//					if ( !pSimPar->isInjectionWell(flag3)  && !pPPData->getProjectedSwgrad(idx2_global) ){
-//						pPPData->get_Sw_Grad(idx2_global,Sw_grad_K);
-//						double scalar = Sw_grad_K[0]*n[0] + Sw_grad_K[1]*n[1] + Sw_grad_K[2]*n[2];
-//						for (i=0; i<3; i++){
-//							Sw_grad_K[i] = Sw_grad_K[i] - scalar*n[i];
-//						}
-//						//pPPData->set_Sw_Grad(idx0_global,Sw_grad_I);
-//						pPPData->setProjectedSwgrad(idx2_global,true);
-//					}
+				// project each nodal gradient on face
+				double norma = sqrt( inner_product(Dij,Dij,dim) );
+				double n[3] = {Dij[0]/norma, Dij[1]/norma, Dij[2]/norma};
+
+				// exclude injection wells
+				if ( !pSimPar->isInjectionWell(flag1)  && !pPPData->getProjectedSwgrad(idx0_global)){
+					pPPData->get_Sw_Grad(idx0_global,Sw_grad_I);
+					double scalar = Sw_grad_I[0]*n[0] + Sw_grad_I[1]*n[1] + Sw_grad_I[2]*n[2];
+					for (i=0; i<3; i++){
+						Sw_grad_I[i] = Sw_grad_I[i] - scalar*n[i];
+					}
+					pPPData->setProjectedSwgrad(idx0_global,true);
+				}
+
+				if ( !pSimPar->isInjectionWell(flag2)  && !pPPData->getProjectedSwgrad(idx1_global) ){
+					pPPData->get_Sw_Grad(idx1_global,Sw_grad_J);
+					double scalar = Sw_grad_J[0]*n[0] + Sw_grad_J[1]*n[1] + Sw_grad_J[2]*n[2];
+					for (i=0; i<3; i++){
+						Sw_grad_J[i] = Sw_grad_J[i] - scalar*n[i];
+					}
+					pPPData->setProjectedSwgrad(idx1_global,true);
+				}
+
+				if ( !pSimPar->isInjectionWell(flag3)  && !pPPData->getProjectedSwgrad(idx2_global) ){
+					pPPData->get_Sw_Grad(idx2_global,Sw_grad_K);
+					double scalar = Sw_grad_K[0]*n[0] + Sw_grad_K[1]*n[1] + Sw_grad_K[2]*n[2];
+					for (i=0; i<3; i++){
+						Sw_grad_K[i] = Sw_grad_K[i] - scalar*n[i];
+					}
+					pPPData->setProjectedSwgrad(idx2_global,true);
 				}
 			}
 		}

@@ -88,12 +88,14 @@ namespace PRS {
 		case 1:
 			return new EBFV1_hyperbolic(theMesh,pPPData,pSimPar,pGCData,pMData,pOilProduction,pErrorAnalysis);
 		case 2:
-			return  new EBFV1_hyperbolic_MIMPES(theMesh,pPPData,pSimPar,pGCData,pMData,pOilProduction,pErrorAnalysis);
+			return new EBFV1_hyperbolic_MIMPES(theMesh,pPPData,pSimPar,pGCData,pMData,pOilProduction,pErrorAnalysis);
+		case 3:
+			return new EBFV1_hyperbolic_MIMPES_Adapt(theMesh,pPPData,pSimPar,pGCData,pMData,pOilProduction,pErrorAnalysis);
 		default:
 			throw Exception(__LINE__,__FILE__,"Could not initialize a pointer to pHiperbolic_eq. Unknown method.\n");
 		}
 	}
-	///#define TRACKING_PROGRAM_STEPS
+
 	void SIMULATION_core::updatePointersData(pMesh theMesh){
 		cout<< "UPDATEPOINTERS"<<endl;
 	#ifdef TRACKING_PROGRAM_STEPS

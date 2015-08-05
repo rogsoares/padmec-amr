@@ -26,7 +26,7 @@ CXXFLAGS=-g -Wall -DNOADAPTATION -DTRACKING_PROGRAM_STEPS -Wparentheses -D_SEEKF
 #CXXFLAGS=-DPARALLEL -g -Wall -Wunused -D__ADAPTATION_DEBUG__ -D__ERROR_ANALYSIS_DEBUG__ -D_SEEKFORBUGS_ -DTRACKING_PROGRAM_STEPS -DFVPO
 # scientific_application folder is where libraries are installed 
 APP_DIR=$(HOME)/applications
-PROJ_DIR=/home/rogerio/projetos/svn/svn/trunk
+PROJ_DIR=$(HOME)/projetos/padmec-amr/trunk
 GMSH_DIR=$(APP_DIR)/gmshGMSH
 
 # compilers
@@ -82,7 +82,7 @@ OBJS_ELLIPTIC=$(OBJ_DIR)/EBFV1_Elliptic_main.o $(OBJ_DIR)/EBFV1_AssemblyMatVec.o
 	          $(OBJ_DIR)/MEBFV_Assembly.o 
 
 OBJS_HYPERBOLIC=$(OBJ_DIR)/EBFV1_velocityField.o $(OBJ_DIR)/EBFV1_hyperbolic.o $(OBJ_DIR)/EBFV1_hyperbolic_MIMPES.o $(OBJ_DIR)/EBFV1_advectiveTerm.o \
-                $(OBJ_DIR)/EBFV1_advanceSaturation.o $(OBJ_DIR)/SaturationGradient.o
+                $(OBJ_DIR)/EBFV1_advanceSaturation.o $(OBJ_DIR)/SaturationGradient.o $(OBJ_DIR)/EBFV1_hyperbolic_MIMPES_Adapt.o
 
 OBJS_TOOLS=$(OBJ_DIR)/MeshData.o $(OBJ_DIR)/MeshData2.o $(OBJ_DIR)/OilProductionManagement.o $(OBJ_DIR)/LoadMeshAdaptationParameters.o  $(OBJ_DIR)/load_EBFV1_PreProcessorData.o $(OBJ_DIR)/auxiliar.o \
            $(OBJ_DIR)/SimulatorParameters.o $(OBJ_DIR)/SimulatorParameters2.o $(OBJ_DIR)/Exception.o $(OBJ_DIR)/exportVTK.o $(OBJ_DIR)/PhysicPropData.o $(OBJ_DIR)/PhysicPropData2.o $(OBJ_DIR)/LoadSimulatorParameters.o \
