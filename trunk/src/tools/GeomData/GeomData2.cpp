@@ -215,8 +215,14 @@ namespace PRS{
 		flag3 = external_bdry_elem[0].getValue(idx,5);
 	}
 
-	int GeomData::getNumEBE() const{
+	// number of external boundary edges
+	int GeomData::getNumExternalBdryEdges() const{
 		return numExtBdryEdges;
+	}
+
+	// number of external boundary edges
+	int GeomData::getNumExternalBdryFaces() const{
+		return numExtBdryFaces;
 	}
 
 	void GeomData::setTotalNumberOfEdges(int n){

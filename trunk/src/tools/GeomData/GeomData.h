@@ -192,7 +192,12 @@ namespace PRS{
 		// Used by Saturation Gradient
 		void getExternalBdryEdges(int idx, int &idx0_global, int &idx1_global, int &flag1, int &flag2);
 		void getExternalBdryFaces(int idx, int &idx0_global, int &idx1_global, int &idx2_global, int &flag1, int &flag2, int &flag3);
-		int getNumEBE() const;	// number if external boundary elements
+
+
+		int getNumExternalBdryEdges() const;
+		int getNumExternalBdryFaces() const;
+
+		void calculate_extFaceVersor(pMesh theMesh);
 
 		void setTotalNumberOfEdges(int n);
 		void getTotalNumberOfEdges(int &n) const;

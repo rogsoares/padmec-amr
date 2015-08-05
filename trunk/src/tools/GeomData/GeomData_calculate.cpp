@@ -217,7 +217,7 @@ namespace PRS{
 
 	void GeomData::calculateNumBDRYFaces(pMesh theMesh){
 		if (theMesh->getDim()==2){
-			return;
+			return;	// nothing to do here
 		}
 
 		int ndom = getNumDomains();
@@ -312,7 +312,7 @@ namespace PRS{
 		}
 		setSmallestEdgeLength(P_getMinDbl(delta_x));
 
-		// Calculate versor for external boundary edges
+		// Calculate unit vector for external boundary edges
 		int tnedges = 0;
 		int row = 0;
 
@@ -347,7 +347,30 @@ namespace PRS{
 			EIter_delete(eit);
 			this->setTotalNumberOfEdges(tnedges);
 		}
-		else{
+	}
+
+	// calculate a unit vector normal to each external face
+	void GeomData::calculate_extFaceVersor(pMesh theMesh){
+		int row = 0;
+		double dij[3], norma;
+		int ndom = getNumDomains();
+		for (int i=0; i<ndom; i++){
+			FIter fit = M_faceIter(theMesh);
+			while ( pFace face = FIter_next(fit) ){
+
+				// only external boudanry faces
+				if (F_numRegions(face)==1){
+					if (faceBelongToDomain(face,domainList[i])){
+						getDij(face,domainList[i],dij);
+						norma = sqrt( inner_product(dij,dij,3) );
+						versor_ExtBdryElem[0].setValue(row,0,dij[0]/norma);
+						versor_ExtBdryElem[0].setValue(row,1,dij[1]/norma);
+						versor_ExtBdryElem[0].setValue(row,2,dij[2]/norma);
+						row++;
+					}
+				}
+			}
+			FIter_delete(fit);
 		}
 	}
 

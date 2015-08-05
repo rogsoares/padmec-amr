@@ -94,7 +94,7 @@ void initializeParameters(pMesh theMesh, ErrorAnalysis* pErrorAnalysis, AMR* pMe
 		void (*pInterpolateData)(InterpolationDataStruct*);
 
 		int simFlag;
-		enum SIMULATION_States{STEADY_STATE, TRANSIENT};
+		enum SIMULATION_States{STEADY_STATE, TRANSIENT, MIMPES_ADAPT};
 	};
 }
 #endif

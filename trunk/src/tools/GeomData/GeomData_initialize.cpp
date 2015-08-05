@@ -59,6 +59,7 @@ namespace PRS{
 		allocatePointers(M_numVertices(theMesh),theMesh->getDim());	// allocate storage
 		calculateEdgeProperties(theMesh);							// fill storage
 		dataTransfer(theMesh);
+		calculate_extFaceVersor(theMesh);
 		mappingNodesIds(theMesh);									// map data to find them quickly
 	}
 }
